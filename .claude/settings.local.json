@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --check \"c:\\\\Users\\\\darda\\\\OneDrive\\\\Desktop\\\\Golden-Ambrosia\\\\js\\\\systems\\\\equipSystem.js\")",
+      "Bash(node --check \"c:\\\\Users\\\\darda\\\\OneDrive\\\\Desktop\\\\Golden-Ambrosia\\\\js\\\\systems\\\\player.js\")",
+      "Bash(node --check \"c:\\\\Users\\\\darda\\\\OneDrive\\\\Desktop\\\\Golden-Ambrosia\\\\js\\\\pages\\\\inventory.js\")",
+      "Bash(node --check \"c:\\\\Users\\\\darda\\\\OneDrive\\\\Desktop\\\\Golden-Ambrosia\\\\js\\\\pages\\\\equipment.js\")",
+      "Bash(node --check \"c:\\\\Users\\\\darda\\\\OneDrive\\\\Desktop\\\\Golden-Ambrosia\\\\js\\\\pages\\\\quests.js\")",
+      "Bash(node -e \":*)"
+    ]
+  }
+}

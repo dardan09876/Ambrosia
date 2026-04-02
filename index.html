@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golden Ambrosia</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="app">
+
+    <!-- Full-screen character creation overlay -->
+    <div id="creation-screen"></div>
+
+    <!-- Main game shell (hidden until character exists) -->
+    <div id="game-shell" class="hidden">
+
+        <!-- Top stat bar -->
+        <header id="top-bar">
+            <div id="brand">
+                <span class="brand-title">Golden Ambrosia</span>
+            </div>
+            <div id="stat-bars-container">
+                <!-- Injected by layout.js -->
+            </div>
+            <div id="top-player-info">
+                <!-- Injected by layout.js -->
+            </div>
+        </header>
+
+        <!-- Sub bar: currency + location -->
+        <div id="sub-bar">
+            <div id="currency-display">
+                <!-- Injected by layout.js -->
+            </div>
+            <div id="location-display">
+                <!-- Injected by layout.js -->
+            </div>
+        </div>
+
+        <!-- Body: sidebar + content -->
+        <div id="body-wrapper">
+            <nav id="sidebar">
+                <ul id="nav-list">
+                    <!-- Injected by layout.js -->
+                </ul>
+            </nav>
+            <main id="content-area">
+                <!-- Dynamic page content -->
+            </main>
+        </div>
+
+        <!-- Activity log footer -->
+        <footer id="activity-footer">
+            <div id="log-label">Activity Log</div>
+            <div id="log-entries">
+                <!-- Injected by log.js -->
+            </div>
+        </footer>
+
+    </div>
+</div>
+
+<!-- Data (load first — no dependencies) -->
+<script src="js/data/factions.js"></script>
+<script src="js/data/origins.js"></script>
+<script src="js/data/items.js"></script>
+<script src="js/data/food.js"></script>
+<script src="js/data/quests.js"></script>
+<script src="js/data/chests.js"></script>
+<script src="js/data/abilities.js"></script>
+<script src="js/data/map.js"></script>
+
+<!-- Systems (depend on data) -->
+<script src="js/systems/player.js"></script>
+<script src="js/systems/save.js"></script>
+<script src="js/systems/questSystem.js"></script>
+<script src="js/systems/chestSystem.js"></script>
+<script src="js/systems/equipSystem.js"></script>
+<script src="js/systems/abilitySystem.js"></script>
+<script src="js/systems/mapSystem.js"></script>
+<script src="js/systems/gameLoop.js"></script>
+
+<!-- UI (depend on systems) -->
+<script src="js/ui/log.js"></script>
+<script src="js/ui/router.js"></script>
+<script src="js/ui/layout.js"></script>
+
+<!-- Pages (depend on UI + systems) -->
+<script src="js/pages/characterCreation.js"></script>
+<script src="js/pages/home.js"></script>
+<script src="js/pages/skills.js"></script>
+<script src="js/pages/quests.js"></script>
+<script src="js/pages/inventory.js"></script>
+<script src="js/pages/equipment.js"></script>
+<script src="js/pages/market.js"></script>
+<script src="js/pages/abilities.js"></script>
+<script src="js/pages/map.js"></script>
+
+<!-- Entry point (runs last) -->
+<script src="main.js"></script>
+</body>
+</html>
