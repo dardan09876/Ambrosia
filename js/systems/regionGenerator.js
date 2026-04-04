@@ -47,7 +47,7 @@ const RegionGenerator = {
         if (!hex) return {};
 
         const weights = this.BIOME_WEIGHTS[hex.biome] || this.BIOME_WEIGHTS.plains;
-        const SIZE = 8;
+        const SIZE = 12;
         const grid = {};
 
         let idx = 0;
@@ -76,6 +76,7 @@ const RegionGenerator = {
 
         // Place a few special tiles based on biome
         this._placeSpecialTiles(grid, hex, worldHexId, SIZE);
+
 
         return grid;
     },

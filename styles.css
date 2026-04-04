@@ -4107,3 +4107,55 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
     pointer-events: none;
 }
 
+/* ── World Hex Info Panel: difficulty + skill requirements ─────── */
+.map-difficulty-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    background: var(--bg-body);
+    border-radius: 3px;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-left: 6px;
+}
+
+.map-info-rec {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.map-info-rec strong {
+    color: var(--text-accent);
+}
+
+.map-info-req-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+    background: var(--bg-body);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    font-size: 12px;
+}
+
+.map-info-req-item {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-muted);
+}
+
+.map-info-req-item.met {
+    color: var(--success);
+}
+
+.map-info-req-item.unmet {
+    color: var(--danger);
+}
+
+.map-tier-badge {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+

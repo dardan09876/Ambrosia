@@ -408,6 +408,40 @@ function _buildWorldInfoPanel(hex) {
   const dangerColor = ['#4a9e6b','#8aa84a','#c9a84c','#c07830','#c04040','#9b1a1a'][hex.danger] || '#c9a84c';
   const dangerStr = _dangerLabel(hex.danger);
 
+  const player = PlayerSystem.current;
+  const reqCheck = MapSystem.meetsWorldHexReq(player, hex.required);
+  const difficulty = MapSystem.getWorldHexDifficulty(hex.id);
+
+  // Requirement display
+  let reqHtml = '';
+  if (hex.required) {
+    if (hex.required.totalSkill != null) {
+      const current = PlayerSystem.getTotalSkill();
+      const met = current >= hex.required.totalSkill;
+      reqHtml = `<div class="map-info-req${met ? '' : ' map-req-unmet'}">
+        Total Skill: ${current} / ${hex.required.totalSkill}
+      </div>`;
+    } else {
+      const parts = Object.entries(hex.required).map(([skill, minLv]) => {
+        const current = PlayerSystem.getSkill(skill);
+        const met = current >= minLv;
+        const label = typeof skillLabel !== 'undefined' ? skillLabel(skill) : skill;
+        return `<div class="map-info-req-item${met ? ' met' : ' unmet'}">${label}: ${current}/${minLv}</div>`;
+      }).join('');
+      reqHtml = `<div class="map-info-req-block">${parts}</div>`;
+    }
+  }
+
+  const recLevel = hex.recommendedLevel > 0
+    ? `<div class="map-info-rec">Recommended total skill: <strong>${hex.recommendedLevel}</strong></div>`
+    : `<div class="map-info-rec">Beginner friendly</div>`;
+
+  const enterBtn = reqCheck.ok
+    ? `<button class="map-btn-travel" onclick="_mapEnterWorldHex('${hex.id}')">Enter Region →</button>`
+    : `<button class="map-btn-travel map-btn-locked" disabled title="${reqCheck.reason}">
+        Locked — ${reqCheck.reason}
+      </button>`;
+
   return `
     <div class="map-info-content">
       <div class="map-info-name">${hex.name}</div>
@@ -415,14 +449,13 @@ function _buildWorldInfoPanel(hex) {
       <div class="map-info-tier">
         <span class="map-tier-stars">${_tierStars(hex.tier)}</span>
         <span class="map-danger-label" style="color:${dangerColor}">${dangerStr}</span>
+        <span class="map-difficulty-badge">Difficulty ${difficulty}</span>
       </div>
       <p class="map-info-desc">${hex.description}</p>
       <div class="map-info-biome">Terrain: <strong>${hex.biome}</strong></div>
-      <div class="map-info-travel">
-        <button class="map-btn-travel" onclick="_mapEnterWorldHex('${hex.id}')">
-          Enter Region →
-        </button>
-      </div>
+      ${recLevel}
+      ${reqHtml}
+      <div class="map-info-travel">${enterBtn}</div>
     </div>
   `;
 }

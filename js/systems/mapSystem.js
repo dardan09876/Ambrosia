@@ -16,6 +16,57 @@ const MapSystem = {
         5: 1000,   // endgame — fortified regions
     },
 
+    // ── Difficulty formula (tied to distance from Ashenveil center) ─────────
+    // Returns difficulty 1–8 based on world hex distance from ashenveil_heart.
+    // Used to scale quests, encounters, loot, and access requirements.
+    getRegionDifficulty(distanceFromCenter) {
+        return Math.floor(1 + distanceFromCenter * 1.5);
+    },
+
+    // Cube-distance between two world hexes
+    worldHexDistance(idA, idB) {
+        const a = MAP_WORLD[idA];
+        const b = MAP_WORLD[idB];
+        if (!a || !b) return 0;
+        return (Math.abs(a.q - b.q) + Math.abs(a.q + a.r - b.q - b.r) + Math.abs(a.r - b.r)) / 2;
+    },
+
+    // Difficulty of a specific world hex (distance from ashenveil_heart)
+    getWorldHexDifficulty(worldHexId) {
+        const dist = this.worldHexDistance('ashenveil_heart', worldHexId);
+        return this.getRegionDifficulty(dist);
+    },
+
+    // ── World hex skill-gate check ────────────────────────────────────────────
+    // World hexes use a simple { skill: minLevel } map (all must be met).
+    // Also supports { totalSkill: N } for ruins zones.
+    meetsWorldHexReq(player, required) {
+        if (!required) return { ok: true };
+        if (!player) return { ok: false, reason: 'No player.' };
+
+        // totalSkill gate (ruins)
+        if (required.totalSkill != null) {
+            const total = PlayerSystem.getTotalSkill();
+            if (total < required.totalSkill) {
+                return { ok: false, reason: `Need ${required.totalSkill} total skill (you have ${total}).` };
+            }
+            return { ok: true };
+        }
+
+        // Individual skill gates — ALL must be met
+        const missing = [];
+        for (const [skill, minLevel] of Object.entries(required)) {
+            const playerLevel = PlayerSystem.getSkill(skill);
+            if (playerLevel < minLevel) {
+                missing.push(`${skillLabel ? skillLabel(skill) : skill} ${minLevel}`);
+            }
+        }
+        if (missing.length > 0) {
+            return { ok: false, reason: `Requires: ${missing.join(', ')}.` };
+        }
+        return { ok: true };
+    },
+
     // ── Adjacency ─────────────────────────────────────────────────────────────
     getAdjacentIds(regionId) {
         const region = MAP_REGIONS[regionId];
