@@ -80,6 +80,12 @@ const PlayerSystem = {
                 : Object.values(typeof FACTION_CAPITALS !== 'undefined' ? FACTION_CAPITALS : {})[0] ?? 'ironhold',
             gold: origin ? origin.startingGold : 100,
 
+            // ── Leveling & Experience ─────────────────────────
+            level: 1,
+            experience: 0,
+            talent: null,           // null until level 15, then one of TALENTS[].id
+            talentUnlockPrompted: false, // flag to show talent selection UI once
+
             // ── Stats (each regenerates on a tick) ───────────
             // regenInterval is in seconds
             stats: {
@@ -178,6 +184,11 @@ const PlayerSystem = {
         if (this.current.corruption == null) this.current.corruption = 0;
         if (!this.current.activeEffects) this.current.activeEffects = [];
         if (this.current.hospitalized === undefined) this.current.hospitalized = null;
+        // Backfill leveling + talent system
+        if (this.current.level == null) this.current.level = 1;
+        if (this.current.experience == null) this.current.experience = 0;
+        if (this.current.talent === undefined) this.current.talent = null;
+        if (this.current.talentUnlockPrompted === undefined) this.current.talentUnlockPrompted = false;
         // Recalculate derived maxes in case design values changed
         this._recalcStatMaxes();
     },
@@ -447,6 +458,191 @@ const PlayerSystem = {
         const now = Date.now();
         this.current.activeEffects = (this.current.activeEffects || [])
             .filter(e => !e.expiresAt || e.expiresAt > now);
+    },
+
+    // ── Leveling & Experience ──────────────────────────────────────────
+    // Gain XP for a specific skill (called by QuestSystem when quest resolves)
+    gainSkillExperience(skillKey, baseXp) {
+        if (!this.current) return;
+
+        // Apply talent modifier if talent is selected
+        let xpMultiplier = 1.0;
+        if (this.current.talent && typeof TALENTS !== 'undefined') {
+            const talent = TALENTS.find(t => t.id === this.current.talent);
+            if (talent && talent.xpModifiers[skillKey]) {
+                xpMultiplier = talent.xpModifiers[skillKey];
+            }
+        }
+
+        // Apply survival penalty
+        const survivalMultiplier = this.getSurvivalMultiplier();
+
+        const finalXp = Math.floor(baseXp * xpMultiplier * survivalMultiplier);
+        this.current.experience += finalXp;
+
+        // Check for level up
+        this._checkLevelUp();
+    },
+
+    // ── Internal level-up check ────────────────────────────────────────
+    _checkLevelUp() {
+        if (!this.current) return;
+        const currentXpThreshold = typeof getXpForLevel !== 'undefined'
+            ? getXpForLevel(this.current.level + 1)
+            : 24000; // fallback for level 15
+
+        if (this.current.experience >= currentXpThreshold) {
+            this._levelUp();
+        }
+    },
+
+    // ── Level up the player ────────────────────────────────────────────
+    _levelUp() {
+        if (!this.current) return;
+
+        const beforeLevel = this.current.level;
+        this.current.level += 1;
+        const afterLevel = this.current.level;
+
+        Log.add(`Level up! You are now level ${afterLevel}.`, 'success');
+
+        // Stat bonus per level: +5 to each stat max
+        for (const statName of Object.keys(this.current.stats)) {
+            this.current.stats[statName].baseMax += 5;
+        }
+        this._recalcStatMaxes();
+
+        // Check if talent should be unlocked
+        if (afterLevel === 15 && !this.current.talent) {
+            this.current.talentUnlockPrompted = false; // Reset to ensure UI shows
+            Log.add('Talent selection unlocked! Visit the talents page to commit to a path.', 'system');
+        }
+
+        // Continue checking for more level-ups
+        this._checkLevelUp();
+    },
+
+    // ── Set player's talent (only available at level 15+) ────────────────
+    setTalent(talentId) {
+        if (!this.current) return { ok: false, reason: 'No player.' };
+        if (this.current.level < 15) return { ok: false, reason: 'You must reach level 15 to choose a talent.' };
+        if (this.current.talent) return { ok: false, reason: 'You have already chosen a talent.' };
+        if (!talentId) return { ok: false, reason: 'Invalid talent.' };
+
+        const talent = typeof TALENTS !== 'undefined' ? TALENTS.find(t => t.id === talentId) : null;
+        if (!talent) return { ok: false, reason: 'Unknown talent.' };
+
+        this.current.talent = talentId;
+        this.current.talentUnlockPrompted = true;
+
+        Log.add(`You have become ${talent.name}. Your path is chosen.`, 'success');
+        SaveSystem.save();
+
+        return { ok: true, talent };
+    },
+
+    // ── Get current talent info ────────────────────────────────────────
+    getTalent() {
+        if (!this.current || !this.current.talent) return null;
+        return typeof TALENTS !== 'undefined' ? TALENTS.find(t => t.id === this.current.talent) : null;
+    },
+
+    // ── Get XP progress to next level ──────────────────────────────────
+    getXpForCurrentLevel() {
+        if (!this.current) return 0;
+        return typeof getXpForLevel !== 'undefined' ? getXpForLevel(this.current.level) : 0;
+    },
+
+    getXpForNextLevel() {
+        if (!this.current) return 0;
+        return typeof getXpForLevel !== 'undefined' ? getXpForLevel(this.current.level + 1) : 24000;
+    },
+
+    getXpProgress() {
+        if (!this.current) return 0;
+        const current = this.getXpForCurrentLevel();
+        const next = this.getXpForNextLevel();
+        if (next <= current) return 0;
+        return Math.round(((this.current.experience - current) / (next - current)) * 100);
+    },
+
+    // ── Synergies (passive bonuses from skill combinations) ──────────────
+    // Only available after choosing a talent
+    getActiveSynergies() {
+        if (!this.current || !this.current.talent || typeof getSynergiesForTalent === 'undefined') {
+            return [];
+        }
+
+        const talentSynergies = getSynergiesForTalent(this.current.talent);
+        const activeSynergies = [];
+
+        for (const synergy of talentSynergies) {
+            const skill1Value = this.current.skills[synergy.skills[0]] || 0;
+            const skill2Value = this.current.skills[synergy.skills[1]] || 0;
+            const synergyValue = Math.min(skill1Value, skill2Value);
+
+            if (synergyValue >= 50) {
+                // Determine tier
+                let tier = 0;
+                const thresholds = [50, 150, 300, 600, 1000];
+                for (let i = 0; i < thresholds.length; i++) {
+                    if (synergyValue >= thresholds[i]) {
+                        tier = i + 1;
+                    }
+                }
+
+                activeSynergies.push({
+                    synergy,
+                    synergyValue,
+                    tier,
+                    tierData: synergy.tiers.find(t => t.tier === tier),
+                });
+            }
+        }
+
+        return activeSynergies;
+    },
+
+    // Get all available synergies for the player's talent (whether active or not)
+    getAllTalentSynergies() {
+        if (!this.current || !this.current.talent || typeof getSynergiesForTalent === 'undefined') {
+            return [];
+        }
+
+        const talentSynergies = getSynergiesForTalent(this.current.talent);
+        const result = [];
+
+        for (const synergy of talentSynergies) {
+            const skill1Value = this.current.skills[synergy.skills[0]] || 0;
+            const skill2Value = this.current.skills[synergy.skills[1]] || 0;
+            const synergyValue = Math.min(skill1Value, skill2Value);
+
+            let tier = 0;
+            const thresholds = [50, 150, 300, 600, 1000];
+            for (let i = 0; i < thresholds.length; i++) {
+                if (synergyValue >= thresholds[i]) {
+                    tier = i + 1;
+                }
+            }
+
+            const nextThresholdIdx = Math.min(tier, 4);
+            const nextThreshold = thresholds[nextThresholdIdx];
+
+            result.push({
+                synergy,
+                synergyValue,
+                tier,
+                tierData: tier > 0 ? synergy.tiers.find(t => t.tier === tier) : null,
+                active: tier > 0,
+                progress: {
+                    current: synergyValue,
+                    nextThreshold,
+                    percentToNext: tier < 5 ? Math.round((Math.max(0, synergyValue - (thresholds[tier - 1] || 0)) / (nextThreshold - (thresholds[tier - 1] || 50))) * 100) : 100,
+                },
+            });
+        }
+
+        return result;
     },
 };
 

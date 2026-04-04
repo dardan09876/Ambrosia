@@ -56,6 +56,30 @@ Router.register('home', function renderHome(container) {
                     </div>
                 </div>
 
+                <!-- Level & Experience -->
+                <div class="card">
+                    <div class="card-header">Level & Talent</div>
+                    <div class="card-body">
+                        <div class="level-display">
+                            <div class="level-value">LVL ${player.level}</div>
+                            <div class="level-title">${player.talent ? (TALENTS.find(t => t.id === player.talent)?.name || 'Unknown') : 'Talentless Wanderer'}</div>
+                        </div>
+                        <div class="xp-bar-wrap" style="margin:12px 0">
+                            <div class="stat-bar-track">
+                                <div class="stat-bar-fill" style="width:${PlayerSystem.getXpProgress()}%;background:#5b8fd4"></div>
+                            </div>
+                        </div>
+                        <div class="muted-text" style="font-size:12px">
+                            ${player.experience.toLocaleString()} / ${PlayerSystem.getXpForNextLevel().toLocaleString()} XP
+                        </div>
+                        ${player.level >= 15 && !player.talent ? `
+                            <button class="btn-primary" style="width:100%;margin-top:8px" id="home-talent-btn">
+                                Choose Talent
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+
                 <!-- Survival status -->
                 <div class="card">
                     <div class="card-header">Survival</div>
@@ -128,4 +152,10 @@ Router.register('home', function renderHome(container) {
             </div>
         </div>
     `;
+
+    // Bind events
+    const talentBtn = container.querySelector('#home-talent-btn');
+    if (talentBtn) {
+        talentBtn.addEventListener('click', () => Router.navigate('talents'));
+    }
 });

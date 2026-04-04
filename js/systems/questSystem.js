@@ -149,11 +149,17 @@ const QuestSystem = {
             this.lastReward = { outcome: 'success', questName: quest.name, gold, chests: quest.chestReward };
             Log.add(`"${quest.name}" complete! +${gold.toLocaleString()} gold · ${quest.chestReward.count}× ${chestDef?.name}.`, 'success');
 
+            // Award XP on success
+            this._awardQuestXp(quest);
+
         } else if (partial) {
             const gold = Math.floor(this._rand(quest.goldReward.min, quest.goldReward.max) * 0.4);
             player.gold += gold;
             this.lastReward = { outcome: 'partial', questName: quest.name, gold, chests: null };
             Log.add(`"${quest.name}" — partial success. +${gold.toLocaleString()} gold, no chest.`, 'warning');
+
+            // Award reduced XP on partial success
+            this._awardQuestXp(quest, 0.5);
 
         } else {
             this.lastReward = { outcome: 'failure', questName: quest.name, gold: 0, chests: null };
@@ -166,6 +172,29 @@ const QuestSystem = {
 
         SaveSystem.save();
         if (Router._current === 'quests') Router._load('quests');
+    },
+
+    // ── Award experience for quest completion ────────────────────────────────
+    _awardQuestXp(quest, multiplier = 1.0) {
+        // Base XP scales with quest tier and duration
+        // Tier 1 (5-10m):    100 XP base
+        // Tier 2 (15-30m):   300 XP base
+        // Tier 3 (45-75m):   800 XP base
+        // Tier 4 (2-3.5h):   1800 XP base
+        // Tier 5 (6-12h):    4000 XP base
+        const tierBaseXp = [0, 100, 300, 800, 1800, 4000];
+        let baseXp = tierBaseXp[Math.max(1, Math.min(5, quest.tier))] || 100;
+
+        // Apply multiplier (partial success = 0.5)
+        const xp = Math.floor(baseXp * multiplier);
+
+        const skillKey = quest.skillCheck.skill;
+        if (typeof PlayerSystem !== 'undefined') {
+            PlayerSystem.gainSkillExperience(skillKey, xp);
+            if (xp > 0) {
+                Log.add(`+${xp} ${skillLabel(skillKey)} experience.`, 'info');
+            }
+        }
     },
 
     // ── Success chance (5–95%) ────────────────────────────────────────────────

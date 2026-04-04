@@ -3008,3 +3008,337 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
 .shrine-poor { font-size: 11px; }
 .shrine-clean-msg { color: var(--text-muted); font-size: 13px; }
 .gold-text { color: var(--gold); }
+
+/* ============================================================
+   TALENTS PAGE
+   ============================================================ */
+
+.level-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.level-value {
+    font-family: var(--font-heading);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.04em;
+}
+
+.level-title {
+    font-size: 13px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.xp-bar-wrap {
+    width: 100%;
+}
+
+.talent-selection {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.talent-card {
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: all var(--transition);
+    cursor: pointer;
+}
+
+.talent-card:hover:not(.committed) {
+    border-color: var(--talent-accent, var(--gold));
+    background: var(--bg-elevated);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.talent-card.committed {
+    border-color: var(--talent-accent, var(--gold));
+    background: rgba(201,168,76,0.1);
+}
+
+.talent-icon {
+    font-size: 42px;
+    text-align: center;
+}
+
+.talent-name {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--talent-accent, var(--text-primary));
+    letter-spacing: 0.04em;
+    text-align: center;
+}
+
+.talent-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.5;
+}
+
+.talent-lore {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-style: italic;
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+    text-align: center;
+}
+
+.talent-modifiers {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+}
+
+.talent-mod-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.talent-mod-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    padding: 2px 0;
+}
+
+.talent-mod-skill {
+    color: var(--text-muted);
+}
+
+.talent-mod-value {
+    font-weight: 600;
+}
+
+.talent-select-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+}
+
+.talent-committed {
+    display: flex;
+    justify-content: center;
+}
+
+.talent-committed .talent-card {
+    max-width: 360px;
+}
+
+.page-facility-blocked {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.page-facility-blocked p {
+    margin: 8px 0;
+    font-size: 13px;
+}
+
+
+/* ============================================================
+   SYNERGIES PAGE
+   ============================================================ */
+
+.synergies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+}
+
+.synergy-card {
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: all var(--transition);
+}
+
+.synergy-card.locked {
+    opacity: 0.6;
+}
+
+.synergy-card.active {
+    border-color: var(--synergy-color, var(--gold));
+    background: rgba(201,168,76,0.05);
+}
+
+.synergy-card.active:hover {
+    box-shadow: 0 8px 24px rgba(201,168,76,0.2);
+    transform: translateY(-2px);
+}
+
+.synergy-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.synergy-icon {
+    font-size: 36px;
+    flex-shrink: 0;
+}
+
+.synergy-tier {
+    padding: 4px 10px;
+    border-radius: var(--radius);
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.synergy-name {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--synergy-color, var(--text-primary));
+    letter-spacing: 0.04em;
+}
+
+.synergy-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.synergy-skills {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px;
+    background: var(--bg-elevated);
+    border-radius: var(--radius);
+}
+
+.skill-badge {
+    padding: 4px 12px;
+    background: var(--border);
+    border-radius: 3px;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.skill-sep {
+    color: var(--text-dim);
+    font-weight: 600;
+}
+
+.synergy-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.synergy-progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.synergy-current-bonuses {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    background: var(--bg-elevated);
+    border-radius: var(--radius);
+}
+
+.synergy-bonus-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.synergy-bonus-item {
+    display: flex;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    align-items: flex-start;
+}
+
+.bonus-icon {
+    color: var(--success);
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.synergy-next-tier {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
+
+
+.talent-synergies {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    background: var(--bg-elevated);
+    border-radius: var(--radius);
+}
+
+.talent-syn-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.talent-synergy-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+    padding: 4px 0;
+}
+
+.syn-name {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.syn-skills {
+    color: var(--text-dim);
+    font-size: 11px;
+}
+
