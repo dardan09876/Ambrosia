@@ -126,7 +126,7 @@ const MapSystem = {
         return { ok: true, totalCost };
     },
 
-    // ── Instant travel to adjacent region — deducts gold ─────────────────────
+    // ── Instant travel to adjacent region — deducts gold + energy ─────────────
     travel(toId) {
         const check = this.canTravel(toId);
         if (!check.ok) return check;
@@ -139,15 +139,25 @@ const MapSystem = {
             return { ok: false, reason: `Not enough gold. Travel to ${dest.name} costs ${cost.toLocaleString()}g (you have ${player.gold.toLocaleString()}g).` };
         }
 
+        // Check energy cost based on destination terrain
+        const tileType = TILE_TYPES[dest.terrain] || TILE_TYPES.plains;
+        const energyCost = tileType.movementCost;
+        const playerEnergy = player.stats.energy.value;
+        if (playerEnergy < energyCost) {
+            return { ok: false, reason: `Too tired to travel. Need ${energyCost} energy, have ${playerEnergy}.` };
+        }
+
         player.gold    -= cost;
+        player.stats.energy.value -= energyCost;
         player.location = toId;
+        this.discoverAround(player, toId);
         Log.add(`Travelled to ${dest.name} for ${cost.toLocaleString()}g.`, 'info');
         SaveSystem.save();
 
         return { ok: true, region: dest };
     },
 
-    // ── Instant multi-hop travel — deducts total gold upfront ─────────────────
+    // ── Instant multi-hop travel — deducts total gold + energy upfront ────────
     travelPath(path) {
         if (!path || path.length === 0) return { ok: false, reason: 'Empty path.' };
 
@@ -159,6 +169,16 @@ const MapSystem = {
         const costInfo = this.pathTravelCost(path);
         if (!costInfo.ok) return costInfo;
 
+        // Calculate total energy cost for entire path
+        let totalEnergyCost = 0;
+        for (const regionId of path) {
+            const region = MAP_REGIONS[regionId];
+            if (region) {
+                const tileType = TILE_TYPES[region.terrain] || TILE_TYPES.plains;
+                totalEnergyCost += tileType.movementCost;
+            }
+        }
+
         const finalId   = path[path.length - 1];
         const finalDest = MAP_REGIONS[finalId];
 
@@ -169,8 +189,17 @@ const MapSystem = {
             };
         }
 
+        if (player.stats.energy.value < totalEnergyCost) {
+            return {
+                ok: false,
+                reason: `Too tired to travel. Journey costs ${totalEnergyCost} energy (you have ${player.stats.energy.value}).`,
+            };
+        }
+
         player.gold    -= costInfo.totalCost;
+        player.stats.energy.value -= totalEnergyCost;
         player.location = finalId;
+        this.discoverAround(player, finalId);
 
         const stops    = path.length - 1;
         const stopsStr = stops > 0 ? ` via ${stops} stop${stops > 1 ? 's' : ''}` : '';
@@ -178,6 +207,21 @@ const MapSystem = {
         SaveSystem.save();
 
         return { ok: true };
+    },
+
+    // ── Fog of War: Discover tiles on travel ──────────────────────────────────
+    discoverAround(player, regionId) {
+        if (!player || !player.discoveredLocations) return;
+
+        const discovered = new Set(player.discoveredLocations);
+        discovered.add(regionId);
+
+        // Reveal all adjacent tiles (fog of war radius 1)
+        for (const adjId of this.getAdjacentIds(regionId)) {
+            discovered.add(adjId);
+        }
+
+        player.discoveredLocations = Array.from(discovered);
     },
 
     // ── Travel state — travel is now instant; these stubs preserve compatibility

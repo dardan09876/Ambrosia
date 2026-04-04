@@ -6,7 +6,10 @@
       "Bash(node --check \"c:\\\\Users\\\\darda\\\\OneDrive\\\\Desktop\\\\Golden-Ambrosia\\\\js\\\\pages\\\\inventory.js\")",
       "Bash(node --check \"c:\\\\Users\\\\darda\\\\OneDrive\\\\Desktop\\\\Golden-Ambrosia\\\\js\\\\pages\\\\equipment.js\")",
       "Bash(node --check \"c:\\\\Users\\\\darda\\\\OneDrive\\\\Desktop\\\\Golden-Ambrosia\\\\js\\\\pages\\\\quests.js\")",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(node -c \"/c/Users/darda/OneDrive/Desktop/Ambrosia/js/pages/map.js\")",
+      "Bash(node -c \"/c/Users/darda/OneDrive/Desktop/Ambrosia/js/systems/mapSystem.js\")",
+      "Bash(node -c \"/c/Users/darda/OneDrive/Desktop/Ambrosia/js/data/map.js\")"
     ]
   }
 }

@@ -123,6 +123,8 @@ const _MAP_TYPE_FILLS = {
 // ── State ─────────────────────────────────────────────────────────────────────
 let _mapSelectedId = null;
 let _mapCurrentPath = null; // multi-tile BFS path to selected tile
+let _mapLayer = 'world';   // 'world' | 'region'
+let _mapRegionFilter = null; // faction mapView for region layer: 'iron_dominion' | 'ashen_covenant' | 'thornwood' | 'ruins'
 
 // ── Main render ───────────────────────────────────────────────────────────────
 function _renderMapPage() {
@@ -136,6 +138,46 @@ function _renderMapPage() {
   if (!el) return;
 
   const player = PlayerSystem.current;
+
+  // Route to world or region view based on layer
+  if (_mapLayer === 'world') {
+    _renderWorldMapPage();
+  } else {
+    _renderRegionMapPage(player);
+  }
+}
+
+// ── World Map View (Macro Layer) ──────────────────────────────────────────────
+function _renderWorldMapPage() {
+  const el = document.getElementById("content-area");
+  if (!el) return;
+
+  const player = PlayerSystem.current;
+  const playerFaction = player ? player.faction : null;
+
+  el.innerHTML = `
+    <div class="page-map page-map-world">
+      <div class="map-header">
+        <h2 class="heading">World Map</h2>
+        <span class="map-location-badge">🌍 High-level Overview</span>
+      </div>
+      <div class="map-body">
+        <div class="map-svg-wrap">
+          ${_buildWorldMapSvg(playerFaction)}
+        </div>
+        <div class="map-info-panel" id="map-info-panel">
+          ${_buildWorldInfoPanel()}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ── Region Map View (Core Gameplay Layer) ─────────────────────────────────────
+function _renderRegionMapPage(player) {
+  const el = document.getElementById("content-area");
+  if (!el) return;
+
   const locId = player.location;
   const adjIds = MapSystem.getAdjacentIds(locId);
 
@@ -148,26 +190,145 @@ function _renderMapPage() {
     _mapCurrentPath = null;
   }
 
+  const selectedRegion = MAP_REGIONS[_mapSelectedId];
+  const backBtnHtml = `<button class="btn-secondary" style="padding:6px 10px;font-size:12px;" id="map-back-btn">← Back to World</button>`;
+
   el.innerHTML = `
-        <div class="page-map">
-            <div class="map-header">
-                <h2 class="heading">World Map</h2>
-                <span class="map-location-badge">◉ ${MapSystem.getCurrentRegionName()}</span>
-            </div>
-            <div class="map-body">
-                <div class="map-svg-wrap">
-                    ${_buildMapSvg(locId, adjIds)}
-                </div>
-                <div class="map-info-panel" id="map-info-panel">
-                    ${_buildInfoPanel(MAP_REGIONS[_mapSelectedId], player, locId, adjIds)}
-                </div>
-            </div>
+    <div class="page-map page-map-region">
+      <div class="map-header">
+        <div style="display:flex;align-items:center;gap:12px;">
+          ${backBtnHtml}
+          <div>
+            <h2 class="heading" style="margin:0;">${_mapRegionFilter ? _mapRegionFilter.split('_').map(w => w[0].toUpperCase() + w.slice(1)).join(' ') : 'Region'}</h2>
+            <span class="map-location-badge">◉ ${MapSystem.getCurrentRegionName()}</span>
+          </div>
         </div>
-    `;
+      </div>
+      <div class="map-body">
+        <div class="map-svg-wrap">
+          ${_buildRegionMapSvg(locId, adjIds, player)}
+        </div>
+        <div class="map-info-panel" id="map-info-panel">
+          ${_buildInfoPanel(selectedRegion, player, locId, adjIds)}
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Bind back button
+  setTimeout(() => {
+    const backBtn = document.getElementById('map-back-btn');
+    if (backBtn) {
+      backBtn.addEventListener('click', () => {
+        _mapLayer = 'world';
+        _mapSelectedId = null;
+        _mapCurrentPath = null;
+        _renderMapPage();
+      });
+    }
+  }, 0);
 }
 
-// ── SVG hex grid ──────────────────────────────────────────────────────────────
-function _buildMapSvg(locId, adjIds) {
+// ── World Map SVG (Macro Layer - 4 faction territory hexes) ──────────────────
+function _buildWorldMapSvg(playerFaction) {
+  const S = 60;  // Larger hexes for world map
+  const ox = 250;
+  const oy = 150;
+
+  function hexToPixel(q, r) {
+    return {
+      x: ox + S * (Math.sqrt(3) * q + (Math.sqrt(3) / 2) * r),
+      y: oy + S * (1.5 * r),
+    };
+  }
+
+  function hexCorners(cx, cy) {
+    const pts = [];
+    for (let i = 0; i < 6; i++) {
+      const angle = (Math.PI / 180) * (60 * i - 30);
+      pts.push(
+        `${(cx + S * Math.cos(angle)).toFixed(1)},${(cy + S * Math.sin(angle)).toFixed(1)}`,
+      );
+    }
+    return pts.join(" ");
+  }
+
+  const lands = [];
+  const fills = [];
+  const glows = [];
+  const labels = [];
+
+  for (const [id, hex] of Object.entries(MAP_WORLD)) {
+    const { x, y } = hexToPixel(hex.q, hex.r);
+    const corners = hexCorners(x, y);
+    const isPlayerFaction = hex.type === playerFaction;
+    const fillColor = _MAP_TYPE_FILLS[hex.type] || '#1a1208';
+
+    lands.push(`<polygon points="${corners}" fill="white"/>`);
+
+    fills.push(
+      `<polygon points="${corners}" fill="${fillColor}" ` +
+      `data-world-hex="${id}" style="cursor:pointer;opacity:${isPlayerFaction ? '1' : '0.85'}"/>`
+    );
+
+    if (isPlayerFaction) {
+      glows.push(
+        `<polygon points="${corners}" fill="rgba(201,168,76,0.15)" ` +
+        `stroke="#c9a84c" stroke-width="2" pointer-events="none"/>`
+      );
+    }
+
+    labels.push(
+      `<text x="${x.toFixed(1)}" y="${(y + 5).toFixed(1)}" ` +
+      `text-anchor="middle" font-size="11" fill="#e0d0a8" ` +
+      `font-family="'Cinzel',serif" font-weight="600" pointer-events="none">` +
+      `${hex.label}</text>`
+    );
+  }
+
+  const land = lands.join("");
+
+  return `
+    <svg class="map-svg" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg"
+      onmousedown="_mapStartDrag(event)"
+      onmousemove="_mapDrag(event)"
+      onmouseup="_mapEndDrag()"
+      onmouseleave="_mapEndDrag()"
+      onclick="_mapHandleWorldHexClick(event)">
+      <defs>
+        <filter id="shore-ring-world" x="-40%" y="-50%" width="180%" height="200%" color-interpolation-filters="sRGB">
+          <feMorphology in="SourceAlpha" operator="dilate" radius="50" result="d1"/>
+          <feComposite in="d1" in2="SourceAlpha" operator="out" result="ring"/>
+          <feFlood flood-color="#3a8fbf" result="col"/>
+          <feComposite in="col" in2="ring" operator="in"/>
+        </filter>
+      </defs>
+      <rect width="100%" height="100%" fill="#2a6a9a"/>
+      <g filter="url(#shore-ring-world)">${land}</g>
+      ${fills.join("")}
+      ${glows.join("")}
+      ${labels.join("")}
+    </svg>
+  `;
+}
+
+// ── World Map Info Panel ──────────────────────────────────────────────────────
+function _buildWorldInfoPanel() {
+  return `
+    <div class="map-info-empty">
+      <h3 style="margin-top:0;color:#c9a84c;">World Overview</h3>
+      <p style="font-size:13px;line-height:1.6;color:#b0a090;">
+        Click a faction territory to explore that region in detail. The central Ruins of Valdros contain the greatest challenges and greatest treasures.
+      </p>
+      <p style="font-size:12px;color:#7d7060;margin-top:12px;">
+        <strong>Your Territory:</strong> Highlighted in gold.
+      </p>
+    </div>
+  `;
+}
+
+// ── Region Map SVG (Core Gameplay Layer) ──────────────────────────────────────
+function _buildRegionMapSvg(locId, adjIds, player) {
   const S = _MAP_HEX_SIZE;
   const ox = _MAP_OFFSET_X;
   const oy = _MAP_OFFSET_Y;
@@ -204,13 +365,22 @@ function _buildMapSvg(locId, adjIds) {
   };
   const ACT_KEYS = ["quests", "market", "training"];
 
-  for (const [id, region] of Object.entries(MAP_REGIONS)) {
+  // Filter regions by current region view
+  const visibleRegions = _mapRegionFilter
+    ? Object.entries(MAP_REGIONS).filter(([_, r]) => r.mapView === _mapRegionFilter)
+    : Object.entries(MAP_REGIONS);
+
+  const discovered = new Set(player?.discoveredLocations || []);
+
+  for (const [id, region] of visibleRegions) {
     const { x, y } = hexToPixel(region.q, region.r);
     const corners = hexCorners(x, y);
 
     const isCurrent = id === locId;
     const isAdjacent = adjIds.includes(id);
     const isSelected = id === _mapSelectedId;
+    const isDiscovered = discovered.has(id);
+    const isExplored = isDiscovered && !isAdjacent;  // Discovered but not currently visible
     const canEnter = isAdjacent && MapSystem.canTravel(id).ok;
     const isLocked = isAdjacent && !canEnter;
     const isOnPath = !!(
@@ -220,11 +390,27 @@ function _buildMapSvg(locId, adjIds) {
     landMask.push(`<polygon points="${corners}" fill="white"/>`);
 
     const fillColor = _MAP_TYPE_FILLS[region.type] || "#1a1208";
-    fills.push(
-      `<polygon class="map-hex${isCurrent ? " map-hex-current" : ""}` +
-        `${isSelected ? " map-hex-selected" : ""}" points="${corners}" ` +
-        `fill="${fillColor}" data-region="${id}" style="cursor:pointer"/>`,
-    );
+
+    // Render tile based on discovery state
+    if (!isDiscovered) {
+      // Undiscovered: dark hex with no interaction
+      fills.push(
+        `<polygon points="${corners}" fill="#0d0d0d" opacity="0.9" ` +
+        `style="pointer-events:none"/>`
+      );
+      glows.push(
+        `<polygon points="${corners}" fill="none" stroke="rgba(100,100,100,0.15)" ` +
+        `stroke-width="0.8" pointer-events="none"/>`
+      );
+    } else {
+      // Discovered: normal rendering
+      const opacity = isExplored ? 0.85 : 1.0;
+      fills.push(
+        `<polygon class="map-hex${isCurrent ? " map-hex-current" : ""}` +
+          `${isSelected ? " map-hex-selected" : ""}" points="${corners}" ` +
+          `fill="${fillColor}" data-region="${id}" style="cursor:pointer;opacity:${opacity}"/>`,
+      );
+    }
 
     borders.push(
       `<polygon points="${corners}" fill="none" ` +
@@ -232,73 +418,79 @@ function _buildMapSvg(locId, adjIds) {
         `stroke-dasharray="3,4" pointer-events="none"/>`,
     );
 
-    if (isCurrent) {
-      glows.push(
-        `<polygon points="${corners}" fill="rgba(201,168,76,0.12)" ` +
-          `stroke="#c9a84c" stroke-width="2.5" pointer-events="none"/>`,
-      );
-    } else if (isSelected) {
-      glows.push(
-        `<polygon points="${corners}" fill="rgba(255,255,255,0.06)" ` +
-          `stroke="rgba(255,255,255,0.5)" stroke-width="1.5" pointer-events="none"/>`,
-      );
-    } else if (canEnter) {
-      glows.push(
-        `<polygon points="${corners}" fill="none" ` +
-          `stroke="rgba(100,200,120,0.4)" stroke-width="1.2" pointer-events="none"/>`,
-      );
-    } else if (isLocked) {
-      glows.push(
-        `<polygon points="${corners}" fill="none" ` +
-          `stroke="rgba(180,60,60,0.35)" stroke-width="1.2" pointer-events="none"/>`,
-      );
-    } else if (isOnPath) {
-      glows.push(
-        `<polygon points="${corners}" fill="rgba(220,160,40,0.07)" ` +
-          `stroke="#dca028" stroke-width="1.5" stroke-dasharray="4,3" ` +
-          `opacity="0.65" pointer-events="none"/>`,
-      );
-    }
-
-    const acts = region.activities ?? [];
-    const actDots = ACT_KEYS.filter((a) => acts.includes(a));
-    if (actDots.length > 0) {
-      const spacing = 9;
-      const startX = x - ((actDots.length - 1) * spacing) / 2;
-      const dotY = y + S * 0.52;
-      actDots.forEach((key, i) => {
-        dots.push(
-          `<circle cx="${(startX + i * spacing).toFixed(1)}" cy="${dotY.toFixed(1)}" ` +
-            `r="3.5" fill="${ACT_COLORS[key]}" opacity="0.9" pointer-events="none"/>`,
+    // Add glow effects only for discovered tiles
+    if (isDiscovered) {
+      if (isCurrent) {
+        glows.push(
+          `<polygon points="${corners}" fill="rgba(201,168,76,0.12)" ` +
+            `stroke="#c9a84c" stroke-width="2.5" pointer-events="none"/>`,
         );
-      });
+      } else if (isSelected) {
+        glows.push(
+          `<polygon points="${corners}" fill="rgba(255,255,255,0.06)" ` +
+            `stroke="rgba(255,255,255,0.5)" stroke-width="1.5" pointer-events="none"/>`,
+        );
+      } else if (canEnter) {
+        glows.push(
+          `<polygon points="${corners}" fill="none" ` +
+            `stroke="rgba(100,200,120,0.4)" stroke-width="1.2" pointer-events="none"/>`,
+        );
+      } else if (isLocked) {
+        glows.push(
+          `<polygon points="${corners}" fill="none" ` +
+            `stroke="rgba(180,60,60,0.35)" stroke-width="1.2" pointer-events="none"/>`,
+        );
+      } else if (isOnPath) {
+        glows.push(
+          `<polygon points="${corners}" fill="rgba(220,160,40,0.07)" ` +
+            `stroke="#dca028" stroke-width="1.5" stroke-dasharray="4,3" ` +
+            `opacity="0.65" pointer-events="none"/>`,
+        );
+      }
     }
 
-    const hasActivities = acts.length > 0;
-    const labelY = hasActivities ? y - S * 0.18 : y + S * 0.12;
-    const shortLabel =
-      region.label.length > 11
-        ? region.label.slice(0, 10) + "\u2026"
-        : region.label;
-    const labelColor = isCurrent ? "#f0d880" : "#e0d0a8";
-    const fontSize = hasActivities ? 8 : 7;
+    // Only show activity dots and labels for discovered tiles
+    if (isDiscovered) {
+      const acts = region.activities ?? [];
+      const actDots = ACT_KEYS.filter((a) => acts.includes(a));
+      if (actDots.length > 0) {
+        const spacing = 9;
+        const startX = x - ((actDots.length - 1) * spacing) / 2;
+        const dotY = y + S * 0.52;
+        actDots.forEach((key, i) => {
+          dots.push(
+            `<circle cx="${(startX + i * spacing).toFixed(1)}" cy="${dotY.toFixed(1)}" ` +
+              `r="3.5" fill="${ACT_COLORS[key]}" opacity="0.9" pointer-events="none"/>`,
+          );
+        });
+      }
 
-    if (hasActivities) {
-      const bw = Math.min(shortLabel.length * 5.2 + 10, S * 1.7);
-      const bh = 11;
+      const hasActivities = acts.length > 0;
+      const labelY = hasActivities ? y - S * 0.18 : y + S * 0.12;
+      const shortLabel =
+        region.label.length > 11
+          ? region.label.slice(0, 10) + "\u2026"
+          : region.label;
+      const labelColor = isCurrent ? "#f0d880" : "#e0d0a8";
+      const fontSize = hasActivities ? 8 : 7;
+
+      if (hasActivities) {
+        const bw = Math.min(shortLabel.length * 5.2 + 10, S * 1.7);
+        const bh = 11;
+        labels.push(
+          `<rect x="${(x - bw / 2).toFixed(1)}" y="${(labelY - bh / 2 - 1).toFixed(1)}" ` +
+            `width="${bw.toFixed(1)}" height="${bh}" rx="3" ` +
+            `fill="rgba(0,0,0,0.6)" stroke="rgba(255,255,255,0.18)" stroke-width="0.5" ` +
+            `pointer-events="none"/>`,
+        );
+      }
       labels.push(
-        `<rect x="${(x - bw / 2).toFixed(1)}" y="${(labelY - bh / 2 - 1).toFixed(1)}" ` +
-          `width="${bw.toFixed(1)}" height="${bh}" rx="3" ` +
-          `fill="rgba(0,0,0,0.6)" stroke="rgba(255,255,255,0.18)" stroke-width="0.5" ` +
-          `pointer-events="none"/>`,
+        `<text x="${x.toFixed(1)}" y="${(labelY + 3.5).toFixed(1)}" ` +
+          `text-anchor="middle" font-size="${fontSize}" fill="${labelColor}" ` +
+          `font-family="'Cinzel',serif" pointer-events="none"` +
+          `>${shortLabel}</text>`,
       );
     }
-    labels.push(
-      `<text x="${x.toFixed(1)}" y="${(labelY + 3.5).toFixed(1)}" ` +
-        `text-anchor="middle" font-size="${fontSize}" fill="${labelColor}" ` +
-        `font-family="'Cinzel',serif" pointer-events="none"` +
-        `>${shortLabel}</text>`,
-    );
   }
 
   const land = landMask.join("");
@@ -334,6 +526,30 @@ function _buildMapSvg(locId, adjIds) {
     ${labels.join("")}
 </svg>
     `;
+}
+
+// ── World hex click handler ──────────────────────────────────────────────────
+function _mapHandleWorldHexClick(e) {
+  if (_wasDragging) {
+    _wasDragging = false;
+    return;
+  }
+
+  const hex = e.target.closest("[data-world-hex]");
+  if (!hex) return;
+
+  const hexId = hex.dataset.worldHex;
+  const worldHex = MAP_WORLD[hexId];
+  if (!worldHex) return;
+
+  // Switch to region view
+  _mapLayer = 'region';
+  _mapRegionFilter = worldHex.linksTo;
+  _mapSelectedId = null;
+  _mapCurrentPath = null;
+  _mapView = { x: 200, y: 150, width: 850, height: 680 };
+  _mapInitialized = false;
+  _renderMapPage();
 }
 
 // ── Click handler ─────────────────────────────────────────────────────────────

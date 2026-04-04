@@ -23,6 +23,22 @@ const MAP_VIEW_CONFIG = {
 };
 
 // ═══════════════════════════════════════════════════════════════
+//  TILE TYPES — movement costs and encounter chances
+// ═══════════════════════════════════════════════════════════════
+const TILE_TYPES = {
+    city:      { movementCost: 0, encounterChance: 0.00 },
+    town:      { movementCost: 1, encounterChance: 0.05 },
+    camp:      { movementCost: 1, encounterChance: 0.10 },
+    plains:    { movementCost: 1, encounterChance: 0.15 },
+    hills:     { movementCost: 2, encounterChance: 0.20 },
+    forest:    { movementCost: 2, encounterChance: 0.25 },
+    wasteland: { movementCost: 2, encounterChance: 0.30 },
+    fortress:  { movementCost: 1, encounterChance: 0.10 },
+    tower:     { movementCost: 1, encounterChance: 0.15 },
+    ruins:     { movementCost: 3, encounterChance: 0.40 },
+};
+
+// ═══════════════════════════════════════════════════════════════
 //  RUINS OF VALDROS — 36 shared tiles
 //  coordsByView: per-faction rendering coordinates
 //  canonical q,r = iron_dominion view coords
@@ -1731,6 +1747,61 @@ const MAP_REGIONS_TW = {
         description:'The furthest Thornwood observation post, watching both the ruins and the Covenant\'s western approach.',
         flavour:'"The best watchtower in Alaia. Nobody wants to be stationed there."',
         activities:['quests'], factionId:'thornwood',
+    },
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  WORLD MAP — 7 macro-hexes for high-level navigation
+//  Zones arranged in a ring around the central Ruins of Valdros
+// ═══════════════════════════════════════════════════════════════
+const MAP_WORLD = {
+    ruins_of_valdros: {
+        id: 'ruins_of_valdros',
+        name: 'Ruins of Valdros',
+        label: 'Valdros',
+        q: 0, r: 0,
+        type: 'ruins',
+        mapView: 'ruins',
+        tier: 5,
+        danger: 5,
+        description: 'The shattered heart of the Golden Ambrosia empire. The greatest mysteries and greatest dangers converge here.',
+        linksTo: 'ruins',
+    },
+    iron_dominion_core: {
+        id: 'iron_dominion_core',
+        name: 'Iron Dominion',
+        label: 'Iron Dom.',
+        q: 2, r: -1,
+        type: 'iron_dominion',
+        mapView: 'iron_dominion',
+        tier: 0,
+        danger: 1,
+        description: 'The eastern military empire, rebuilding from the ruins of the old world.',
+        linksTo: 'iron_dominion',
+    },
+    ashen_covenant_core: {
+        id: 'ashen_covenant_core',
+        name: 'Ashen Covenant',
+        label: 'Ashen Cov.',
+        q: -2, r: -1,
+        type: 'ashen_covenant',
+        mapView: 'ashen_covenant',
+        tier: 0,
+        danger: 1,
+        description: 'The northern scholars and mages, keepers of forbidden knowledge.',
+        linksTo: 'ashen_covenant',
+    },
+    thornwood_core: {
+        id: 'thornwood_core',
+        name: 'Thornwood',
+        label: 'Thornwood',
+        q: 0, r: 2,
+        type: 'thornwood',
+        mapView: 'thornwood',
+        tier: 0,
+        danger: 1,
+        description: 'The western forests, free from empire and magic alike.',
+        linksTo: 'thornwood',
     },
 };
 

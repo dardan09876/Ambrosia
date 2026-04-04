@@ -3342,3 +3342,768 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
     font-size: 11px;
 }
 
+
+/* ============================================================
+   GUILDS PAGE
+   ============================================================ */
+
+.guild-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.guild-status-card,
+.guild-perks-card {
+    /* Use default card styling */
+}
+
+.guild-rank-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.rank-icon {
+    font-size: 32px;
+    flex-shrink: 0;
+}
+
+.rank-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.rank-title {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.rank-rep {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.rank-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.rank-next-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.perks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.perk-item {
+    display: flex;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+    align-items: center;
+}
+
+.perk-icon {
+    color: var(--success);
+    flex-shrink: 0;
+    font-weight: 600;
+}
+
+.guild-description {
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.guild-selection {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.guild-unavailable {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.guild-card {
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: all var(--transition);
+}
+
+.guild-card.joinable {
+    border-color: var(--gold);
+    cursor: pointer;
+}
+
+.guild-card.joinable:hover {
+    background: var(--bg-elevated);
+    box-shadow: 0 8px 24px rgba(201,168,76,0.2);
+    transform: translateY(-2px);
+}
+
+.guild-card.locked {
+    opacity: 0.6;
+    border-color: var(--border);
+}
+
+.guild-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.guild-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+}
+
+.guild-name {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.guild-tagline {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-style: italic;
+}
+
+.guild-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.guild-requirements {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    background: var(--bg-elevated);
+    border-radius: var(--radius);
+}
+
+.req-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.req-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-muted);
+    align-items: center;
+}
+
+.req-item.met {
+    color: var(--success);
+}
+
+.req-item.unmet {
+    color: var(--text-dim);
+}
+
+.req-check {
+    font-weight: 600;
+}
+
+.req-value {
+    font-weight: 500;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   CRAFTING PAGE STYLES
+   ───────────────────────────────────────────────────────────── */
+
+.crafting-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+    padding: 20px;
+    height: 100%;
+}
+
+.crafting-main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.crafting-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+}
+
+/* ── Profession Tabs ─────────────────────────────────────────── */
+.profession-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 12px;
+}
+
+.profession-tab {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.profession-tab:hover {
+    border-color: var(--text-accent);
+    color: var(--text-accent);
+}
+
+.profession-tab.active {
+    background: linear-gradient(135deg, var(--accent1), var(--accent2));
+    border-color: transparent;
+    color: var(--text-bright);
+    font-weight: 600;
+}
+
+.prof-name {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.prof-level {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* ── Recipes Section ────────────────────────────────────────── */
+.recipes-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.recipes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.recipes-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--text-bright);
+    font-weight: 600;
+}
+
+.skill-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    background: var(--bg-elevated);
+    border-radius: 3px;
+    font-size: 11px;
+    color: var(--text-accent);
+    font-weight: 600;
+}
+
+.recipes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.recipe-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    transition: all 0.2s ease;
+}
+
+.recipe-card:hover {
+    border-color: var(--text-accent);
+    box-shadow: 0 0 12px rgba(201, 168, 76, 0.1);
+}
+
+.recipe-card.locked {
+    opacity: 0.6;
+    border-color: var(--border-color);
+}
+
+.recipe-card.locked:hover {
+    border-color: var(--border-color);
+    box-shadow: none;
+}
+
+.recipe-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.recipe-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-bright);
+}
+
+.recipe-skill {
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 2px 6px;
+    background: var(--bg-body);
+    border-radius: 2px;
+}
+
+.recipe-desc {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.recipe-materials {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.materials-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.materials-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.material-req {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    padding: 4px 6px;
+    background: var(--bg-body);
+    border-radius: 3px;
+    color: var(--text-muted);
+}
+
+.material-req.have {
+    color: var(--success);
+}
+
+.material-req.missing {
+    color: var(--danger);
+}
+
+.mat-icon {
+    flex: 0 0 auto;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.mat-name {
+    flex: 1;
+}
+
+.mat-count {
+    flex: 0 0 auto;
+    text-align: right;
+    font-weight: 500;
+}
+
+.recipe-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+}
+
+.recipe-cost {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--text-accent);
+    font-weight: 600;
+}
+
+.gold-icon {
+    font-size: 13px;
+}
+
+.btn-craft {
+    padding: 6px 12px;
+    background: linear-gradient(135deg, var(--accent1), var(--accent2));
+    border: none;
+    border-radius: var(--radius);
+    color: var(--text-bright);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-craft:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(201, 168, 76, 0.3);
+}
+
+.btn-craft:disabled,
+.btn-craft-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.no-recipes {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.no-recipes p {
+    margin: 8px 0;
+    font-size: 13px;
+}
+
+.muted-text {
+    color: var(--text-dim);
+    font-size: 12px;
+}
+
+/* ── Materials Inventory ────────────────────────────────────── */
+.materials-card {
+    max-height: 300px;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 12px;
+    background: var(--bg-body);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-accent);
+}
+
+.card-body {
+    padding: 12px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.materials-inventory {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.material-tier {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.tier-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    padding: 4px 0;
+}
+
+.tier-materials {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.material-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    padding: 6px;
+    background: var(--bg-body);
+    border-radius: 3px;
+    color: var(--text-muted);
+}
+
+.material-item:hover {
+    background: var(--bg-body-alt);
+}
+
+.mat-name {
+    flex: 1;
+}
+
+.mat-amount {
+    font-weight: 600;
+    color: var(--text-bright);
+}
+
+/* ── Salvage Info ───────────────────────────────────────────── */
+.salvage-card,
+.tips-card {
+    flex: 0 0 auto;
+}
+
+.tip {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.tip:last-child {
+    margin-bottom: 0;
+}
+
+.tip-bullet {
+    flex: 0 0 auto;
+    color: var(--text-accent);
+    font-weight: 600;
+}
+
+/* ── Salvage Modal ──────────────────────────────────────────── */
+.salvage-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.salvage-modal {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: var(--bg-body);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--text-bright);
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.modal-close:hover {
+    color: var(--text-bright);
+}
+
+.modal-body {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.salvage-items {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.salvage-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: var(--bg-body);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    transition: all 0.2s ease;
+}
+
+.salvage-item:hover {
+    border-color: var(--text-accent);
+}
+
+.salvage-item.locked {
+    opacity: 0.6;
+}
+
+.salvage-item-info {
+    flex: 1;
+}
+
+.salvage-item-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-bright);
+    margin-bottom: 4px;
+}
+
+.salvage-item-rarity {
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.btn-salvage {
+    padding: 6px 12px;
+    background: linear-gradient(135deg, var(--accent1), var(--accent2));
+    border: none;
+    border-radius: var(--radius);
+    color: var(--text-bright);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-salvage:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(201, 168, 76, 0.3);
+}
+
+.cant-salvage {
+    display: inline-block;
+    padding: 6px 12px;
+    background: var(--bg-elevated);
+    border-radius: var(--radius);
+    color: var(--text-dim);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   MAP LAYER NAVIGATION & FOG OF WAR
+   ───────────────────────────────────────────────────────────── */
+
+.page-map {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    height: 100%;
+}
+
+.page-map-world .map-body {
+    flex: 1;
+}
+
+.page-map-region .map-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.map-back-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+/* Fog of war — undiscovered tiles appear dark */
+.map-fog {
+    fill: #0d0d0d;
+    opacity: 0.88;
+    pointer-events: none;
+}
+

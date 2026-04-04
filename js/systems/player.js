@@ -71,13 +71,22 @@ const PlayerSystem = {
             }
         }
 
+        const startLocation = (typeof FACTION_CAPITALS !== 'undefined' && FACTION_CAPITALS[factionId])
+            ? FACTION_CAPITALS[factionId]
+            : Object.values(typeof FACTION_CAPITALS !== 'undefined' ? FACTION_CAPITALS : {})[0] ?? 'ironhold';
+
+        // Pre-discover starting location + adjacent tiles
+        const discoveredLocations = [startLocation];
+        if (typeof MAP_REGIONS !== 'undefined' && typeof MapSystem !== 'undefined') {
+            const adjIds = MapSystem.getAdjacentIds(startLocation);
+            discoveredLocations.push(...adjIds);
+        }
+
         this.current = {
             name,
             faction: factionId,
             origin: originId,
-            location: (typeof FACTION_CAPITALS !== 'undefined' && FACTION_CAPITALS[factionId])
-                ? FACTION_CAPITALS[factionId]
-                : Object.values(typeof FACTION_CAPITALS !== 'undefined' ? FACTION_CAPITALS : {})[0] ?? 'ironhold',
+            location: startLocation,
             gold: origin ? origin.startingGold : 100,
 
             // ── Leveling & Experience ─────────────────────────
@@ -85,6 +94,29 @@ const PlayerSystem = {
             experience: 0,
             talent: null,           // null until level 15, then one of TALENTS[].id
             talentUnlockPrompted: false, // flag to show talent selection UI once
+
+            // ── Guild System ──────────────────────────────────
+            guild: null,            // null until joining; then guild ID
+            guildReputation: {
+                the_black_sigil: 0,
+                the_ashguard: 0,
+                the_veil_syndicate: 0,
+            },
+
+            // ── Crafting System ───────────────────────────────
+            professions: {
+                blacksmithing: 0,
+                armorsmithing: 0,
+                woodworking: 0,
+                tailoring: 0,
+                alchemy: 0,
+                magesmithing: 0,
+            },
+            craftingMaterials: {},
+
+            // ── Map Fog of War ────────────────────────────────
+            // Array of location IDs the player has discovered (revealed by travel)
+            discoveredLocations,
 
             // ── Stats (each regenerates on a tick) ───────────
             // regenInterval is in seconds
@@ -189,6 +221,25 @@ const PlayerSystem = {
         if (this.current.experience == null) this.current.experience = 0;
         if (this.current.talent === undefined) this.current.talent = null;
         if (this.current.talentUnlockPrompted === undefined) this.current.talentUnlockPrompted = false;
+        // Backfill guild system
+        if (this.current.guild === undefined) this.current.guild = null;
+        if (!this.current.guildReputation) this.current.guildReputation = {
+            the_black_sigil: 0,
+            the_ashguard: 0,
+            the_veil_syndicate: 0,
+        };
+        // Backfill crafting system
+        if (!this.current.professions) this.current.professions = {
+            blacksmithing: 0,
+            armorsmithing: 0,
+            woodworking: 0,
+            tailoring: 0,
+            alchemy: 0,
+            magesmithing: 0,
+        };
+        if (!this.current.craftingMaterials) this.current.craftingMaterials = {};
+        // Backfill map fog of war system
+        if (!this.current.discoveredLocations) this.current.discoveredLocations = [];
         // Recalculate derived maxes in case design values changed
         this._recalcStatMaxes();
     },
@@ -643,6 +694,91 @@ const PlayerSystem = {
         }
 
         return result;
+    },
+
+    // ── Guild System ──────────────────────────────────────────────────────────
+    // Check if player can join a specific guild
+    canJoinGuild(guildId) {
+        if (!this.current) return false;
+        if (typeof canJoinGuild !== 'undefined') {
+            return canJoinGuild(guildId, this.current.skills);
+        }
+        return false;
+    },
+
+    // Get available guilds the player can join
+    getAvailableGuilds() {
+        if (!this.current || typeof GUILDS === 'undefined') return [];
+        return GUILDS.filter(guild => this.canJoinGuild(guild.id));
+    },
+
+    // Join a guild
+    joinGuild(guildId) {
+        if (!this.current) return { ok: false, reason: 'No player.' };
+        if (this.current.guild) return { ok: false, reason: 'You are already in a guild.' };
+        if (!this.canJoinGuild(guildId)) return { ok: false, reason: 'You do not meet the requirements for this guild.' };
+
+        const guild = typeof getGuild !== 'undefined' ? getGuild(guildId) : null;
+        if (!guild) return { ok: false, reason: 'Unknown guild.' };
+
+        this.current.guild = guildId;
+        this.current.guildReputation[guildId] = 0;
+
+        Log.add(`You have joined ${guild.name}. Welcome, initiate.`, 'success');
+        SaveSystem.save();
+
+        return { ok: true, guild };
+    },
+
+    // Get player's current guild
+    getGuild() {
+        if (!this.current || !this.current.guild || typeof getGuild === 'undefined') return null;
+        return getGuild(this.current.guild);
+    },
+
+    // Gain guild reputation
+    gainGuildReputation(guildId, amount) {
+        if (!this.current) return;
+        if (!this.current.guildReputation[guildId]) return;
+
+        const repBefore = this.current.guildReputation[guildId];
+        const rankBefore = typeof getGuildRank !== 'undefined' ? getGuildRank(repBefore) : null;
+
+        this.current.guildReputation[guildId] += amount;
+        const repAfter = this.current.guildReputation[guildId];
+        const rankAfter = typeof getGuildRank !== 'undefined' ? getGuildRank(repAfter) : null;
+
+        if (rankBefore && rankAfter && rankAfter.rank > rankBefore.rank) {
+            Log.add(`Guild Rank: ${rankAfter.title}! ${rankAfter.title} privileges unlocked.`, 'success');
+        }
+    },
+
+    // Get guild rank
+    getGuildRank() {
+        if (!this.current || !this.current.guild || typeof getGuildRank === 'undefined') return null;
+        const rep = this.current.guildReputation[this.current.guild] || 0;
+        return getGuildRank(rep);
+    },
+
+    // Get next guild rank
+    getNextGuildRank() {
+        const currentRank = this.getGuildRank();
+        if (!currentRank || typeof getNextGuildRank === 'undefined') return null;
+        return getNextGuildRank(currentRank);
+    },
+
+    // Get guild core perks for current rank
+    getGuildBonuses() {
+        if (!this.current || !this.current.guild || typeof getGuildCorePerks === 'undefined') return [];
+        const rank = this.getGuildRank();
+        if (!rank) return [];
+        return getGuildCorePerks(this.current.guild, rank.rank);
+    },
+
+    // Get current guild reputation
+    getCurrentGuildReputation() {
+        if (!this.current || !this.current.guild) return 0;
+        return this.current.guildReputation[this.current.guild] || 0;
     },
 };
 

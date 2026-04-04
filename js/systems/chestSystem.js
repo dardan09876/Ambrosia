@@ -1,66 +1,76 @@
 // js/systems/chestSystem.js
-// Handles chest opening — rolls item tiers from weighted tables,
-// picks a random item of that tier from ITEMS, and delivers it to inventory.
+// Handles chest opening — generates loot using the new loot generation system
 
 const ChestSystem = {
 
     // Open a chest by tier. Returns array of item objects awarded.
-    open(chestTier) {
-        const def = CHEST_DEFS[chestTier];
-        if (!def) return [];
-
+    open(chestTier, sourceContext = {}) {
         const player  = PlayerSystem.current;
-        const rewards = [];
+        if (!player) return [];
 
-        for (let i = 0; i < def.rolls; i++) {
-            const itemTier = this._rollTier(def.tierWeights);
-            const item     = this._rollItem(itemTier);
-            if (item) {
-                rewards.push(item);
-                player.inventory.push(item);
-            }
+        // Use loot generator to create items
+        if (typeof LootGenerationSystem === 'undefined') return [];
+
+        const loot = LootGenerationSystem.generateChestLoot(chestTier, {
+            sourceType: 'chest',
+            chestTier,
+            ...sourceContext,
+        });
+
+        // Add items to inventory
+        player.inventory.push(...loot.items);
+
+        // Add materials
+        for (const material of loot.materials) {
+            // TODO: Add to crafting materials storage
         }
 
-        return rewards;
+        // Add consumables
+        for (const consumable of loot.consumables) {
+            // TODO: Add to consumables storage
+        }
+
+        // Log the loot
+        Log.add(`Chest opened: ${loot.gold}g · ${loot.items.length} item(s)`, 'info');
+
+        return {
+            gold: loot.gold,
+            items: loot.items,
+            materials: loot.materials,
+            consumables: loot.consumables,
+        };
     },
 
     // Open a chest from the player's chest array by uid.
-    // Returns { items: [], chestName: '' } or null if not found.
+    // Returns { items: [], chestName: '', tier: 1 } or null if not found.
     openFromInventory(uid) {
         const player = PlayerSystem.current;
+        if (!player) return null;
+
         const idx    = player.chests.findIndex(c => c.uid === uid);
         if (idx === -1) return null;
 
         const chest = player.chests[idx];
         player.chests.splice(idx, 1);
 
-        const items = this.open(chest.tier);
+        const loot = this.open(chest.tier, {
+            sourceType: 'inventory_chest',
+        });
+
+        // Award any guild reputation if applicable
+        if (player.guild && loot.items.length > 0) {
+            // Could add small rep here if desired
+        }
 
         SaveSystem.save();
 
-        return { items, chestName: chest.name, tier: chest.tier };
-    },
-
-    // ── Weighted tier roll ────────────────────────────────────────────────────
-    _rollTier(weights) {
-        const total = weights.reduce((sum, w) => sum + w.weight, 0);
-        let roll    = Math.random() * total;
-        for (const entry of weights) {
-            roll -= entry.weight;
-            if (roll <= 0) return entry.itemTier;
-        }
-        return weights[weights.length - 1].itemTier;
-    },
-
-    // ── Random item from a given tier ─────────────────────────────────────────
-    _rollItem(tier) {
-        const pool = Object.values(ITEMS).filter(item => item.tier === tier);
-        if (pool.length === 0) return null;
-        const base = pool[Math.floor(Math.random() * pool.length)];
-        // Clone so inventory entries are independent
-        return Object.assign({}, base, {
-            uid: Date.now() + Math.random(),
-            durability: base.maxDurability, // start at full durability
-        });
+        return {
+            items: loot.items,
+            chestName: chest.name,
+            tier: chest.tier,
+            gold: loot.gold,
+            materials: loot.materials,
+            consumables: loot.consumables,
+        };
     },
 };
