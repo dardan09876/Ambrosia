@@ -9,7 +9,9 @@
       "Bash(node -e \":*)",
       "Bash(node -c \"/c/Users/darda/OneDrive/Desktop/Ambrosia/js/pages/map.js\")",
       "Bash(node -c \"/c/Users/darda/OneDrive/Desktop/Ambrosia/js/systems/mapSystem.js\")",
-      "Bash(node -c \"/c/Users/darda/OneDrive/Desktop/Ambrosia/js/data/map.js\")"
+      "Bash(node -c \"/c/Users/darda/OneDrive/Desktop/Ambrosia/js/data/map.js\")",
+      "Bash(node -c \"/c/Users/darda/OneDrive/Desktop/Ambrosia/js/systems/regionGenerator.js\")",
+      "Bash(node -c \"/c/Users/darda/OneDrive/Desktop/Ambrosia/js/systems/player.js\")"
     ]
   }
 }

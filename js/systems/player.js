@@ -118,6 +118,10 @@ const PlayerSystem = {
             // Array of location IDs the player has discovered (revealed by travel)
             discoveredLocations,
 
+            // ── Procedural Region Cache ───────────────────────
+            // Generated 8x8 grids keyed by world hex ID (for neutral zones)
+            generatedRegions: {},
+
             // ── Stats (each regenerates on a tick) ───────────
             // regenInterval is in seconds
             stats: {
@@ -240,6 +244,8 @@ const PlayerSystem = {
         if (!this.current.craftingMaterials) this.current.craftingMaterials = {};
         // Backfill map fog of war system
         if (!this.current.discoveredLocations) this.current.discoveredLocations = [];
+        // Backfill procedural region cache
+        if (!this.current.generatedRegions) this.current.generatedRegions = {};
         // Recalculate derived maxes in case design values changed
         this._recalcStatMaxes();
     },

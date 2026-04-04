@@ -122,9 +122,11 @@ const _MAP_TYPE_FILLS = {
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let _mapSelectedId = null;
-let _mapCurrentPath = null; // multi-tile BFS path to selected tile
-let _mapLayer = 'world';   // 'world' | 'region'
-let _mapRegionFilter = null; // faction mapView for region layer: 'iron_dominion' | 'ashen_covenant' | 'thornwood' | 'ruins'
+let _mapCurrentPath = null;     // multi-tile BFS path to selected tile
+let _mapLayer = 'world';        // 'world' | 'region'
+let _mapRegionFilter = null;    // faction mapView for MAP_REGIONS filter
+let _activeWorldHexId = null;   // currently selected world hex ID
+let _worldSelectedHexId = null; // highlighted hex on world map (for info panel)
 
 // ── Main render ───────────────────────────────────────────────────────────────
 function _renderMapPage() {
@@ -154,23 +156,36 @@ function _renderWorldMapPage() {
 
   const player = PlayerSystem.current;
   const playerFaction = player ? player.faction : null;
+  const selectedHex = _worldSelectedHexId ? MAP_WORLD[_worldSelectedHexId] : null;
 
   el.innerHTML = `
     <div class="page-map page-map-world">
       <div class="map-header">
         <h2 class="heading">World Map</h2>
-        <span class="map-location-badge">🌍 High-level Overview</span>
+        <span class="map-location-badge">◉ ${_worldCurrentRegionLabel(player)}</span>
       </div>
       <div class="map-body">
         <div class="map-svg-wrap">
           ${_buildWorldMapSvg(playerFaction)}
         </div>
         <div class="map-info-panel" id="map-info-panel">
-          ${_buildWorldInfoPanel()}
+          ${_buildWorldInfoPanel(selectedHex)}
         </div>
       </div>
     </div>
   `;
+}
+
+function _worldCurrentRegionLabel(player) {
+  if (!player) return 'Unknown';
+  // Find which world hex contains the player's current location
+  const curRegion = MAP_REGIONS[player.location];
+  if (curRegion) {
+    // Find world hex whose linksTo matches curRegion.mapView
+    const worldHex = Object.values(MAP_WORLD).find(h => h.linksTo === curRegion.mapView);
+    if (worldHex) return worldHex.name;
+  }
+  return 'Ashenveil';
 }
 
 // ── Region Map View (Core Gameplay Layer) ─────────────────────────────────────
@@ -178,20 +193,22 @@ function _renderRegionMapPage(player) {
   const el = document.getElementById("content-area");
   if (!el) return;
 
+  const activeWorldHex = _activeWorldHexId ? MAP_WORLD[_activeWorldHexId] : null;
+  const regionName = activeWorldHex ? activeWorldHex.name : 'Region';
+
+  // Dispatch: faction hexes use handcrafted MAP_REGIONS, neutral hexes use generated grid
+  const useGenerated = activeWorldHex && !activeWorldHex.linksTo;
+
   const locId = player.location;
-  const adjIds = MapSystem.getAdjacentIds(locId);
+  const adjIds = useGenerated ? [] : MapSystem.getAdjacentIds(locId);
 
-  if (!_mapSelectedId || !MAP_REGIONS[_mapSelectedId]) {
-    _mapSelectedId = locId;
+  if (!useGenerated) {
+    if (!_mapSelectedId || !MAP_REGIONS[_mapSelectedId]) _mapSelectedId = locId;
+    if (_mapSelectedId === locId || adjIds.includes(_mapSelectedId)) _mapCurrentPath = null;
   }
 
-  // Reset path when selection is current or adjacent
-  if (_mapSelectedId === locId || adjIds.includes(_mapSelectedId)) {
-    _mapCurrentPath = null;
-  }
-
-  const selectedRegion = MAP_REGIONS[_mapSelectedId];
-  const backBtnHtml = `<button class="btn-secondary" style="padding:6px 10px;font-size:12px;" id="map-back-btn">← Back to World</button>`;
+  const selectedRegion = useGenerated ? null : MAP_REGIONS[_mapSelectedId];
+  const backBtnHtml = `<button class="btn-secondary" style="padding:6px 10px;font-size:12px;" id="map-back-btn">← World</button>`;
 
   el.innerHTML = `
     <div class="page-map page-map-region">
@@ -199,17 +216,22 @@ function _renderRegionMapPage(player) {
         <div style="display:flex;align-items:center;gap:12px;">
           ${backBtnHtml}
           <div>
-            <h2 class="heading" style="margin:0;">${_mapRegionFilter ? _mapRegionFilter.split('_').map(w => w[0].toUpperCase() + w.slice(1)).join(' ') : 'Region'}</h2>
+            <h2 class="heading" style="margin:0;">${regionName}</h2>
             <span class="map-location-badge">◉ ${MapSystem.getCurrentRegionName()}</span>
+            ${activeWorldHex ? `<span class="map-tier-badge">${_tierStars(activeWorldHex.tier)} ${_dangerLabel(activeWorldHex.danger)}</span>` : ''}
           </div>
         </div>
       </div>
       <div class="map-body">
         <div class="map-svg-wrap">
-          ${_buildRegionMapSvg(locId, adjIds, player)}
+          ${useGenerated
+            ? _buildGeneratedRegionSvg(_activeWorldHexId, player)
+            : _buildRegionMapSvg(locId, adjIds, player)}
         </div>
         <div class="map-info-panel" id="map-info-panel">
-          ${_buildInfoPanel(selectedRegion, player, locId, adjIds)}
+          ${useGenerated
+            ? _buildWorldInfoPanel(activeWorldHex)
+            : _buildInfoPanel(selectedRegion, player, locId, adjIds)}
         </div>
       </div>
     </div>
@@ -229,16 +251,24 @@ function _renderRegionMapPage(player) {
   }, 0);
 }
 
-// ── World Map SVG (Macro Layer - 4 faction territory hexes) ──────────────────
+// ── Tier + danger helpers ─────────────────────────────────────────────────────
+function _tierStars(tier) {
+  if (tier === 0) return 'Starter';
+  return '★'.repeat(tier) + '☆'.repeat(Math.max(0, 5 - tier));
+}
+function _dangerLabel(danger) {
+  return (['Safe','Low','Moderate','High','Extreme','Lethal'][danger] || '') ;
+}
+
+// ── World Map SVG (Macro Layer — 18 continental hexes) ───────────────────────
 function _buildWorldMapSvg(playerFaction) {
-  const S = 60;  // Larger hexes for world map
-  const ox = 250;
-  const oy = 150;
+  const S = 52; // Hex size — slightly smaller to fit 18 hexes
+  const PAD = 80;
 
   function hexToPixel(q, r) {
     return {
-      x: ox + S * (Math.sqrt(3) * q + (Math.sqrt(3) / 2) * r),
-      y: oy + S * (1.5 * r),
+      x: S * (Math.sqrt(3) * q + (Math.sqrt(3) / 2) * r),
+      y: S * (1.5 * r),
     };
   }
 
@@ -253,43 +283,79 @@ function _buildWorldMapSvg(playerFaction) {
     return pts.join(" ");
   }
 
+  // Auto-calculate viewBox bounding box from hex positions
+  const entries = Object.entries(MAP_WORLD);
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const [, hex] of entries) {
+    const { x, y } = hexToPixel(hex.q, hex.r);
+    minX = Math.min(minX, x - S);
+    maxX = Math.max(maxX, x + S);
+    minY = Math.min(minY, y - S);
+    maxY = Math.max(maxY, y + S);
+  }
+  const vbX = minX - PAD;
+  const vbY = minY - PAD;
+  const vbW = (maxX - minX) + PAD * 2;
+  const vbH = (maxY - minY) + PAD * 2;
+
   const lands = [];
+  const borders = [];
   const fills = [];
   const glows = [];
   const labels = [];
 
-  for (const [id, hex] of Object.entries(MAP_WORLD)) {
+  for (const [id, hex] of entries) {
     const { x, y } = hexToPixel(hex.q, hex.r);
     const corners = hexCorners(x, y);
     const isPlayerFaction = hex.type === playerFaction;
+    const isSelected = id === _worldSelectedHexId;
     const fillColor = _MAP_TYPE_FILLS[hex.type] || '#1a1208';
 
     lands.push(`<polygon points="${corners}" fill="white"/>`);
 
     fills.push(
-      `<polygon points="${corners}" fill="${fillColor}" ` +
-      `data-world-hex="${id}" style="cursor:pointer;opacity:${isPlayerFaction ? '1' : '0.85'}"/>`
+      `<polygon points="${corners}" fill="${fillColor}" data-world-hex="${id}" ` +
+      `style="cursor:pointer;opacity:${isPlayerFaction ? '1' : '0.82'}"/>`
+    );
+
+    borders.push(
+      `<polygon points="${corners}" fill="none" ` +
+      `stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-dasharray="3,4" pointer-events="none"/>`
     );
 
     if (isPlayerFaction) {
       glows.push(
-        `<polygon points="${corners}" fill="rgba(201,168,76,0.15)" ` +
+        `<polygon points="${corners}" fill="rgba(201,168,76,0.12)" ` +
         `stroke="#c9a84c" stroke-width="2" pointer-events="none"/>`
       );
     }
+    if (isSelected) {
+      glows.push(
+        `<polygon points="${corners}" fill="rgba(255,255,255,0.08)" ` +
+        `stroke="rgba(255,255,255,0.6)" stroke-width="1.8" pointer-events="none"/>`
+      );
+    }
 
+    // Tier danger dots
+    if (hex.tier >= 3) {
+      const dotColor = hex.tier >= 5 ? '#9b1a1a' : hex.tier >= 4 ? '#c04040' : '#c07830';
+      labels.push(`<circle cx="${(x + S * 0.55).toFixed(1)}" cy="${(y - S * 0.55).toFixed(1)}" r="4" fill="${dotColor}" pointer-events="none"/>`);
+    }
+
+    const fontSize = 9;
+    const shortLabel = hex.label.length > 12 ? hex.label.slice(0, 11) + '…' : hex.label;
     labels.push(
-      `<text x="${x.toFixed(1)}" y="${(y + 5).toFixed(1)}" ` +
-      `text-anchor="middle" font-size="11" fill="#e0d0a8" ` +
+      `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" ` +
+      `text-anchor="middle" font-size="${fontSize}" fill="#e0d0a8" ` +
       `font-family="'Cinzel',serif" font-weight="600" pointer-events="none">` +
-      `${hex.label}</text>`
+      `${shortLabel}</text>`
     );
   }
 
   const land = lands.join("");
-
   return `
-    <svg class="map-svg" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg"
+    <svg class="map-svg" viewBox="${vbX.toFixed(0)} ${vbY.toFixed(0)} ${vbW.toFixed(0)} ${vbH.toFixed(0)}"
+      xmlns="http://www.w3.org/2000/svg"
       onmousedown="_mapStartDrag(event)"
       onmousemove="_mapDrag(event)"
       onmouseup="_mapEndDrag()"
@@ -303,9 +369,10 @@ function _buildWorldMapSvg(playerFaction) {
           <feComposite in="col" in2="ring" operator="in"/>
         </filter>
       </defs>
-      <rect width="100%" height="100%" fill="#2a6a9a"/>
+      <rect x="${(vbX - 200).toFixed(0)}" y="${(vbY - 200).toFixed(0)}" width="${(vbW + 400).toFixed(0)}" height="${(vbH + 400).toFixed(0)}" fill="#2a6a9a"/>
       <g filter="url(#shore-ring-world)">${land}</g>
       ${fills.join("")}
+      ${borders.join("")}
       ${glows.join("")}
       ${labels.join("")}
     </svg>
@@ -313,17 +380,161 @@ function _buildWorldMapSvg(playerFaction) {
 }
 
 // ── World Map Info Panel ──────────────────────────────────────────────────────
-function _buildWorldInfoPanel() {
+function _buildWorldInfoPanel(hex) {
+  if (!hex) {
+    return `
+      <div class="map-info-empty">
+        <h3 style="margin-top:0;color:#c9a84c;">World Map</h3>
+        <p style="font-size:13px;line-height:1.6;color:#b0a090;">
+          Click a territory to explore it. Your faction territory is highlighted in gold.
+        </p>
+        <div style="font-size:11px;color:#7d7060;margin-top:16px;line-height:1.8;">
+          <div>🔴 High danger</div>
+          <div>🟡 Your territory</div>
+          <div>◻ Click to enter region</div>
+        </div>
+      </div>
+    `;
+  }
+
+  const typeLabel = {
+    neutral: 'Neutral Territory',
+    iron_dominion: 'Iron Dominion',
+    ashen_covenant: 'Ashen Covenant',
+    thornwood: 'Thornwood',
+    ruins: 'Ruins of Valdros',
+  }[hex.type] || hex.type;
+
+  const dangerColor = ['#4a9e6b','#8aa84a','#c9a84c','#c07830','#c04040','#9b1a1a'][hex.danger] || '#c9a84c';
+  const dangerStr = _dangerLabel(hex.danger);
+
   return `
-    <div class="map-info-empty">
-      <h3 style="margin-top:0;color:#c9a84c;">World Overview</h3>
-      <p style="font-size:13px;line-height:1.6;color:#b0a090;">
-        Click a faction territory to explore that region in detail. The central Ruins of Valdros contain the greatest challenges and greatest treasures.
-      </p>
-      <p style="font-size:12px;color:#7d7060;margin-top:12px;">
-        <strong>Your Territory:</strong> Highlighted in gold.
-      </p>
+    <div class="map-info-content">
+      <div class="map-info-name">${hex.name}</div>
+      <div class="map-info-type">${typeLabel}</div>
+      <div class="map-info-tier">
+        <span class="map-tier-stars">${_tierStars(hex.tier)}</span>
+        <span class="map-danger-label" style="color:${dangerColor}">${dangerStr}</span>
+      </div>
+      <p class="map-info-desc">${hex.description}</p>
+      <div class="map-info-biome">Terrain: <strong>${hex.biome}</strong></div>
+      <div class="map-info-travel">
+        <button class="map-btn-travel" onclick="_mapEnterWorldHex('${hex.id}')">
+          Enter Region →
+        </button>
+      </div>
     </div>
+  `;
+}
+
+// ── Generated Region SVG (Procedural Neutral Zones) ──────────────────────────
+function _buildGeneratedRegionSvg(worldHexId, player) {
+  if (typeof RegionGenerator === 'undefined') {
+    return `<div class="map-info-empty">Region generator not loaded.</div>`;
+  }
+
+  const grid = RegionGenerator.getOrGenerate(worldHexId);
+  const tiles = Object.values(grid);
+  if (!tiles.length) return `<div class="map-info-empty">Empty region.</div>`;
+
+  const S = _MAP_HEX_SIZE;
+  const ox = _MAP_OFFSET_X;
+  const oy = _MAP_OFFSET_Y;
+  const discovered = new Set(player?.discoveredLocations || []);
+
+  // Terrain fill colors (lighter palette for generated tiles)
+  const TERRAIN_FILLS = {
+    city:      '#3a2a10', town:     '#2a3a18', camp:     '#1e2e12',
+    plains:    '#1e3010', hills:    '#2a2010', forest:   '#0e2a0e',
+    wasteland: '#2a1e0e', fortress: '#2a1010', tower:    '#1a1a2a',
+    ruins:     '#120a0a',
+  };
+
+  function hexToPixel(q, r) {
+    return {
+      x: ox + S * (Math.sqrt(3) * q + (Math.sqrt(3) / 2) * r),
+      y: oy + S * (1.5 * r),
+    };
+  }
+
+  function hexCorners(cx, cy) {
+    const pts = [];
+    for (let i = 0; i < 6; i++) {
+      const angle = (Math.PI / 180) * (60 * i - 30);
+      pts.push(`${(cx + S * Math.cos(angle)).toFixed(1)},${(cy + S * Math.sin(angle)).toFixed(1)}`);
+    }
+    return pts.join(' ');
+  }
+
+  // Auto center view on content
+  if (!_mapInitialized) {
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const tile of tiles) {
+      const { x, y } = hexToPixel(tile.q, tile.r);
+      minX = Math.min(minX, x - S); maxX = Math.max(maxX, x + S);
+      minY = Math.min(minY, y - S); maxY = Math.max(maxY, y + S);
+    }
+    const pad = 80;
+    _mapView = { x: minX - pad, y: minY - pad, width: (maxX - minX) + pad * 2, height: (maxY - minY) + pad * 2 };
+    _mapInitialized = true;
+  }
+
+  const lands = [], fills = [], borders = [], glows = [], labels = [];
+
+  for (const tile of tiles) {
+    const { x, y } = hexToPixel(tile.q, tile.r);
+    const corners = hexCorners(x, y);
+    const isDiscovered = discovered.has(tile.id);
+    const fillColor = TERRAIN_FILLS[tile.terrain] || '#1a1208';
+
+    lands.push(`<polygon points="${corners}" fill="white"/>`);
+
+    if (!isDiscovered) {
+      fills.push(`<polygon points="${corners}" fill="#0d0d0d" opacity="0.9" style="pointer-events:none"/>`);
+      glows.push(`<polygon points="${corners}" fill="none" stroke="rgba(100,100,100,0.12)" stroke-width="0.8" pointer-events="none"/>`);
+    } else {
+      fills.push(`<polygon points="${corners}" fill="${fillColor}" data-gen-tile="${tile.id}" style="cursor:default"/>`);
+      borders.push(`<polygon points="${corners}" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="0.8" stroke-dasharray="3,4" pointer-events="none"/>`);
+
+      // Activity dots for hub tiles
+      if (tile.activities && tile.activities.length) {
+        glows.push(`<circle cx="${x.toFixed(1)}" cy="${(y + S * 0.52).toFixed(1)}" r="3" fill="#c9a84c" opacity="0.9" pointer-events="none"/>`);
+      }
+
+      const shortTerrain = tile.terrain.slice(0, 8);
+      labels.push(
+        `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" ` +
+        `text-anchor="middle" font-size="6.5" fill="#a09080" ` +
+        `font-family="'Cinzel',serif" pointer-events="none">${shortTerrain}</text>`
+      );
+    }
+  }
+
+  const land = lands.join('');
+  return `
+    <svg class="map-svg"
+      viewBox="${_mapView.x} ${_mapView.y} ${_mapView.width} ${_mapView.height}"
+      xmlns="http://www.w3.org/2000/svg"
+      onmousedown="_mapStartDrag(event)"
+      onmousemove="_mapDrag(event)"
+      onmouseup="_mapEndDrag()"
+      onmouseleave="_mapEndDrag()"
+      onwheel="_mapZoom(event)">
+      <defs>
+        <filter id="shore-ring-gen" x="-40%" y="-50%" width="180%" height="200%" color-interpolation-filters="sRGB">
+          <feMorphology in="SourceAlpha" operator="dilate" radius="40" result="d1"/>
+          <feComposite in="d1" in2="SourceAlpha" operator="out" result="ring"/>
+          <feFlood flood-color="#3a8fbf" result="col"/>
+          <feComposite in="col" in2="ring" operator="in"/>
+        </filter>
+      </defs>
+      <rect width="200%" height="200%" x="-50%" y="-50%" fill="#2a6a9a"/>
+      <g filter="url(#shore-ring-gen)">${land}</g>
+      ${fills.join('')}
+      ${borders.join('')}
+      ${glows.join('')}
+      ${labels.join('')}
+    </svg>
   `;
 }
 
@@ -528,23 +739,35 @@ function _buildRegionMapSvg(locId, adjIds, player) {
     `;
 }
 
-// ── World hex click handler ──────────────────────────────────────────────────
+// ── World hex click handler — select hex and show info ──────────────────────
 function _mapHandleWorldHexClick(e) {
   if (_wasDragging) {
     _wasDragging = false;
     return;
   }
 
-  const hex = e.target.closest("[data-world-hex]");
-  if (!hex) return;
+  const hexEl = e.target.closest("[data-world-hex]");
+  if (!hexEl) return;
 
-  const hexId = hex.dataset.worldHex;
+  const hexId = hexEl.dataset.worldHex;
   const worldHex = MAP_WORLD[hexId];
   if (!worldHex) return;
 
-  // Switch to region view
+  // Select hex and update info panel (don't enter region yet)
+  _worldSelectedHexId = hexId;
+
+  // Update SVG selection state by re-rendering
+  _renderWorldMapPage();
+}
+
+// ── Enter a world hex region (called by info panel button) ────────────────────
+function _mapEnterWorldHex(hexId) {
+  const worldHex = MAP_WORLD[hexId];
+  if (!worldHex) return;
+
   _mapLayer = 'region';
-  _mapRegionFilter = worldHex.linksTo;
+  _activeWorldHexId = hexId;
+  _mapRegionFilter = worldHex.linksTo || null;
   _mapSelectedId = null;
   _mapCurrentPath = null;
   _mapView = { x: 200, y: 150, width: 850, height: 680 };

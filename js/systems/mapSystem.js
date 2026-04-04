@@ -151,6 +151,7 @@ const MapSystem = {
         player.stats.energy.value -= energyCost;
         player.location = toId;
         this.discoverAround(player, toId);
+        this._rollEncounter(player, dest);
         Log.add(`Travelled to ${dest.name} for ${cost.toLocaleString()}g.`, 'info');
         SaveSystem.save();
 
@@ -209,19 +210,43 @@ const MapSystem = {
         return { ok: true };
     },
 
-    // ── Fog of War: Discover tiles on travel ──────────────────────────────────
+    // ── Fog of War: Discover tiles within 2-tile radius on travel ─────────────
     discoverAround(player, regionId) {
         if (!player || !player.discoveredLocations) return;
 
         const discovered = new Set(player.discoveredLocations);
         discovered.add(regionId);
 
-        // Reveal all adjacent tiles (fog of war radius 1)
-        for (const adjId of this.getAdjacentIds(regionId)) {
+        // Ring 1 — all adjacent tiles
+        const ring1 = this.getAdjacentIds(regionId);
+        for (const adjId of ring1) {
             discovered.add(adjId);
+            // Ring 2 — tiles adjacent to ring 1 (2-tile radius)
+            for (const adj2Id of this.getAdjacentIds(adjId)) {
+                discovered.add(adj2Id);
+            }
         }
 
         player.discoveredLocations = Array.from(discovered);
+    },
+
+    // ── Encounter roll on tile entry ─────────────────────────────────────────
+    _rollEncounter(player, region) {
+        if (!region || !region.terrain) return;
+        const tileType = (typeof TILE_TYPES !== 'undefined' ? TILE_TYPES[region.terrain] : null)
+            || { encounterChance: 0, encounterTypes: [] };
+
+        if (!tileType.encounterChance) return;
+        if (Math.random() >= tileType.encounterChance) return;
+
+        const types = tileType.encounterTypes || [];
+        const name = types.length
+            ? types[Math.floor(Math.random() * types.length)]
+            : 'wandering enemies';
+
+        if (typeof Log !== 'undefined') {
+            Log.add(`⚔ Encounter: ${name} near ${region.name}.`, 'danger');
+        }
     },
 
     // ── Travel state — travel is now instant; these stubs preserve compatibility
