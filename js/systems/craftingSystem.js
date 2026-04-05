@@ -19,14 +19,25 @@ const CraftingSystem = {
         }
     },
 
-    // Get skill level for a profession
+    // Crafting profession keys that live in player.skills
+    PROFESSION_KEYS: ['blacksmithing', 'armorsmithing', 'woodworking', 'tailoring', 'alchemy', 'magesmithing'],
+
+    // Get skill level for a profession — reads from player.skills (unified skill store)
     getProfessionSkill(player, profession) {
+        if (player.skills && profession in player.skills) return player.skills[profession] || 0;
         this.initProfessions(player);
         return player.professions[profession] || 0;
     },
 
-    // Get all professions and their skill levels
+    // Get all professions and their skill levels (from player.skills)
     getAllProfessions(player) {
+        if (player.skills) {
+            const result = {};
+            for (const key of this.PROFESSION_KEYS) {
+                result[key] = player.skills[key] || 0;
+            }
+            return result;
+        }
         this.initProfessions(player);
         return player.professions;
     },
@@ -89,20 +100,54 @@ const CraftingSystem = {
         // Consume gold
         player.gold -= recipe.goldCost;
 
-        // Add output to inventory
+        // Add output to inventory or crafting materials
         if (recipe.output.itemId) {
-            player.inventory.push({
-                uid: `item_${Date.now()}_${Math.random()}`,
-                itemId: recipe.output.itemId,
-                amount: recipe.output.amount || 1,
-            });
+            const outputItemId = recipe.output.itemId;
+            const outputAmount = recipe.output.amount || 1;
+
+            if (typeof CRAFTING_MATERIALS !== 'undefined' && CRAFTING_MATERIALS[outputItemId]) {
+                // It's a crafting component — add to materials storage
+                this.addMaterial(player, outputItemId, outputAmount);
+            } else if (typeof getItem !== 'undefined') {
+                const template = getItem(outputItemId);
+                if (template) {
+                    if (template.type === 'consumable') {
+                        // Stack consumables in inventory by itemId
+                        const existing = player.inventory.find(
+                            i => i.type === 'consumable' && i.id === outputItemId
+                        );
+                        if (existing) {
+                            existing.quantity = (existing.quantity || 1) + outputAmount;
+                        } else {
+                            const instance = Object.assign({}, template);
+                            instance.uid = Date.now() * 10000 + Math.floor(Math.random() * 10000);
+                            instance.quantity = outputAmount;
+                            player.inventory.push(instance);
+                        }
+                    } else {
+                        // Equipment — instantiate each copy with its own uid
+                        for (let i = 0; i < outputAmount; i++) {
+                            const instance = Object.assign({}, template);
+                            if (instance.statBonuses) {
+                                instance.statBonuses = Object.assign({}, instance.statBonuses);
+                            }
+                            instance.uid = Date.now() * 10000 + Math.floor(Math.random() * 10000) + i;
+                            player.inventory.push(instance);
+                        }
+                    }
+                } else {
+                    // Fallback: item definition not found — push a minimal placeholder
+                    Log.add(`Warning: no item definition for "${outputItemId}".`, 'warning');
+                }
+            }
         }
 
-        // Gain profession XP
-        this.gainProfessionXp(player, recipe.profession, recipe.requiredSkill);
+        // Gain profession skill
+        this.gainProfessionXp(player, recipe.profession, recipe.requiredSkill, recipe.tier || 1);
 
         if (typeof Log !== 'undefined') {
-            Log.add(`Crafted: ${recipe.name}`, 'success');
+            const newSkill = this.getProfessionSkill(player, recipe.profession);
+            Log.add(`Crafted: ${recipe.name} · ${recipe.profession} ${newSkill}`, 'success');
         }
         if (typeof SaveSystem !== 'undefined') {
             SaveSystem.save();
@@ -145,21 +190,25 @@ const CraftingSystem = {
         return player.craftingMaterials;
     },
 
-    // Gain XP in a profession (simplified)
-    gainProfessionXp(player, profession, baseSkillRequired) {
-        this.initProfessions(player);
+    // Gain skill in a profession — writes to player.skills, gain = recipe tier
+    gainProfessionXp(player, profession, baseSkillRequired, recipeTier = 1) {
+        // Determine gain with diminishing returns matching combat skills
+        const current = this.getProfessionSkill(player, profession);
+        const gain = current < 100 ? recipeTier * 3
+                   : current < 1000 ? recipeTier * 2
+                   : recipeTier;
 
-        // XP based on recipe difficulty
-        const xpGain = Math.max(1, Math.floor(baseSkillRequired * 0.5));
-        const oldSkill = player.professions[profession];
-        player.professions[profession] = Math.min(100, oldSkill + xpGain);
+        const before = current;
+        if (player.skills && profession in player.skills) {
+            player.skills[profession] = (player.skills[profession] || 0) + gain;
+        } else {
+            this.initProfessions(player);
+            player.professions[profession] = (player.professions[profession] || 0) + gain;
+        }
 
-        // Check for level up (every 10 levels)
-        const oldLevel = Math.floor(oldSkill / 10);
-        const newLevel = Math.floor(player.professions[profession] / 10);
-
-        if (newLevel > oldLevel && typeof Log !== 'undefined') {
-            Log.add(`${profession} skill increased to ${player.professions[profession]}.`, 'info');
+        const after = this.getProfessionSkill(player, profession);
+        if (typeof Log !== 'undefined' && Math.floor(before / 10) < Math.floor(after / 10)) {
+            Log.add(`${profession.charAt(0).toUpperCase() + profession.slice(1)} skill reached ${after}.`, 'info');
         }
     },
 

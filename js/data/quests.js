@@ -1,5 +1,6 @@
 // js/data/quests.js
-// Quest definitions across 5 tiers. Each quest has a single primary skill check.
+// Quest definitions across 5 tiers. Each tier has exactly 6 quests — one per
+// combat skill: melee, stealth, ranged, magic, defense, restoration.
 // All 'required' values are EFFECTIVE skill (not raw) — see PlayerSystem.getEffectiveSkill().
 // At exactly the required effective skill → 75% success chance.
 // At ~1.3× required effective skill → 95% cap.
@@ -22,7 +23,7 @@
 
 const QUESTS = [
 
-    // ── TIER 1 — Novice (0–100 skill) ─────────────────────────────────────────
+    // ── TIER 1 — Novice ────────────────────────────────────────────────────────
 
     {
         id: 'bandit_ambush',
@@ -31,7 +32,7 @@ const QUESTS = [
         description: 'Outlaws have been hitting trade caravans on the eastern road. A merchant is offering coin to clear them out.',
         lore: 'The road east has been cut for three weeks. The nearest settlement is starting to feel it.',
         skillCheck: { skill: 'melee', required: 28 },
-        duration: 360,          // 6 minutes
+        duration: 360,
         goldReward: { min: 10, max: 30 },
         chestReward: { tier: 1, count: 1 },
     },
@@ -42,7 +43,7 @@ const QUESTS = [
         description: 'Someone is feeding troop positions to the Iron Dominion. Follow them without being seen and confirm their identity.',
         lore: 'Every faction capital has more eyes in it than most people realise.',
         skillCheck: { skill: 'stealth', required: 28 },
-        duration: 480,          // 8 minutes
+        duration: 480,
         goldReward: { min: 12, max: 35 },
         chestReward: { tier: 1, count: 1 },
     },
@@ -53,19 +54,19 @@ const QUESTS = [
         description: 'A Covenant observer wants fresh eyes on a small rift south of the city. Get close, note its size, and come back.',
         lore: 'The rifts have been expanding. Slowly, but steadily.',
         skillCheck: { skill: 'ranged', required: 28 },
-        duration: 420,          // 7 minutes
+        duration: 420,
         goldReward: { min: 12, max: 32 },
         chestReward: { tier: 1, count: 1 },
     },
     {
-        id: 'gather_reagents',
+        id: 'minor_ward',
         tier: 1,
-        name: 'Gather Reagents',
-        description: 'An alchemist needs rare herbs from the outskirts of the city. They grow near the rift boundaries — handle with care.',
-        lore: 'Rift-touched plants are dangerous. They\'re also valuable.',
-        skillCheck: { skill: 'alchemy', required: 22 },
-        duration: 300,          // 5 minutes
-        goldReward: { min: 8, max: 22 },
+        name: 'Set a Minor Ward',
+        description: 'A merchant\'s storehouse keeps being breached by rift-touched vermin. Lay a containment ward on the perimeter before the next surge.',
+        lore: 'Rift energy bleeds through old walls. Most people don\'t know what they\'re smelling.',
+        skillCheck: { skill: 'magic', required: 24 },
+        duration: 420,
+        goldReward: { min: 10, max: 28 },
         chestReward: { tier: 1, count: 1 },
     },
     {
@@ -75,12 +76,23 @@ const QUESTS = [
         description: 'The city watch is short-handed. Walk the southern wall for a shift and report anything unusual.',
         lore: 'Three guards quit last week after seeing something near the rift. The watch doesn\'t talk about what.',
         skillCheck: { skill: 'defense', required: 24 },
-        duration: 360,          // 6 minutes
+        duration: 360,
         goldReward: { min: 10, max: 25 },
         chestReward: { tier: 1, count: 1 },
     },
+    {
+        id: 'tend_the_wounded',
+        tier: 1,
+        name: 'Tend the Wounded',
+        description: 'Three labourers were caught in a rift flare on the eastern docks. They\'re stable but deteriorating. Get there before that changes.',
+        lore: 'Rift injuries don\'t heal the way regular wounds do. Most healers refuse to touch them.',
+        skillCheck: { skill: 'restoration', required: 22 },
+        duration: 300,
+        goldReward: { min: 8, max: 24 },
+        chestReward: { tier: 1, count: 1 },
+    },
 
-    // ── TIER 2 — Apprentice (100–500 skill) ───────────────────────────────────
+    // ── TIER 2 — Apprentice ────────────────────────────────────────────────────
 
     {
         id: 'dominion_deserters',
@@ -89,7 +101,7 @@ const QUESTS = [
         description: 'A squad of Iron Dominion soldiers has gone rogue. They\'ve barricaded themselves in a farmhouse and won\'t leave alive.',
         lore: 'The Dominion\'s discipline slips the further from command you get.',
         skillCheck: { skill: 'melee', required: 95 },
-        duration: 900,          // 15 minutes
+        duration: 900,
         goldReward: { min: 50, max: 100 },
         chestReward: { tier: 2, count: 1 },
     },
@@ -100,8 +112,19 @@ const QUESTS = [
         description: 'A courier is carrying sealed orders between two faction officers. Take the message without anyone knowing it\'s gone.',
         lore: 'What gets written down tends to be more honest than what gets said aloud.',
         skillCheck: { skill: 'stealth', required: 95 },
-        duration: 1350,         // 22.5 minutes
+        duration: 1350,
         goldReward: { min: 60, max: 120 },
+        chestReward: { tier: 2, count: 1 },
+    },
+    {
+        id: 'eliminate_lookout',
+        tier: 2,
+        name: 'Eliminate the Lookout',
+        description: 'A Dominion observation post on the southern ridge is relaying troop movements to the capital. Put it down from distance before they can send word.',
+        lore: 'Intelligence only matters if it reaches someone. Make sure it doesn\'t.',
+        skillCheck: { skill: 'ranged', required: 90 },
+        duration: 1200,
+        goldReward: { min: 55, max: 110 },
         chestReward: { tier: 2, count: 1 },
     },
     {
@@ -111,7 +134,7 @@ const QUESTS = [
         description: 'Retrieve a spellbound container from a site near a rift. The Covenant won\'t say what\'s inside. They\'ll pay well not to be asked.',
         lore: 'Ashen Covenant researchers are careful people. If they\'re paying someone else to collect it, it\'s probably cursed.',
         skillCheck: { skill: 'magic', required: 95 },
-        duration: 1800,         // 30 minutes
+        duration: 1800,
         goldReward: { min: 70, max: 130 },
         chestReward: { tier: 2, count: 1 },
     },
@@ -122,7 +145,7 @@ const QUESTS = [
         description: 'An outpost on the border of the central ruins needs reinforcing before the next demon surge hits. Get it done.',
         lore: 'The outpost has been overrun twice already. Third time, someone decided to hire competent people.',
         skillCheck: { skill: 'defense', required: 95 },
-        duration: 1200,         // 20 minutes
+        duration: 1200,
         goldReward: { min: 55, max: 110 },
         chestReward: { tier: 2, count: 1 },
     },
@@ -133,12 +156,12 @@ const QUESTS = [
         description: 'A field camp near the ruins is overwhelmed. Work through the night stabilising the badly injured before more fighting begins.',
         lore: 'Restoration magic is rare enough that people beg for it. The pay reflects that.',
         skillCheck: { skill: 'restoration', required: 88 },
-        duration: 1350,         // 22.5 minutes
+        duration: 1350,
         goldReward: { min: 60, max: 115 },
         chestReward: { tier: 2, count: 1 },
     },
 
-    // ── TIER 3 — Journeyman (500–2000 skill) ──────────────────────────────────
+    // ── TIER 3 — Journeyman ────────────────────────────────────────────────────
 
     {
         id: 'demon_breach',
@@ -147,7 +170,7 @@ const QUESTS = [
         description: 'A rift has cracked open near the old granary. Demons are pouring through in numbers. Push them back and hold the line.',
         lore: 'This is what most of the early war looked like. It\'s no easier the second time.',
         skillCheck: { skill: 'melee', required: 260 },
-        duration: 2700,         // 45 minutes
+        duration: 2700,
         goldReward: { min: 150, max: 300 },
         chestReward: { tier: 3, count: 1 },
     },
@@ -158,8 +181,19 @@ const QUESTS = [
         description: 'Slip through Thornwood territory, reach the central ruins, and retrieve a specific object from a guarded location.',
         lore: 'The Thornwood don\'t take trespassing lightly. They\'ve hanged people for less.',
         skillCheck: { skill: 'stealth', required: 260 },
-        duration: 3600,         // 60 minutes
+        duration: 3600,
         goldReward: { min: 175, max: 350 },
+        chestReward: { tier: 3, count: 1 },
+    },
+    {
+        id: 'siege_suppression',
+        tier: 3,
+        name: 'Siege Suppression',
+        description: 'Demon forces are massing outside the outer wall. Keep them back from the battlements long enough for the garrison to fall back to the inner gate.',
+        lore: 'Forty archers held the eastern rampart for six hours once. That was before the second surge.',
+        skillCheck: { skill: 'ranged', required: 260 },
+        duration: 3600,
+        goldReward: { min: 175, max: 340 },
         chestReward: { tier: 3, count: 1 },
     },
     {
@@ -169,8 +203,19 @@ const QUESTS = [
         description: 'Enter the rift boundary and observe what the Covenant\'s instruments can\'t measure from the outside. Do not let anything follow you back.',
         lore: 'The Ashen Covenant has lost three researchers this way. They keep sending more.',
         skillCheck: { skill: 'magic', required: 285 },
-        duration: 4500,         // 75 minutes
+        duration: 4500,
         goldReward: { min: 200, max: 400 },
+        chestReward: { tier: 3, count: 1 },
+    },
+    {
+        id: 'hold_the_barricade',
+        tier: 3,
+        name: 'Hold the Barricade',
+        description: 'The last defensive line before the inner district is a hastily built barricade. It will not hold without someone behind it.',
+        lore: 'The barricade is made from furniture and broken market stalls. It has held six surges already.',
+        skillCheck: { skill: 'defense', required: 270 },
+        duration: 2700,
+        goldReward: { min: 160, max: 320 },
         chestReward: { tier: 3, count: 1 },
     },
     {
@@ -180,12 +225,12 @@ const QUESTS = [
         description: 'An entire district near the ruins has been contaminated by rift energy. Clear the corruption before it spreads.',
         lore: 'Rift corruption is slow, patient, and thorough. Like everything from the underworld.',
         skillCheck: { skill: 'restoration', required: 270 },
-        duration: 3600,         // 60 minutes
+        duration: 3600,
         goldReward: { min: 180, max: 360 },
         chestReward: { tier: 3, count: 1 },
     },
 
-    // ── TIER 4 — Expert (2000–5000 skill) ─────────────────────────────────────
+    // ── TIER 4 — Expert ────────────────────────────────────────────────────────
 
     {
         id: 'rift_walker',
@@ -194,7 +239,7 @@ const QUESTS = [
         description: 'A greater demon has been slipping through a rift and hunting inside the city walls. Track it. Kill it. Do not let it reach the market district.',
         lore: 'It has already killed six. The watch doesn\'t know what it\'s fighting.',
         skillCheck: { skill: 'melee', required: 757 },
-        duration: 7200,         // 2 hours
+        duration: 7200,
         goldReward: { min: 400, max: 700 },
         chestReward: { tier: 4, count: 1 },
     },
@@ -205,8 +250,19 @@ const QUESTS = [
         description: 'The Iron Dominion\'s generals are meeting to finalise an offensive push into the ruins. Stop the order before it\'s signed. No witnesses.',
         lore: 'A Dominion offensive would destabilise everything. All three factions know it. Only one is paying to stop it.',
         skillCheck: { skill: 'stealth', required: 757 },
-        duration: 9600,         // 2h 40m
+        duration: 9600,
         goldReward: { min: 450, max: 800 },
+        chestReward: { tier: 4, count: 1 },
+    },
+    {
+        id: 'hunt_the_wraith',
+        tier: 4,
+        name: 'Hunt the Wraith',
+        description: 'A rift wraith has been picking off sentries from impossible distances. Track it and end it from further away than it can reach you.',
+        lore: 'Wraiths don\'t bleed. They dissolve. Most people can\'t tell the difference until it\'s too late.',
+        skillCheck: { skill: 'ranged', required: 760 },
+        duration: 9000,
+        goldReward: { min: 430, max: 760 },
         chestReward: { tier: 4, count: 1 },
     },
     {
@@ -216,7 +272,7 @@ const QUESTS = [
         description: 'A minor rift on the eastern edge can still be closed — the tear is fresh enough. Use everything you know to seal it before it widens.',
         lore: 'Aidia\'s ritual opened a hundred rifts. This is the only one anyone\'s managed to close.',
         skillCheck: { skill: 'magic', required: 884 },
-        duration: 12000,        // 3h 20m
+        duration: 12000,
         goldReward: { min: 500, max: 900 },
         chestReward: { tier: 4, count: 1 },
     },
@@ -227,12 +283,23 @@ const QUESTS = [
         description: 'A major demon surge is incoming. Hold the city gate for the night with whatever force you can muster.',
         lore: 'Six hours. Every time someone says they\'ll hold for six hours, the survivors stop counting at four.',
         skillCheck: { skill: 'defense', required: 884 },
-        duration: 10800,        // 3 hours
+        duration: 10800,
         goldReward: { min: 475, max: 850 },
         chestReward: { tier: 4, count: 1 },
     },
+    {
+        id: 'avert_the_collapse',
+        tier: 4,
+        name: 'Avert the Collapse',
+        description: 'A field hospital near the ruins is losing people faster than healers can work. Stabilise the worst cases and hold the ward together through the night.',
+        lore: 'Every healer within two hundred miles is already here. It still isn\'t enough.',
+        skillCheck: { skill: 'restoration', required: 820 },
+        duration: 10800,
+        goldReward: { min: 450, max: 820 },
+        chestReward: { tier: 4, count: 1 },
+    },
 
-    // ── TIER 5 — Master (5000+ skill) ─────────────────────────────────────────
+    // ── TIER 5 — Master ────────────────────────────────────────────────────────
 
     {
         id: 'aidias_echo',
@@ -241,8 +308,30 @@ const QUESTS = [
         description: 'Something wearing Aidia\'s face has been seen in the ruins of the capital. It is not Aidia — Aidia died with the ritual. Whatever it is, it needs to be ended.',
         lore: 'The ritual consumed him. But something learned from him first.',
         skillCheck: { skill: 'melee', required: 1779 },
-        duration: 21600,        // 6 hours
+        duration: 21600,
         goldReward: { min: 800, max: 1500 },
+        chestReward: { tier: 5, count: 1 },
+    },
+    {
+        id: 'the_last_shadow',
+        tier: 5,
+        name: 'The Last Shadow',
+        description: 'A surviving Dominion general is rebuilding command from deep inside the ruins. Get in undetected, confirm their position, and remove them before they consolidate.',
+        lore: 'The last person who tried this without the skill to back it up — the Dominion knew before they\'d left the city gate.',
+        skillCheck: { skill: 'stealth', required: 1900 },
+        duration: 36000,
+        goldReward: { min: 900, max: 1700 },
+        chestReward: { tier: 5, count: 1 },
+    },
+    {
+        id: 'the_siege_breaker',
+        tier: 5,
+        name: 'The Siege Breaker',
+        description: 'A rift colossus has anchored itself outside the outer wall and nothing in the garrison can reach it. You can.',
+        lore: 'It has been standing there for three days. No one has taken a shot yet. Everyone is waiting for someone else to go first.',
+        skillCheck: { skill: 'ranged', required: 1850 },
+        duration: 28800,
+        goldReward: { min: 850, max: 1600 },
         chestReward: { tier: 5, count: 1 },
     },
     {
@@ -252,7 +341,7 @@ const QUESTS = [
         description: 'The main rift — the one Aidia\'s ritual tore open — can be sealed. The process will unmake anything standing inside it when it closes. Go anyway.',
         lore: 'Closing it won\'t bring the empire back. But it will stop the bleeding.',
         skillCheck: { skill: 'magic', required: 1977 },
-        duration: 43200,        // 12 hours
+        duration: 43200,
         goldReward: { min: 1000, max: 2000 },
         chestReward: { tier: 5, count: 1 },
     },
@@ -263,7 +352,18 @@ const QUESTS = [
         description: 'The ruins of Golden Ambrosia\'s capital are overrun. Clear every demon from every corridor. Reclaim what the empire lost.',
         lore: 'The capital was the most beautiful city on Alaia. It is now the worst place on it.',
         skillCheck: { skill: 'defense', required: 1779 },
-        duration: 43200,        // 12 hours
+        duration: 43200,
+        goldReward: { min: 900, max: 1800 },
+        chestReward: { tier: 5, count: 1 },
+    },
+    {
+        id: 'mend_the_rift_sick',
+        tier: 5,
+        name: 'Mend the Rift-Sick',
+        description: 'An entire district has been soaked in concentrated rift energy. The rift-sickness spreads between survivors. Contain it and restore those who can still be saved.',
+        lore: 'Rift-sickness is not a disease. It is something replacing the person from the inside out.',
+        skillCheck: { skill: 'restoration', required: 1900 },
+        duration: 43200,
         goldReward: { min: 900, max: 1800 },
         chestReward: { tier: 5, count: 1 },
     },

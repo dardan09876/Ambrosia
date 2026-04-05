@@ -112,7 +112,7 @@ const LEVEL_THRESHOLDS = {
 
 // Calculate XP for next level (interpolate if beyond defined levels)
 function getXpForLevel(level) {
-    if (LEVEL_THRESHOLDS[level]) return LEVEL_THRESHOLDS[level];
+    if (level in LEVEL_THRESHOLDS) return LEVEL_THRESHOLDS[level];
     // For levels beyond 20, scale up by ~10% per level
     const base = LEVEL_THRESHOLDS[20] || 42000;
     const diff = level - 20;

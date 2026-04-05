@@ -28,10 +28,7 @@ function _renderQuestsPage(container) {
     if (!hasQuestBoard) {
         boardContent = `<div class="page-facility-blocked"><p>There is no quest board in ${regionName}.</p><p class="muted-text">Travel to a region that has a quest board to pick up work.</p></div>`;
     } else {
-        boardContent = `
-            ${_buildChestSection(player)}
-            ${_buildBoardSection(boardQuests, player)}
-        `;
+        boardContent = _buildBoardSection(boardQuests, player);
     }
 
     container.innerHTML = `
@@ -122,30 +119,6 @@ function _buildActiveQuestSection(player) {
                 </div>
             </div>
         </div>
-    `;
-}
-
-// ── Chests ────────────────────────────────────────────────────────────────────
-function _buildChestSection(player) {
-    if (!player.chests?.length) return '';
-
-    return `
-        <div class="quest-section-header">
-            Your Chests
-            <span class="section-count">${player.chests.length}</span>
-        </div>
-        <div class="chest-grid" id="chest-grid">
-            ${player.chests.map(chest => `
-                <div class="chest-card">
-                    <div class="chest-tier-icon" style="color:${ITEM_TIER_COLORS[chest.tier] || '#c9a84c'}">⬡</div>
-                    <div class="chest-name">${chest.name}</div>
-                    <div class="chest-desc">${CHEST_DEFS[chest.tier]?.description ?? ''}</div>
-                    <div class="chest-rolls">${CHEST_DEFS[chest.tier]?.rolls ?? 1} item roll${(CHEST_DEFS[chest.tier]?.rolls ?? 1) > 1 ? 's' : ''}</div>
-                    <button class="btn-primary btn-sm btn-open-chest" data-uid="${chest.uid}">Open Chest</button>
-                </div>
-            `).join('')}
-        </div>
-        <div class="chest-loot-display hidden" id="chest-loot-display"></div>
     `;
 }
 
@@ -286,16 +259,6 @@ function _bindAllButtons(container) {
     // Start quest buttons
     container.querySelectorAll('.btn-start-quest:not([disabled])').forEach(_bindStartBtn);
 
-    // Open chest buttons
-    container.querySelectorAll('.btn-open-chest').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const uid    = parseFloat(btn.dataset.uid);
-            const result = ChestSystem.openFromInventory(uid);
-            if (!result) return;
-            _showChestLoot(result);
-            _renderQuestsPage(container);
-        });
-    });
 }
 
 function _bindStartBtn(btn) {
@@ -305,40 +268,6 @@ function _bindStartBtn(btn) {
         const container = document.getElementById('content-area');
         if (container) _renderQuestsPage(container);
     });
-}
-
-// ── Chest loot reveal ─────────────────────────────────────────────────────────
-function _showChestLoot(result) {
-    const { items, chestName } = result;
-    if (!items.length) { Log.add(`Opened ${chestName} — nothing inside.`, 'warning'); return; }
-
-    items.forEach(item => {
-        Log.add(`${chestName}: found ${item.name} (${ITEM_TIER_NAMES[item.tier] || `Tier ${item.tier}`})`, 'success');
-    });
-
-    const lootEl = document.getElementById('chest-loot-display');
-    if (!lootEl) return;
-    lootEl.classList.remove('hidden');
-    lootEl.innerHTML = `
-        <div class="loot-reveal">
-            <div class="loot-reveal-title">Opened: ${chestName}</div>
-            <div class="loot-reveal-items">
-                ${items.map(item => `
-                    <div class="loot-item">
-                        <span class="loot-item-tier" style="color:${ITEM_TIER_COLORS[item.tier] || '#c9a84c'}">
-                            ${ITEM_TIER_NAMES[item.tier] || `T${item.tier}`}
-                        </span>
-                        <span class="loot-item-name">${item.name}</span>
-                        <span class="loot-item-stats">
-                            ${item.damage > 0 ? `⚔ ${item.damage}` : ''}
-                            ${item.defense > 0 ? `◉ ${item.defense}` : ''}
-                            · ${item.slot}
-                        </span>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    `;
 }
 
 // ── Live countdown timers ─────────────────────────────────────────────────────

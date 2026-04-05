@@ -121,7 +121,7 @@ const TRAIN_MODES = {
     },
     balanced: {
         label: 'Balanced',
-        desc: 'Normal gain on trained skill. +1 to all other skills in the same category.',
+        desc: 'Normal gain on trained skill. No side effects.',
         gainMultiplier: 1,
         sideEffect: null,
     },
@@ -181,7 +181,7 @@ function getNextTierName(tier) {
 }
 
 // ── Page state ─────────────────────────────────────────────────────────────────
-let _activeTab  = 'combat';
+let _activeTab  = 'combat';  // 'combat' | 'crafting' | 'talents' | 'synergies'
 let _trainMode  = 'balanced'; // 'focused' | 'balanced' | 'overtraining'
 
 // ── Facility helper ────────────────────────────────────────────────────────────
@@ -210,59 +210,77 @@ function _renderSkillsPage(container) {
             }
         </div>` : '';
 
+    const player  = PlayerSystem.current;
+
     container.innerHTML = `
         <div class="page">
             <div class="page-header">
                 <h1 class="page-title">Skills</h1>
-                <p class="page-subtitle">Train to unlock equipment, abilities, and greater power. Each skill consumes a different resource.</p>
+                <p class="page-subtitle">Train skills, choose a talent, and unlock synergies.</p>
             </div>
-
-            ${facilityNotice}
 
             <div class="skills-tabs">
-                <button class="skill-tab ${_activeTab === 'combat'   ? 'active' : ''}" data-tab="combat">Combat</button>
-                <button class="skill-tab ${_activeTab === 'crafting' ? 'active' : ''}" data-tab="crafting">Crafting</button>
+                <button class="skill-tab ${_activeTab === 'combat'    ? 'active' : ''}" data-tab="combat">Combat</button>
+                <button class="skill-tab ${_activeTab === 'crafting'  ? 'active' : ''}" data-tab="crafting">Crafting</button>
+                <button class="skill-tab ${_activeTab === 'talents'   ? 'active' : ''}" data-tab="talents">
+                    Talents${player.level < 15 ? ' <span class="tab-lock">🔒</span>' : ''}
+                </button>
+                <button class="skill-tab ${_activeTab === 'synergies' ? 'active' : ''}" data-tab="synergies">
+                    Synergies${!player.talent ? ' <span class="tab-lock">🔒</span>' : ''}
+                </button>
             </div>
 
-            <div class="skills-resource-bar" id="skills-resource-bar">
-                ${_buildResourceBar()}
-            </div>
-
-            ${canTrain ? `
-            <div class="train-mode-panel">
-                <div class="train-mode-label">Training Mode</div>
-                <div class="train-mode-btns">
-                    ${Object.entries(TRAIN_MODES).map(([key, mode]) => `
-                        <button
-                            class="train-mode-btn ${_trainMode === key ? 'active' : ''}"
-                            data-mode="${key}"
-                            onclick="_setTrainMode('${key}')"
-                            title="${mode.desc}"
-                        >${mode.label}<span class="train-mode-mult">${key === 'focused' ? '×2' : key === 'overtraining' ? '×3' : '×1'}</span></button>
-                    `).join('')}
-                </div>
-                <div class="train-mode-desc muted-text">${TRAIN_MODES[_trainMode].desc}</div>
-            </div>` : ''}
-
-            <div class="skills-list" id="skills-list">
-                ${_buildSkillList(canTrain)}
+            <div id="skills-tab-content">
+                ${_buildTabContent(canTrain, facilityNotice)}
             </div>
         </div>
     `;
 
-    // Tab switching
     container.querySelectorAll('.skill-tab').forEach(btn => {
         btn.addEventListener('click', () => {
             _activeTab = btn.dataset.tab;
             container.querySelectorAll('.skill-tab').forEach(b =>
                 b.classList.toggle('active', b === btn)
             );
-            document.getElementById('skills-list').innerHTML = _buildSkillList(_skillsHasTraining());
+            document.getElementById('skills-tab-content').innerHTML =
+                _buildTabContent(_skillsHasTraining(), facilityNotice);
             _bindTrainButtons();
         });
     });
 
+    _bindTalentButtons(container);
     _bindTrainButtons();
+}
+
+// ── Tab content dispatcher ─────────────────────────────────────────────────────
+function _buildTabContent(canTrain, facilityNotice) {
+    if (_activeTab === 'talents')   return _buildTalentsTab();
+    if (_activeTab === 'synergies') return _buildSynergiesTab();
+    // combat or crafting
+    return `
+        ${facilityNotice}
+        <div class="skills-resource-bar" id="skills-resource-bar">
+            ${_buildResourceBar()}
+        </div>
+        ${canTrain ? `
+        <div class="train-mode-panel">
+            <div class="train-mode-label">Training Mode</div>
+            <div class="train-mode-btns">
+                ${Object.entries(TRAIN_MODES).map(([key, mode]) => `
+                    <button
+                        class="train-mode-btn ${_trainMode === key ? 'active' : ''}"
+                        data-mode="${key}"
+                        onclick="_setTrainMode('${key}')"
+                        title="${mode.desc}"
+                    >${mode.label}<span class="train-mode-mult">${key === 'focused' ? '×2' : key === 'overtraining' ? '×3' : '×1'}</span></button>
+                `).join('')}
+            </div>
+            <div class="train-mode-desc muted-text">${TRAIN_MODES[_trainMode].desc}</div>
+        </div>` : ''}
+        <div class="skills-list" id="skills-list">
+            ${_buildSkillList(canTrain)}
+        </div>
+    `;
 }
 
 // ── Resource bar ───────────────────────────────────────────────────────────────
@@ -399,6 +417,10 @@ function _executeTrain(skillKey, resource) {
     player.skills[skillKey] = before + gain;
     const after             = player.skills[skillKey];
 
+    // Award character XP: gain × 5, scaled down by mode multiplier so focused mode
+    // doesn't give disproportionate XP (its higher skill gain already compensates)
+    PlayerSystem.gainSkillExperience(skillKey, Math.ceil(gain * 5 / mode.gainMultiplier));
+
     // Recalc stat maxes (skill synergy bonuses may have changed)
     PlayerSystem._recalcStatMaxes();
 
@@ -408,16 +430,6 @@ function _executeTrain(skillKey, resource) {
         // Focused: reduction targets the trained resource specifically
         if (_trainMode === 'focused') effect.stat = resource;
         PlayerSystem.applyActiveEffect(effect);
-    }
-
-    // Balanced mode: +1 to sibling skills
-    if (_trainMode === 'balanced') {
-        const group = Object.values(SKILL_GROUPS).find(g => g.includes(skillKey));
-        if (group) {
-            for (const sibling of group) {
-                if (sibling !== skillKey) player.skills[sibling] += 1;
-            }
-        }
     }
 
     // Log
@@ -446,4 +458,136 @@ function _executeTrain(skillKey, resource) {
     _bindTrainButtons();
     Layout.updateStatBars();
     SaveSystem.save();
+}
+
+// ── Talents tab ────────────────────────────────────────────────────────────────
+function _buildTalentsTab() {
+    const player = PlayerSystem.current;
+
+    if (player.level < 15) {
+        return `
+            <div class="page-facility-blocked">
+                <p>Talents unlock at level 15.</p>
+                <p class="muted-text">You are level ${player.level}. Keep training and completing quests to level up.</p>
+            </div>
+        `;
+    }
+
+    if (player.talent) {
+        const t = TALENTS.find(t => t.id === player.talent);
+        return `
+            <div class="talent-committed">
+                <div class="talent-card committed" style="--talent-accent:${_getTalentColor(t.id)}">
+                    <div class="talent-icon">${t.icon}</div>
+                    <div class="talent-name">${t.name}</div>
+                    <div class="talent-desc">${t.description}</div>
+                    <div class="talent-lore">"${t.lore}"</div>
+                    <div class="talent-modifiers">
+                        <div class="talent-mod-title">Experience Modifiers</div>
+                        ${_buildModifiersList(t.xpModifiers)}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    return `
+        <p class="muted-text" style="margin-bottom:16px">Choose a talent to commit to a path. Your choice is permanent.</p>
+        <div class="talent-selection">
+            ${TALENTS.map(t => `
+                <div class="talent-card" style="--talent-accent:${_getTalentColor(t.id)}">
+                    <div class="talent-icon">${t.icon}</div>
+                    <div class="talent-name">${t.name}</div>
+                    <div class="talent-desc">${t.description}</div>
+                    <div class="talent-lore">"${t.lore}"</div>
+                    <div class="talent-modifiers">
+                        <div class="talent-mod-title">Experience Modifiers</div>
+                        ${_buildModifiersList(t.xpModifiers)}
+                    </div>
+                    <div class="talent-synergies">
+                        <div class="talent-syn-title">Synergies</div>
+                        ${_buildSynergyPreview(t.id)}
+                    </div>
+                    <button class="btn-primary talent-select-btn" data-talent-id="${t.id}">
+                        Commit to ${t.name}
+                    </button>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+// ── Synergies tab ──────────────────────────────────────────────────────────────
+function _buildSynergiesTab() {
+    const player = PlayerSystem.current;
+
+    if (!player.talent) {
+        return `
+            <div class="page-facility-blocked">
+                <p>Choose a talent to unlock synergies.</p>
+                <p class="muted-text">Synergies become available once you have committed to a talent on the Talents tab.</p>
+            </div>
+        `;
+    }
+
+    const talentName  = TALENTS.find(t => t.id === player.talent)?.name || 'Unknown';
+    const allSynergies = PlayerSystem.getAllTalentSynergies();
+
+    return `
+        <p class="muted-text" style="margin-bottom:16px">${talentName} — passive bonuses from complementary skill combinations.</p>
+        <div class="synergies-grid">
+            ${allSynergies.map(s => _buildSynergyCard(s)).join('')}
+        </div>
+    `;
+}
+
+// ── Talent helpers (moved from talents.js, used here) ─────────────────────────
+function _getTalentColor(talentId) {
+    const colors = {
+        ironbound:   '#d4511e',
+        shade:       '#4a3f8f',
+        rift_caller: '#5b8fd4',
+        veil_keeper: '#6b4fa3',
+        wilder:      '#4a8f3e',
+    };
+    return colors[talentId] || '#666';
+}
+
+function _buildModifiersList(modifiers) {
+    return Object.entries(modifiers).map(([skill, mult]) => {
+        const pct   = Math.round((mult - 1) * 100);
+        const sign  = pct > 0 ? '+' : '';
+        const color = pct > 0 ? 'var(--success)' : 'var(--danger)';
+        return `
+            <div class="talent-mod-item">
+                <span class="talent-mod-skill">${skillLabel(skill)}</span>
+                <span class="talent-mod-value" style="color:${color}">${sign}${pct}%</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function _buildSynergyPreview(talentId) {
+    if (typeof getSynergiesForTalent === 'undefined') return '';
+    const synergies = getSynergiesForTalent(talentId);
+    if (!synergies?.length) return '<p class="muted-text" style="font-size:12px">No synergies</p>';
+    return synergies.map(syn => `
+        <div class="talent-synergy-item">
+            <span class="syn-name">${syn.name}</span>
+            <span class="syn-skills">${skillLabel(syn.skills[0])} + ${skillLabel(syn.skills[1])}</span>
+        </div>
+    `).join('');
+}
+
+function _bindTalentButtons(container) {
+    container.querySelectorAll('.talent-select-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const result = PlayerSystem.setTalent(btn.dataset.talentId);
+            if (!result.ok) { Log.add(result.reason, 'danger'); return; }
+            SaveSystem.save();
+            document.getElementById('skills-tab-content').innerHTML =
+                _buildTabContent(_skillsHasTraining(), '');
+            _bindTalentButtons(document.querySelector('.page'));
+        });
+    });
 }

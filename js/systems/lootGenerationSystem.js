@@ -31,29 +31,31 @@ const LootGenerationSystem = {
 
         // Build display name
         const displayName = this._buildDisplayName(baseItem, rarity);
+        const durMax = Math.floor(baseItem.baseDurability * rarityDef.multiplier);
 
-        // Create the item
+        // Create the item using canonical field names expected by inventory/equip systems
         const item = {
-            uid: `item_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
+            uid: Date.now() * 10000 + Math.floor(Math.random() * 10000),
             baseItemId: baseItem.id,
-            displayName,
+            name: displayName,
+            displayName,           // keep for salvage system compatibility
             category: baseItem.category,
             subtype: baseItem.subtype,
             slot: baseItem.slot,
+            tier: tierNum,
             rarity,
             scalingSkill: baseItem.scalingSkill,
             tags: [...(baseItem.tags || [])],
-            rolledStats: {
-                power: finalPower,
-                defense: finalDefense,
-                durabilityMax: Math.floor(baseItem.baseDurability * rarityDef.multiplier),
-            },
-            currentDurability: Math.floor(baseItem.baseDurability * rarityDef.multiplier),
-            maxDurability: Math.floor(baseItem.baseDurability * rarityDef.multiplier),
+            damage: finalPower,
+            defense: finalDefense,
+            durability: durMax,
+            maxDurability: durMax,
             value: finalValue,
-            bonuses: {
-                ...((baseItem.implicitBonuses || {})),
-            },
+            twoHanded: baseItem.handedness === 'two_handed',
+            requiredSkill: baseItem.requirement
+                ? { skill: baseItem.requirement.skill, level: baseItem.requirement.amount }
+                : null,
+            statBonuses: { ...(baseItem.implicitBonuses || {}) },
             sourceContext: {
                 chestTier: tierNum,
                 ...sourceContext,

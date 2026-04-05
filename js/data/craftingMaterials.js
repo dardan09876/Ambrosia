@@ -205,6 +205,18 @@ const CRAFTING_MATERIALS = {
         value: 18,
         tags: ['magical', 'arcane', 'rare'],
     },
+
+    // ── CRAFTED COMPONENTS ────────────────────────────────────────────────────
+    // Produced by professions and used as inputs for higher-tier recipes
+
+    staff_core: {
+        id: 'staff_core',
+        name: 'Staff Core',
+        category: 'crafted_component',
+        tier: 2,
+        value: 15,
+        tags: ['wood', 'magic', 'crafted'],
+    },
 };
 
 // Helper to get material by ID

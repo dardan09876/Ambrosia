@@ -3,8 +3,9 @@
 // Players commit to a talent to gain XP modifiers for their chosen path.
 
 // ── Router registration ────────────────────────────────────────────────────
-Router.register('talents', function renderTalents(container) {
-    _renderTalentsPage(container);
+Router.register('talents', function () {
+    _activeTab = 'talents';
+    Router.navigate('skills');
 });
 
 // ── Page render ────────────────────────────────────────────────────────────

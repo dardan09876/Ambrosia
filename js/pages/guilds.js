@@ -1,7 +1,13 @@
 // js/pages/guilds.js
-// Guild system page - view membership, perks, and join available guilds
+// Guild system page - view membership, perks, and start guild contracts
+
+let _guildTimerInterval = null;
 
 Router.register('guilds', function renderGuilds(container) {
+    if (_guildTimerInterval) {
+        clearInterval(_guildTimerInterval);
+        _guildTimerInterval = null;
+    }
     _renderGuildsPage(container);
 });
 
@@ -11,11 +17,13 @@ function _renderGuildsPage(container) {
     const availableGuilds = PlayerSystem.getAvailableGuilds();
 
     if (currentGuild) {
-        // Player is in a guild - show guild page
-        const rank = PlayerSystem.getGuildRank();
-        const bonuses = PlayerSystem.getGuildBonuses();
+        const rank       = PlayerSystem.getGuildRank();
+        const bonuses    = PlayerSystem.getGuildBonuses();
         const reputation = PlayerSystem.getCurrentGuildReputation();
-        const nextRank = PlayerSystem.getNextGuildRank();
+        const nextRank   = PlayerSystem.getNextGuildRank();
+        const contracts  = (typeof QuestGeneratorSystem !== 'undefined')
+            ? QuestGeneratorSystem.getGuildBoard()
+            : [];
 
         container.innerHTML = `
             <div class="page">
@@ -24,8 +32,8 @@ function _renderGuildsPage(container) {
                     <p class="page-subtitle">"${currentGuild.flavor}"</p>
                 </div>
 
+                <!-- Status + Perks row -->
                 <div class="guild-container">
-                    <!-- Guild Status -->
                     <div class="card guild-status-card">
                         <div class="card-header">Guild Status</div>
                         <div class="card-body">
@@ -36,7 +44,6 @@ function _renderGuildsPage(container) {
                                     <div class="rank-rep">Reputation: ${reputation.toLocaleString()}</div>
                                 </div>
                             </div>
-
                             ${nextRank ? `
                                 <div class="rank-progress">
                                     <div class="rank-next-label">
@@ -55,7 +62,6 @@ function _renderGuildsPage(container) {
                         </div>
                     </div>
 
-                    <!-- Guild Perks -->
                     <div class="card guild-perks-card">
                         <div class="card-header">Active Perks</div>
                         <div class="card-body">
@@ -68,13 +74,10 @@ function _renderGuildsPage(container) {
                                         </div>
                                     `).join('')}
                                 </div>
-                            ` : `
-                                <p class="muted-text">No perks unlocked yet.</p>
-                            `}
+                            ` : `<p class="muted-text">No perks unlocked yet.</p>`}
                         </div>
                     </div>
 
-                    <!-- Guild Description -->
                     <div class="card card-wide">
                         <div class="card-header">About This Guild</div>
                         <div class="card-body">
@@ -82,17 +85,39 @@ function _renderGuildsPage(container) {
                         </div>
                     </div>
                 </div>
+
+                <!-- Active quest tracker (guild contracts only) -->
+                ${_buildGuildActiveQuest(player)}
+
+                <!-- Guild Contracts board -->
+                <div class="guild-contracts-section">
+                    <div class="quest-section-header" style="margin-top:8px">
+                        Guild Contracts
+                        <span class="section-count">${contracts.length}</span>
+                    </div>
+                    <p class="guild-contracts-note muted-text">
+                        Contracts refresh daily. Completing them earns guild reputation.
+                    </p>
+                    <div class="guild-contracts-list">
+                        ${contracts.length
+                            ? contracts.map(q => _buildGuildQuestCard(q, player, currentGuild)).join('')
+                            : '<p class="muted-text" style="padding:12px 0">No contracts available.</p>'
+                        }
+                    </div>
+                </div>
             </div>
         `;
+
+        _bindGuildContractButtons(container);
+        if (player.quests.active) _startGuildTimer(container);
+
     } else if (availableGuilds.length > 0) {
-        // Player can join guilds
         container.innerHTML = `
             <div class="page">
                 <div class="page-header">
                     <h1 class="page-title">Guilds</h1>
                     <p class="page-subtitle">Join a guild to unlock specialized quests and bonuses.</p>
                 </div>
-
                 <div class="guild-selection">
                     ${availableGuilds.map(guild => `
                         <div class="guild-card joinable">
@@ -120,17 +145,15 @@ function _renderGuildsPage(container) {
                 </div>
             </div>
         `;
-
         _bindGuildJoinButtons(container);
+
     } else {
-        // Player cannot join any guild yet
         container.innerHTML = `
             <div class="page">
                 <div class="page-header">
                     <h1 class="page-title">Guilds</h1>
                     <p class="page-subtitle">Reach 500 in specific skills to join a guild.</p>
                 </div>
-
                 <div class="guild-unavailable">
                     ${GUILDS.map(guild => {
                         const canJoin = PlayerSystem.canJoinGuild(guild.id);
@@ -163,6 +186,126 @@ function _renderGuildsPage(container) {
     }
 }
 
+// ── Active quest tracker (shown when a guild quest is running) ────────────────
+function _buildGuildActiveQuest(player) {
+    const active = player.quests.active;
+    if (!active) return '';
+
+    const quest = QuestSystem._findQuest(active.questId);
+    if (!quest?.isGuildQuest) return '';
+
+    const remaining = QuestSystem.getRemainingMs();
+    const progress  = QuestSystem.getProgress();
+    const chance    = QuestSystem.getSuccessChance(quest);
+
+    return `
+        <div class="active-quest-card" style="margin-top:16px">
+            <div class="aq-header">
+                <div class="aq-label">Active Contract</div>
+                <span class="quest-tier-badge tier-badge-${quest.tier}">Tier ${quest.tier}</span>
+            </div>
+            <div class="aq-name">${quest.name}</div>
+            <div class="aq-meta">
+                <span>Eff. ${skillLabel(quest.skillCheck.skill)} ${quest.skillCheck.required.toLocaleString()} required</span>
+                <span class="aq-chance" style="color:${successColor(chance)}">${chance}% success</span>
+            </div>
+            <div class="aq-progress-row">
+                <div class="aq-progress-track">
+                    <div class="aq-progress-fill" id="guild-aq-fill" style="width:${progress}%"></div>
+                </div>
+                <div class="aq-timer" id="guild-quest-countdown">${formatMs(remaining)}</div>
+            </div>
+            <div class="aq-actions">
+                <button class="btn-secondary btn-sm" id="guild-abandon-quest">Abandon contract</button>
+            </div>
+        </div>
+    `;
+}
+
+// ── Guild quest card ──────────────────────────────────────────────────────────
+function _buildGuildQuestCard(quest, player, guild) {
+    const hasActive  = !!player.quests.active;
+    const chance     = QuestSystem.getSuccessChance(quest);
+    const skillVal   = PlayerSystem.getEffectiveSkill(quest.skillCheck.skill);
+    const meetsSkill = skillVal >= quest.skillCheck.required;
+    const chestDef   = CHEST_DEFS[quest.chestReward.tier];
+    const repReward  = quest.guildReputation ?? 0;
+
+    let btnLabel = 'Accept Contract →';
+    if (hasActive) btnLabel = 'Quest Active';
+
+    return `
+        <div class="quest-card guild-contract-card ${hasActive ? 'quest-card-blocked' : ''}">
+            <div class="quest-card-top">
+                <div class="quest-card-left">
+                    <div class="quest-card-name">${quest.name}</div>
+                    <div class="quest-card-desc">${quest.description}</div>
+                    <div class="quest-card-lore">"${quest.lore}"</div>
+                </div>
+                <div class="quest-card-right">
+                    <span class="quest-tier-badge tier-badge-${quest.tier}">Tier ${quest.tier}</span>
+                </div>
+            </div>
+
+            <div class="quest-card-stats">
+                <div class="quest-stat">
+                    <span class="quest-stat-icon">⏱</span>
+                    <span>${formatDuration(quest.duration)}</span>
+                </div>
+                <div class="quest-stat">
+                    <span class="quest-stat-icon">◈</span>
+                    <span>${quest.goldReward.min.toLocaleString()}–${quest.goldReward.max.toLocaleString()} gold</span>
+                </div>
+                <div class="quest-stat">
+                    <span class="quest-stat-icon" style="color:${ITEM_TIER_COLORS[quest.chestReward.tier]}">⬡</span>
+                    <span>${chestDef?.name ?? 'Chest'}</span>
+                </div>
+                <div class="quest-stat">
+                    <span class="quest-stat-icon" style="color:${guild.color}">★</span>
+                    <span>+${repReward} reputation</span>
+                </div>
+                <div class="quest-stat">
+                    <span class="quest-stat-label">Requires:</span>
+                    <span class="${meetsSkill ? 'req-met' : 'req-unmet'}">
+                        Eff. ${skillLabel(quest.skillCheck.skill)} ${quest.skillCheck.required.toLocaleString()}
+                        ${meetsSkill ? '✓' : `(you: ${skillVal.toLocaleString()})`}
+                    </span>
+                </div>
+                <div class="quest-stat">
+                    <span class="quest-stat-label">Success:</span>
+                    <span style="color:${successColor(chance)};font-weight:700">${chance}%</span>
+                </div>
+            </div>
+
+            <div class="quest-card-footer">
+                <button
+                    class="btn-primary btn-sm btn-guild-contract ${hasActive ? 'btn-blocked' : ''}"
+                    data-quest-id="${quest.id}"
+                    ${hasActive ? 'disabled' : ''}
+                    title="${hasActive ? 'A quest is already in progress.' : `Accept: ${quest.name}`}"
+                >${btnLabel}</button>
+            </div>
+        </div>
+    `;
+}
+
+// ── Event binding ─────────────────────────────────────────────────────────────
+function _bindGuildContractButtons(container) {
+    container.querySelectorAll('.btn-guild-contract:not([disabled])').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const result = QuestSystem.start(btn.dataset.questId);
+            if (!result.ok) { Log.add(result.reason, 'warning'); return; }
+            _renderGuildsPage(container);
+        });
+    });
+
+    container.querySelector('#guild-abandon-quest')?.addEventListener('click', () => {
+        if (confirm('Abandon this contract? You will receive no reward.')) {
+            QuestSystem.abandon();
+        }
+    });
+}
+
 function _bindGuildJoinButtons(container) {
     container.querySelectorAll('.guild-join-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -176,4 +319,19 @@ function _bindGuildJoinButtons(container) {
             }
         });
     });
+}
+
+// ── Live countdown timer ──────────────────────────────────────────────────────
+function _startGuildTimer(container) {
+    _guildTimerInterval = setInterval(() => {
+        const countdown = document.getElementById('guild-quest-countdown');
+        const fill      = document.getElementById('guild-aq-fill');
+        if (!countdown && !fill) {
+            clearInterval(_guildTimerInterval);
+            _guildTimerInterval = null;
+            return;
+        }
+        if (countdown) countdown.textContent = formatMs(QuestSystem.getRemainingMs());
+        if (fill)      fill.style.width = `${QuestSystem.getProgress()}%`;
+    }, 1000);
 }

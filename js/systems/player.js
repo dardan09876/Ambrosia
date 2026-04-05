@@ -155,6 +155,7 @@ const PlayerSystem = {
                 head: null, torso: null, back: null,
                 hands: null, legs: null, feet: null,
                 weapon: null, offhand: null,
+                ring_1: null, ring_2: null,
             },
 
             quests: {
@@ -201,7 +202,10 @@ const PlayerSystem = {
         // Force board regeneration if regionId field is missing (old save format)
         if (!('regionId' in this.current.quests.board)) this.current.quests.board.regionId = '';
         if (!this.current.quests.daily) this.current.quests.daily = { date: '', count: 0 };
+        if (!('guildBoard' in this.current.quests)) this.current.quests.guildBoard = null;
         if (!this.current.abilities) this.current.abilities = { unlocked: [], equipped: [] };
+        if (!('ring_1' in this.current.equipment)) this.current.equipment.ring_1 = null;
+        if (!('ring_2' in this.current.equipment)) this.current.equipment.ring_2 = null;
         if (!this.current.abilities.unlocked) this.current.abilities.unlocked = [];
         if (!this.current.abilities.equipped) this.current.abilities.equipped = [];
         // Migrate string location to region ID
@@ -242,6 +246,27 @@ const PlayerSystem = {
             magesmithing: 0,
         };
         if (!this.current.craftingMaterials) this.current.craftingMaterials = {};
+        // Migrate old player.chests array into inventory stacks
+        if (this.current.chests && this.current.chests.length > 0) {
+            for (const chest of this.current.chests) {
+                const tier     = chest.tier || 1;
+                const def      = (typeof CHEST_DEFS !== 'undefined') ? CHEST_DEFS[tier] : null;
+                const name     = def ? def.name : chest.name || `Tier ${tier} Chest`;
+                const existing = this.current.inventory.find(i => i.type === 'chest' && i.tier === tier);
+                if (existing) {
+                    existing.quantity = (existing.quantity || 1) + 1;
+                } else {
+                    this.current.inventory.push({
+                        uid:      Date.now() * 10000 + Math.floor(Math.random() * 10000),
+                        type:     'chest',
+                        tier,
+                        name,
+                        quantity: 1,
+                    });
+                }
+            }
+            this.current.chests = [];
+        }
         // Backfill map fog of war system
         if (!this.current.discoveredLocations) this.current.discoveredLocations = [];
         // Backfill procedural region cache

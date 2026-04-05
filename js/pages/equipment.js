@@ -134,9 +134,9 @@ function _equipInventoryPanel(player) {
     const inv = player.inventory;
     if (inv.length === 0) return '';
 
-    // Only show items that can go into a valid slot
+    // Only show items that can go into a valid slot (rings use 'ring' slot key)
     const equippable = inv.filter(i =>
-        EquipSystem.SLOTS.some(s => s.key === i.slot)
+        i.slot === 'ring' || EquipSystem.SLOTS.some(s => s.key === i.slot)
     );
     if (equippable.length === 0) return '';
 
@@ -151,8 +151,11 @@ function _equipInventoryPanel(player) {
         if (item.damage  > 0) statParts.push(`ATK ${item.damage}`);
         if (item.defense > 0) statParts.push(`DEF ${item.defense}`);
 
-        // Compare against currently equipped item in same slot
-        const current = player.equipment[item.slot];
+        // For rings, compare against the slot that would be replaced
+        const compareSlot = item.slot === 'ring'
+            ? (!player.equipment.ring_1 ? 'ring_1' : !player.equipment.ring_2 ? 'ring_2' : 'ring_1')
+            : item.slot;
+        const current = player.equipment[compareSlot];
         const diffHtml = current ? _equipStatDiff(item, current) : '';
 
         return `
@@ -200,6 +203,7 @@ function _diffSpan(label, val) {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function _equipSlotLabel(slot) {
+    if (slot === 'ring') return 'Ring';
     const s = EquipSystem.SLOTS.find(s => s.key === slot);
     return s ? s.label : slot;
 }

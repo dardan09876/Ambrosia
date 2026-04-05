@@ -41,36 +41,33 @@ const ChestSystem = {
         };
     },
 
-    // Open a chest from the player's chest array by uid.
-    // Returns { items: [], chestName: '', tier: 1 } or null if not found.
+    // Open a chest from player.inventory by uid (stacked chest items).
+    // Returns { items, chestName, tier, gold } or null if not found.
     openFromInventory(uid) {
         const player = PlayerSystem.current;
         if (!player) return null;
 
-        const idx    = player.chests.findIndex(c => c.uid === uid);
-        if (idx === -1) return null;
+        const stack = player.inventory.find(i => i.type === 'chest' && i.uid === uid);
+        if (!stack) return null;
 
-        const chest = player.chests[idx];
-        player.chests.splice(idx, 1);
+        const { tier, name: chestName } = stack;
 
-        const loot = this.open(chest.tier, {
-            sourceType: 'inventory_chest',
-        });
-
-        // Award any guild reputation if applicable
-        if (player.guild && loot.items.length > 0) {
-            // Could add small rep here if desired
+        if ((stack.quantity || 1) <= 1) {
+            player.inventory.splice(player.inventory.indexOf(stack), 1);
+        } else {
+            stack.quantity--;
         }
+
+        const loot = this.open(tier, { sourceType: 'inventory_chest' });
 
         SaveSystem.save();
 
         return {
-            items: loot.items,
-            chestName: chest.name,
-            tier: chest.tier,
-            gold: loot.gold,
+            items:     loot.items,
+            chestName,
+            tier,
+            gold:      loot.gold,
             materials: loot.materials,
-            consumables: loot.consumables,
         };
     },
 };

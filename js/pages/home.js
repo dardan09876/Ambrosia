@@ -64,14 +64,24 @@ Router.register('home', function renderHome(container) {
                             <div class="level-value">LVL ${player.level}</div>
                             <div class="level-title">${player.talent ? (TALENTS.find(t => t.id === player.talent)?.name || 'Unknown') : 'Talentless Wanderer'}</div>
                         </div>
-                        <div class="xp-bar-wrap" style="margin:12px 0">
-                            <div class="stat-bar-track">
-                                <div class="stat-bar-fill" style="width:${PlayerSystem.getXpProgress()}%;background:#5b8fd4"></div>
-                            </div>
-                        </div>
-                        <div class="muted-text" style="font-size:12px">
-                            ${player.experience.toLocaleString()} / ${PlayerSystem.getXpForNextLevel().toLocaleString()} XP
-                        </div>
+                        ${(() => {
+                            const xpCurrent   = PlayerSystem.getXpForCurrentLevel();
+                            const xpNext      = PlayerSystem.getXpForNextLevel();
+                            const xpInLevel   = Math.max(0, player.experience - xpCurrent);
+                            const xpNeeded    = Math.max(1, xpNext - xpCurrent);
+                            const pct         = Math.min(100, Math.round((xpInLevel / xpNeeded) * 100));
+                            return `
+                                <div class="xp-bar-wrap" style="margin:10px 0 4px">
+                                    <div class="xp-bar-track">
+                                        <div class="xp-bar-fill" style="width:${pct}%"></div>
+                                    </div>
+                                </div>
+                                <div class="xp-bar-label">
+                                    <span class="muted-text" style="font-size:11px">${xpInLevel.toLocaleString()} / ${xpNeeded.toLocaleString()} XP</span>
+                                    <span class="muted-text" style="font-size:11px">${pct}%</span>
+                                </div>
+                            `;
+                        })()}
                         ${player.level >= 15 && !player.talent ? `
                             <button class="btn-primary" style="width:100%;margin-top:8px" id="home-talent-btn">
                                 Choose Talent
@@ -144,6 +154,14 @@ Router.register('home', function renderHome(container) {
                             <div class="tip-item">
                                 <span class="tip-icon">◎</span>
                                 <span>Visit the <strong>Market</strong> to buy food and repair worn equipment.</span>
+                            </div>
+                            <div class="tip-item">
+                                <span class="tip-icon">◆</span>
+                                <span>You can join a <strong>guild</strong> once you reach the required combat stats.</span>
+                            </div>
+                            <div class="tip-item">
+                                <span class="tip-icon">✦</span>
+                                <span>Once you reach level <strong>15</strong> choose a talent to focus your skills.</span>
                             </div>
                         </div>
                     </div>

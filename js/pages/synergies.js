@@ -2,8 +2,9 @@
 // Synergies page — shows passive bonuses unlocked by training complementary skills.
 // Only available after choosing a talent.
 
-Router.register('synergies', function renderSynergies(container) {
-    _renderSynergiesPage(container);
+Router.register('synergies', function () {
+    _activeTab = 'synergies';
+    Router.navigate('skills');
 });
 
 function _renderSynergiesPage(container) {
@@ -73,8 +74,8 @@ function _buildSynergyCard(data) {
                 </div>
                 <div class="synergy-progress">
                     <div class="synergy-progress-label">
-                        <span>${skill1}: ${player.skills[synergy.skills[0]] || 0}</span>
-                        <span>${skill2}: ${player.skills[synergy.skills[1]] || 0}</span>
+                        <span>${skill1}: ${(PlayerSystem.current.skills[synergy.skills[0]] || 0)}</span>
+                        <span>${skill2}: ${(PlayerSystem.current.skills[synergy.skills[1]] || 0)}</span>
                     </div>
                     <div class="stat-bar-track">
                         <div class="stat-bar-fill" style="width:${Math.min(100, (synergyValue / 50) * 100)}%;background:#444"></div>

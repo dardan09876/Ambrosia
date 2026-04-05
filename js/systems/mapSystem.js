@@ -16,57 +16,6 @@ const MapSystem = {
         5: 1000,   // endgame — fortified regions
     },
 
-    // ── Difficulty formula (tied to distance from Ashenveil center) ─────────
-    // Returns difficulty 1–8 based on world hex distance from ashenveil_heart.
-    // Used to scale quests, encounters, loot, and access requirements.
-    getRegionDifficulty(distanceFromCenter) {
-        return Math.floor(1 + distanceFromCenter * 1.5);
-    },
-
-    // Cube-distance between two world hexes
-    worldHexDistance(idA, idB) {
-        const a = MAP_WORLD[idA];
-        const b = MAP_WORLD[idB];
-        if (!a || !b) return 0;
-        return (Math.abs(a.q - b.q) + Math.abs(a.q + a.r - b.q - b.r) + Math.abs(a.r - b.r)) / 2;
-    },
-
-    // Difficulty of a specific world hex (distance from ashenveil_heart)
-    getWorldHexDifficulty(worldHexId) {
-        const dist = this.worldHexDistance('ashenveil_heart', worldHexId);
-        return this.getRegionDifficulty(dist);
-    },
-
-    // ── World hex skill-gate check ────────────────────────────────────────────
-    // World hexes use a simple { skill: minLevel } map (all must be met).
-    // Also supports { totalSkill: N } for ruins zones.
-    meetsWorldHexReq(player, required) {
-        if (!required) return { ok: true };
-        if (!player) return { ok: false, reason: 'No player.' };
-
-        // totalSkill gate (ruins)
-        if (required.totalSkill != null) {
-            const total = PlayerSystem.getTotalSkill();
-            if (total < required.totalSkill) {
-                return { ok: false, reason: `Need ${required.totalSkill} total skill (you have ${total}).` };
-            }
-            return { ok: true };
-        }
-
-        // Individual skill gates — ALL must be met
-        const missing = [];
-        for (const [skill, minLevel] of Object.entries(required)) {
-            const playerLevel = PlayerSystem.getSkill(skill);
-            if (playerLevel < minLevel) {
-                missing.push(`${skillLabel ? skillLabel(skill) : skill} ${minLevel}`);
-            }
-        }
-        if (missing.length > 0) {
-            return { ok: false, reason: `Requires: ${missing.join(', ')}.` };
-        }
-        return { ok: true };
-    },
-
     // ── Adjacency ─────────────────────────────────────────────────────────────
     getAdjacentIds(regionId) {
         const region = MAP_REGIONS[regionId];
@@ -177,7 +126,7 @@ const MapSystem = {
         return { ok: true, totalCost };
     },
 
-    // ── Instant travel to adjacent region — deducts gold + energy ─────────────
+    // ── Instant travel to adjacent region — deducts gold ─────────────────────
     travel(toId) {
         const check = this.canTravel(toId);
         if (!check.ok) return check;
@@ -190,26 +139,15 @@ const MapSystem = {
             return { ok: false, reason: `Not enough gold. Travel to ${dest.name} costs ${cost.toLocaleString()}g (you have ${player.gold.toLocaleString()}g).` };
         }
 
-        // Check energy cost based on destination terrain
-        const tileType = TILE_TYPES[dest.terrain] || TILE_TYPES.plains;
-        const energyCost = tileType.movementCost;
-        const playerEnergy = player.stats.energy.value;
-        if (playerEnergy < energyCost) {
-            return { ok: false, reason: `Too tired to travel. Need ${energyCost} energy, have ${playerEnergy}.` };
-        }
-
         player.gold    -= cost;
-        player.stats.energy.value -= energyCost;
         player.location = toId;
-        this.discoverAround(player, toId);
-        this._rollEncounter(player, dest);
         Log.add(`Travelled to ${dest.name} for ${cost.toLocaleString()}g.`, 'info');
         SaveSystem.save();
 
         return { ok: true, region: dest };
     },
 
-    // ── Instant multi-hop travel — deducts total gold + energy upfront ────────
+    // ── Instant multi-hop travel — deducts total gold upfront ─────────────────
     travelPath(path) {
         if (!path || path.length === 0) return { ok: false, reason: 'Empty path.' };
 
@@ -221,16 +159,6 @@ const MapSystem = {
         const costInfo = this.pathTravelCost(path);
         if (!costInfo.ok) return costInfo;
 
-        // Calculate total energy cost for entire path
-        let totalEnergyCost = 0;
-        for (const regionId of path) {
-            const region = MAP_REGIONS[regionId];
-            if (region) {
-                const tileType = TILE_TYPES[region.terrain] || TILE_TYPES.plains;
-                totalEnergyCost += tileType.movementCost;
-            }
-        }
-
         const finalId   = path[path.length - 1];
         const finalDest = MAP_REGIONS[finalId];
 
@@ -241,17 +169,8 @@ const MapSystem = {
             };
         }
 
-        if (player.stats.energy.value < totalEnergyCost) {
-            return {
-                ok: false,
-                reason: `Too tired to travel. Journey costs ${totalEnergyCost} energy (you have ${player.stats.energy.value}).`,
-            };
-        }
-
         player.gold    -= costInfo.totalCost;
-        player.stats.energy.value -= totalEnergyCost;
         player.location = finalId;
-        this.discoverAround(player, finalId);
 
         const stops    = path.length - 1;
         const stopsStr = stops > 0 ? ` via ${stops} stop${stops > 1 ? 's' : ''}` : '';
@@ -259,45 +178,6 @@ const MapSystem = {
         SaveSystem.save();
 
         return { ok: true };
-    },
-
-    // ── Fog of War: Discover tiles within 2-tile radius on travel ─────────────
-    discoverAround(player, regionId) {
-        if (!player || !player.discoveredLocations) return;
-
-        const discovered = new Set(player.discoveredLocations);
-        discovered.add(regionId);
-
-        // Ring 1 — all adjacent tiles
-        const ring1 = this.getAdjacentIds(regionId);
-        for (const adjId of ring1) {
-            discovered.add(adjId);
-            // Ring 2 — tiles adjacent to ring 1 (2-tile radius)
-            for (const adj2Id of this.getAdjacentIds(adjId)) {
-                discovered.add(adj2Id);
-            }
-        }
-
-        player.discoveredLocations = Array.from(discovered);
-    },
-
-    // ── Encounter roll on tile entry ─────────────────────────────────────────
-    _rollEncounter(player, region) {
-        if (!region || !region.terrain) return;
-        const tileType = (typeof TILE_TYPES !== 'undefined' ? TILE_TYPES[region.terrain] : null)
-            || { encounterChance: 0, encounterTypes: [] };
-
-        if (!tileType.encounterChance) return;
-        if (Math.random() >= tileType.encounterChance) return;
-
-        const types = tileType.encounterTypes || [];
-        const name = types.length
-            ? types[Math.floor(Math.random() * types.length)]
-            : 'wandering enemies';
-
-        if (typeof Log !== 'undefined') {
-            Log.add(`⚔ Encounter: ${name} near ${region.name}.`, 'danger');
-        }
     },
 
     // ── Travel state — travel is now instant; these stubs preserve compatibility

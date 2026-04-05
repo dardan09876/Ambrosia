@@ -13,6 +13,8 @@ const EquipSystem = {
         { key: 'hands',   label: 'Hands'     },
         { key: 'legs',    label: 'Legs'      },
         { key: 'feet',    label: 'Feet'      },
+        { key: 'ring_1',  label: 'Ring 1'    },
+        { key: 'ring_2',  label: 'Ring 2'    },
     ],
 
     // ── Equip an item from inventory by uid ───────────────────────
@@ -22,7 +24,13 @@ const EquipSystem = {
         if (idx === -1) return { ok: false, reason: 'Item not found in inventory.' };
 
         const item = player.inventory[idx];
-        const slot = item.slot;
+        // Rings: fill ring_1 first, then ring_2; if both full, replace ring_1
+        let slot = item.slot;
+        if (slot === 'ring') {
+            slot = !player.equipment.ring_1 ? 'ring_1'
+                 : !player.equipment.ring_2 ? 'ring_2'
+                 : 'ring_1';
+        }
 
         if (!Object.prototype.hasOwnProperty.call(player.equipment, slot)) {
             return { ok: false, reason: `Unknown equipment slot: ${slot}.` };

@@ -25,6 +25,7 @@ const WEAPON_TYPE_LABELS = {
     sword:              'Sword',
     mace:               'Mace',
     hammer:             'Hammer',
+    axe:                'Axe',
     spear:              'Spear',
     greatsword:         'Greatsword',
     dagger:             'Dagger',
@@ -1212,12 +1213,139 @@ const ITEMS = {
         statBonuses: { mana: 65, energy: 30 },
         description: 'Walk on air, water, or the memory of a surface.',
     },
+
+    // ═══════════════════════════════════════════════════════════════
+    //  CRAFTED ITEMS — produced by professions from gathered materials
+    // ═══════════════════════════════════════════════════════════════
+
+    // ── Crafted weapons ───────────────────────────────────────────
+    iron_axe: {
+        id: 'iron_axe', name: 'Iron Axe',
+        slot: 'weapon', category: 'weapon', weaponType: 'axe',
+        damage: 20, defense: 0, tier: 2, durability: 170, maxDurability: 170,
+        requiredSkill: { skill: 'melee', level: 100 },
+        description: 'A heavy iron axe forged for powerful strikes.',
+    },
+    short_bow: {
+        id: 'short_bow', name: 'Short Bow',
+        slot: 'weapon', category: 'weapon', weaponType: 'bow', twoHanded: true,
+        damage: 12, defense: 0, tier: 1, durability: 85, maxDurability: 85,
+        requiredSkill: { skill: 'ranged', level: 0 },
+        description: 'A nimble crafted bow favoured for speed over range.',
+    },
+    quarterstaff: {
+        id: 'quarterstaff', name: 'Quarterstaff',
+        slot: 'weapon', category: 'weapon', weaponType: 'staff_magic', twoHanded: true,
+        damage: 8, defense: 2, tier: 1, durability: 100, maxDurability: 100,
+        requiredSkill: { skill: 'magic', level: 0 },
+        statBonuses: { mana: 5 },
+        description: 'A sturdy wooden staff for combat and cantrips.',
+    },
+    infused_staff: {
+        id: 'infused_staff', name: 'Infused Staff',
+        slot: 'weapon', category: 'weapon', weaponType: 'staff_magic', twoHanded: true,
+        damage: 28, defense: 0, tier: 2, durability: 140, maxDurability: 140,
+        requiredSkill: { skill: 'magic', level: 100 },
+        statBonuses: { mana: 12, focus: 6 },
+        description: 'A staff core saturated with rift energy. Amplifies arcane output considerably.',
+    },
+
+    // ── Crafted armor ─────────────────────────────────────────────
+    padded_gloves: {
+        id: 'padded_gloves', name: 'Padded Gloves',
+        slot: 'hands', category: 'armor', armorClass: 'light',
+        damage: 0, defense: 2, tier: 1, durability: 60, maxDurability: 60,
+        requiredSkill: { skill: 'stealth', level: 0 },
+        statBonuses: { energy: 2, focus: 1 },
+        description: 'Simple padded gloves stitched from cloth and leather.',
+    },
+    travelers_hood: {
+        id: 'travelers_hood', name: "Traveler's Hood",
+        slot: 'head', category: 'armor', armorClass: 'light',
+        damage: 0, defense: 3, tier: 1, durability: 65, maxDurability: 65,
+        requiredSkill: { skill: 'stealth', level: 0 },
+        statBonuses: { energy: 2, focus: 1 },
+        description: 'A hooded garment that keeps the weather off and the wearer anonymous.',
+    },
+    ashen_cloak: {
+        id: 'ashen_cloak', name: 'Ashen Cloak',
+        slot: 'back', category: 'armor', armorClass: 'light',
+        damage: 0, defense: 6, tier: 2, durability: 110, maxDurability: 110,
+        requiredSkill: { skill: 'stealth', level: 100 },
+        statBonuses: { energy: 6, focus: 4 },
+        description: 'Woven from ash-bleached cloth and stiffened with resin. Resists corruption.',
+    },
+    buckler_shield: {
+        id: 'buckler_shield', name: 'Buckler Shield',
+        slot: 'offhand', category: 'armor', weaponType: 'shield',
+        damage: 0, defense: 6, tier: 1, durability: 100, maxDurability: 100,
+        requiredSkill: { skill: 'defense', level: 0 },
+        statBonuses: { stamina: 3, health: 2 },
+        description: 'A small round shield. Light enough to use alongside most weapons.',
+    },
+
+    // ── Crafted jewelry ───────────────────────────────────────────
+    warded_ring: {
+        id: 'warded_ring', name: 'Warded Ring',
+        slot: 'ring', category: 'jewelry',
+        damage: 0, defense: 0, tier: 2, durability: 50, maxDurability: 50,
+        requiredSkill: null,
+        statBonuses: { mana: 15, focus: 5 },
+        description: 'An iron band set with a warding sigil. Dampens minor magical disruption.',
+    },
+
+    // ── Crafted consumables ───────────────────────────────────────
+    // These are usable items produced by Alchemy and other professions.
+    // They do not have slots, damage, or durability — use _invConsumableCard to render.
+    weak_healing_tonic: {
+        id: 'weak_healing_tonic', name: 'Weak Healing Tonic',
+        type: 'consumable', category: 'consumable',
+        tier: 1, value: 8,
+        effect: { stat: 'health', amount: 25 },
+        description: 'A basic healing draught. Restores 25 health.',
+    },
+    weak_mana_tonic: {
+        id: 'weak_mana_tonic', name: 'Weak Mana Tonic',
+        type: 'consumable', category: 'consumable',
+        tier: 1, value: 10,
+        effect: { stat: 'mana', amount: 25 },
+        description: 'A crystalline blue draught. Restores 25 mana.',
+    },
+    stamina_draught: {
+        id: 'stamina_draught', name: 'Stamina Draught',
+        type: 'consumable', category: 'consumable',
+        tier: 1, value: 10,
+        effect: { stat: 'stamina', amount: 30 },
+        description: 'A thick amber liquid. Restores 30 stamina.',
+    },
+    dried_ration_pack: {
+        id: 'dried_ration_pack', name: 'Dried Ration Pack',
+        type: 'consumable', category: 'consumable',
+        tier: 1, value: 7,
+        effect: { stat: 'food', amount: 20 },
+        description: 'Compact dried food. Restores 20 food.',
+    },
+    minor_rift_ward: {
+        id: 'minor_rift_ward', name: 'Minor Rift Ward',
+        type: 'consumable', category: 'consumable',
+        tier: 2, value: 18,
+        effect: { stat: 'ward', duration: 300 },
+        description: 'A warding draught that briefly suppresses rift corruption effects.',
+    },
+    weapon_repair_kit: {
+        id: 'weapon_repair_kit', name: 'Weapon Repair Kit',
+        type: 'consumable', category: 'consumable',
+        tier: 1, value: 12,
+        effect: { stat: 'repair', amount: 60 },
+        description: 'Oil, whetstone, and scraps. Repairs 60 durability on your equipped weapon.',
+    },
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function getItemValue(item) {
-    return Math.floor((item.damage + item.defense + 5) * item.tier * 4);
+    if (item.value != null) return item.value;
+    return Math.floor(((item.damage || 0) + (item.defense || 0) + 5) * (item.tier || 1) * 4);
 }
 
 // Returns a fresh shallow copy (with statBonuses deep-copied) from base definitions

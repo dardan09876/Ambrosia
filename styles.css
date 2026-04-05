@@ -2584,7 +2584,7 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
     flex: 1;
     min-width: 0;
     min-height: 640px;
-    background: #152535;
+    background: #0d1e32;
     border: 1px solid var(--border);
     border-radius: 6px;
     overflow: hidden;
@@ -3038,6 +3038,25 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
 
 .xp-bar-wrap {
     width: 100%;
+}
+.xp-bar-track {
+    height: 10px;
+    background: var(--bg-elevated);
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+.xp-bar-fill {
+    height: 100%;
+    border-radius: 5px;
+    background: linear-gradient(90deg, #4a72c4, #6a9ae0);
+    transition: width 500ms ease;
+    min-width: 2px;
+}
+.xp-bar-label {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
 }
 
 .talent-selection {
@@ -3537,6 +3556,26 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
 
 .req-value {
     font-weight: 500;
+}
+
+/* ── Guild Contracts ──────────────────────────────────────────── */
+.guild-contracts-section {
+    margin-top: 8px;
+}
+
+.guild-contracts-note {
+    font-size: 12px;
+    margin: 4px 0 12px;
+}
+
+.guild-contracts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.guild-contract-card {
+    border-left: 3px solid var(--gold-dim);
 }
 
 /* ─────────────────────────────────────────────────────────────

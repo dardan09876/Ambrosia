@@ -11,7 +11,7 @@ const RECIPES = [
         name: 'Weak Healing Tonic',
         profession: 'alchemy',
         tier: 1,
-        requiredSkill: 1,
+        requiredSkill: 100,
         description: 'A basic healing draught for minor wounds.',
         materials: [
             { itemId: 'herbs', amount: 2 },
@@ -29,7 +29,7 @@ const RECIPES = [
         name: 'Weak Mana Tonic',
         profession: 'alchemy',
         tier: 1,
-        requiredSkill: 3,
+        requiredSkill: 200,
         description: 'Restores a small amount of mana.',
         materials: [
             { itemId: 'herbs', amount: 2 },
@@ -47,7 +47,7 @@ const RECIPES = [
         name: 'Stamina Draught',
         profession: 'alchemy',
         tier: 1,
-        requiredSkill: 5,
+        requiredSkill: 300,
         description: 'Restores stamina for continued exertion.',
         materials: [
             { itemId: 'herbs', amount: 2 },
@@ -65,7 +65,7 @@ const RECIPES = [
         name: 'Dried Ration Pack',
         profession: 'alchemy',
         tier: 1,
-        requiredSkill: 1,
+        requiredSkill: 100,
         description: 'Dried food for survival during travel.',
         materials: [
             { itemId: 'beast_fat', amount: 1 },
@@ -83,7 +83,7 @@ const RECIPES = [
         name: 'Minor Rift Ward',
         profession: 'alchemy',
         tier: 2,
-        requiredSkill: 8,
+        requiredSkill: 500,
         description: 'Protects against minor rift corruption.',
         materials: [
             { itemId: 'veil_dust', amount: 1 },
@@ -106,7 +106,7 @@ const RECIPES = [
         name: 'Iron Dagger',
         profession: 'blacksmithing',
         tier: 1,
-        requiredSkill: 1,
+        requiredSkill: 100,
         description: 'A reliable iron dagger for close combat.',
         materials: [
             { itemId: 'iron_ingot', amount: 2 },
@@ -123,7 +123,7 @@ const RECIPES = [
         name: 'Iron Sword',
         profession: 'blacksmithing',
         tier: 1,
-        requiredSkill: 5,
+        requiredSkill: 300,
         description: 'A solid iron sword for melee combat.',
         materials: [
             { itemId: 'iron_ingot', amount: 3 },
@@ -141,7 +141,7 @@ const RECIPES = [
         name: 'Iron Axe',
         profession: 'blacksmithing',
         tier: 1,
-        requiredSkill: 8,
+        requiredSkill: 500,
         description: 'A heavy iron axe for powerful strikes.',
         materials: [
             { itemId: 'iron_ingot', amount: 3 },
@@ -158,7 +158,7 @@ const RECIPES = [
         name: 'Weapon Repair Kit',
         profession: 'blacksmithing',
         tier: 1,
-        requiredSkill: 4,
+        requiredSkill: 250,
         description: 'Restores durability to damaged weapons.',
         materials: [
             { itemId: 'iron_ingot', amount: 1 },
@@ -181,7 +181,7 @@ const RECIPES = [
         name: 'Padded Gloves',
         profession: 'tailoring',
         tier: 1,
-        requiredSkill: 1,
+        requiredSkill: 100,
         description: 'Simple padded gloves for protection.',
         materials: [
             { itemId: 'cloth_scraps', amount: 2 },
@@ -198,7 +198,7 @@ const RECIPES = [
         name: 'Traveler\'s Hood',
         profession: 'tailoring',
         tier: 1,
-        requiredSkill: 4,
+        requiredSkill: 250,
         description: 'A hooded cloak for travel and warmth.',
         materials: [
             { itemId: 'woven_cloth', amount: 3 },
@@ -215,7 +215,7 @@ const RECIPES = [
         name: 'Ashen Cloak',
         profession: 'tailoring',
         tier: 2,
-        requiredSkill: 9,
+        requiredSkill: 600,
         description: 'A cloak touched by ash and rift energy.',
         materials: [
             { itemId: 'woven_cloth', amount: 4 },
@@ -238,7 +238,7 @@ const RECIPES = [
         name: 'Iron Helm',
         profession: 'armorsmithing',
         tier: 1,
-        requiredSkill: 6,
+        requiredSkill: 350,
         description: 'A protective iron helmet.',
         materials: [
             { itemId: 'iron_ingot', amount: 3 },
@@ -255,7 +255,7 @@ const RECIPES = [
         name: 'Iron Greaves',
         profession: 'armorsmithing',
         tier: 2,
-        requiredSkill: 10,
+        requiredSkill: 750,
         description: 'Iron leg protection for defense.',
         materials: [
             { itemId: 'iron_ingot', amount: 4 },
@@ -272,7 +272,7 @@ const RECIPES = [
         name: 'Buckler Shield',
         profession: 'armorsmithing',
         tier: 1,
-        requiredSkill: 7,
+        requiredSkill: 400,
         description: 'A small protective shield.',
         materials: [
             { itemId: 'iron_ingot', amount: 2 },
@@ -295,7 +295,7 @@ const RECIPES = [
         name: 'Short Bow',
         profession: 'woodworking',
         tier: 1,
-        requiredSkill: 5,
+        requiredSkill: 300,
         description: 'A nimble bow for ranged combat.',
         materials: [
             { itemId: 'treated_plank', amount: 2 },
@@ -313,7 +313,7 @@ const RECIPES = [
         name: 'Quarterstaff',
         profession: 'woodworking',
         tier: 1,
-        requiredSkill: 1,
+        requiredSkill: 100,
         description: 'A sturdy wooden staff for combat.',
         materials: [
             { itemId: 'rough_wood', amount: 2 },
@@ -330,7 +330,7 @@ const RECIPES = [
         name: 'Staff Core',
         profession: 'woodworking',
         tier: 2,
-        requiredSkill: 8,
+        requiredSkill: 500,
         description: 'A magical staff core for arcane use.',
         materials: [
             { itemId: 'treated_plank', amount: 2 },
@@ -352,7 +352,7 @@ const RECIPES = [
         name: 'Warded Ring',
         profession: 'magesmithing',
         tier: 2,
-        requiredSkill: 10,
+        requiredSkill: 750,
         description: 'A ring that provides magical protection.',
         materials: [
             { itemId: 'iron_ingot', amount: 1 },
@@ -370,7 +370,7 @@ const RECIPES = [
         name: 'Infused Staff',
         profession: 'magesmithing',
         tier: 2,
-        requiredSkill: 12,
+        requiredSkill: 900,
         description: 'A staff infused with rift energy.',
         materials: [
             { itemId: 'staff_core', amount: 1 },

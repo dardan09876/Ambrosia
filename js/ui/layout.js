@@ -7,8 +7,6 @@ const Layout = {
     NAV_ITEMS: [
         { page: 'home',      label: 'Home',      icon: '⌂' },
         { page: 'skills',    label: 'Skills',    icon: '✦' },
-        { page: 'talents',   label: 'Talents',   icon: '✦' },
-        { page: 'synergies', label: 'Synergies', icon: '◇' },
         { page: 'guilds',    label: 'Guilds',    icon: '◆' },
         { page: 'quests',    label: 'Quests',    icon: '◈' },
         { page: 'inventory', label: 'Inventory', icon: '◫' },

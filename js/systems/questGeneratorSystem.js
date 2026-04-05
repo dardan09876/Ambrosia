@@ -196,4 +196,68 @@ const QuestGeneratorSystem = {
             guildReputation: 10,
         };
     },
+
+    // ── Tier / duration helpers ───────────────────────────────────────────────
+    _tierFromSkill(skillValue) {
+        if (skillValue >= 400) return 5;
+        if (skillValue >= 250) return 4;
+        if (skillValue >= 150) return 3;
+        if (skillValue >= 75)  return 2;
+        return 1;
+    },
+
+    _durationFromTier(tier) {
+        return [0, 600, 1800, 3600, 7200, 14400][tier] ?? 600;
+    },
+
+    // Normalize a raw generated quest to the format QuestSystem expects
+    _normalizeQuest(raw) {
+        const primaryCheck  = raw.checks?.[0] ?? { skill: 'melee', required: 10 };
+        const skillValue    = primaryCheck.required;
+        const tier          = this._tierFromSkill(skillValue);
+        const duration      = this._durationFromTier(tier);
+        const chestTier     = Math.min(5, tier);
+        const guildDef      = typeof getGuild !== 'undefined' ? getGuild(raw.guild) : null;
+        const baseGold      = Math.max(10, Math.floor(skillValue * 0.4));
+
+        return {
+            id:             raw.id,
+            templateId:     raw.templateId,
+            name:           raw.name,
+            description:    raw.description,
+            category:       raw.category,
+            location:       raw.location,
+            guild:          raw.guild,
+            tier,
+            duration,
+            skillCheck:     primaryCheck,
+            secondaryCheck: raw.checks?.[1] ?? null,
+            lore: `Contracted through ${guildDef?.name ?? 'the guild'} — ${raw.location}.`,
+            goldReward:     { min: baseGold, max: Math.floor(baseGold * 1.5) },
+            chestReward:    { tier: chestTier, count: 1 },
+            guildReputation: tier * 10,
+            isGuildQuest:   true,
+        };
+    },
+
+    // Get (or generate) today's guild contract board, cached in player state
+    getGuildBoard() {
+        const player = PlayerSystem.current;
+        if (!player?.guild) return [];
+
+        const d       = new Date();
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        const board   = player.quests.guildBoard;
+
+        if (board?.date === dateStr && board?.guildId === player.guild && board?.quests?.length > 0) {
+            return board.quests;
+        }
+
+        const raw    = this.generateGuildQuests(3);
+        const quests = raw.map(q => this._normalizeQuest(q));
+
+        player.quests.guildBoard = { date: dateStr, guildId: player.guild, quests };
+        SaveSystem.save();
+        return quests;
+    },
 };
