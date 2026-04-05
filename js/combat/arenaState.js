@@ -19,6 +19,7 @@ const ArenaState = {
     totalGold:       0,  // gold earned this run
     totalTokens:     0,  // arena tokens earned this run
     chestsEarned:    [], // { tier, name } objects
+    runBuffs:        [], // active consumable buff objects for this run
 
     _interval:  null,    // setInterval handle for combat ticks
 
@@ -36,6 +37,7 @@ const ArenaState = {
         this.totalGold  = 0;
         this.totalTokens = 0;
         this.chestsEarned = [];
+        this.runBuffs   = [];
         if (this._interval) { clearInterval(this._interval); this._interval = null; }
     },
 

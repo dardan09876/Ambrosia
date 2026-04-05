@@ -158,6 +158,17 @@ const PlayerSystem = {
                 ring_1: null, ring_2: null,
             },
 
+            arenaTokens: 0,
+            arenaUpgrades: {
+                healthBoost: 0, roundRecovery: 0, manaRegen: 0,
+                staminaBonus: 0, combatDamage: 0, tokenGain: 0, goldBonus: 0,
+            },
+            arenaConsumables: {
+                gladiators_ration: 0, adrenaline_draft: 0,
+                mana_surge_potion: 0, second_wind_elixir: 0,
+            },
+            pendingArenaBuffs: [],
+
             quests: {
                 active: null,
                 completed: [],
@@ -206,6 +217,11 @@ const PlayerSystem = {
         if (!this.current.abilities) this.current.abilities = { unlocked: [], equipped: [] };
         if (!('ring_1' in this.current.equipment)) this.current.equipment.ring_1 = null;
         if (!('ring_2' in this.current.equipment)) this.current.equipment.ring_2 = null;
+        // Backfill arena progression
+        if (this.current.arenaTokens == null) this.current.arenaTokens = 0;
+        if (!this.current.arenaUpgrades) this.current.arenaUpgrades = { healthBoost: 0, roundRecovery: 0, manaRegen: 0, staminaBonus: 0, combatDamage: 0, tokenGain: 0, goldBonus: 0 };
+        if (!this.current.arenaConsumables) this.current.arenaConsumables = { gladiators_ration: 0, adrenaline_draft: 0, mana_surge_potion: 0, second_wind_elixir: 0 };
+        if (!this.current.pendingArenaBuffs) this.current.pendingArenaBuffs = [];
         if (!this.current.abilities.unlocked) this.current.abilities.unlocked = [];
         if (!this.current.abilities.equipped) this.current.abilities.equipped = [];
         // Migrate string location to region ID

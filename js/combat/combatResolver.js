@@ -53,6 +53,9 @@ const CombatResolver = {
 
     // ── Check dodge ─────────────────────────────────────────────────────────────
     _tryDodge(target) {
+        // Passive dodge from Survivor's Cloak
+        if ((target.passiveDodgeChance || 0) > 0 && Math.random() < target.passiveDodgeChance) return true;
+        // Effect-based dodge
         for (const eff of target.effects) {
             if ((eff.id === 'dodge_up') && Math.random() < eff.dodgeChance) return true;
         }
@@ -68,6 +71,21 @@ const CombatResolver = {
         const attackPower = ability.baseDamage + Math.floor(skillVal * 0.55);
         const mitigation  = Math.floor(defenseVal * 0.28);
         let   damage      = Math.max(1, attackPower - mitigation);
+
+        // Arena damage multiplier (upgrades + Gladiator's Spear)
+        if ((user.arenaDamageMultiplier || 1) !== 1) {
+            damage = Math.floor(damage * user.arenaDamageMultiplier);
+        }
+
+        // Flat arena damage bonus (Amulet of Momentum stacks)
+        if (user.arenaDamageFlat) {
+            damage += user.arenaDamageFlat;
+        }
+
+        // Executioner's Axe: +50% damage vs enemies below 30% HP
+        if (user.executioner && target.health / target.maxHealth < 0.30) {
+            damage = Math.floor(damage * 1.5);
+        }
 
         // Crit check
         const critChance = (ability.critBonus || 0);

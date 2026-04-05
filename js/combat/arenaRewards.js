@@ -28,7 +28,18 @@ const ArenaRewards = {
     // Apply round rewards to the player and ArenaState totals
     applyRound(round) {
         const player  = PlayerSystem.current;
-        const { gold, tokens } = this.roundReward(round);
+        const upg     = player.arenaUpgrades || {};
+        const { gold: baseGold, tokens: baseTokens } = this.roundReward(round);
+
+        // Apply War Profiteer upgrade (+10% gold per level)
+        const gold   = Math.floor(baseGold * (1 + (upg.goldBonus || 0) * 0.10));
+
+        // Apply Crowd Favorite upgrade (+1 token per 5 rounds per level)
+        let tokens = baseTokens;
+        if ((upg.tokenGain || 0) > 0 && round % 5 === 0) tokens += upg.tokenGain;
+
+        // Apply Token Charm (+1 token every 3 rounds)
+        if (ArenaState.player?.tokenBonus && round % 3 === 0) tokens += 1;
 
         player.gold          += gold;
         player.arenaTokens    = (player.arenaTokens || 0) + tokens;
