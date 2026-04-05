@@ -4198,3 +4198,140 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
     margin-top: 2px;
 }
 
+
+/* ── Arena ─────────────────────────────────────────────── */
+.arena-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+}
+.arena-start-card { grid-column: 1 / -1; }
+.arena-hint { color: var(--text-muted); font-size: 12px; margin-bottom: 8px; }
+.arena-warn { color: var(--warning); font-size: 12px; margin-bottom: 12px; }
+
+.arena-ability-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.arena-ability-tag {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    padding: 3px 8px;
+    font-size: 12px;
+    color: var(--gold);
+}
+
+.arena-tokens-display {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 20px; font-weight: 600; color: var(--gold);
+    margin-bottom: 8px;
+}
+.arena-token-icon { font-size: 18px; }
+.arena-token-label { font-size: 13px; color: var(--text-muted); font-weight: 400; }
+
+.arena-last-run {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.arena-start-btn { margin-top: 4px; }
+
+/* Status line */
+.arena-status {
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+.arena-status-active { background: var(--bg-elevated); color: var(--gold); border: 1px solid var(--gold-dim); }
+.arena-status-win    { background: #162416; color: var(--success); border: 1px solid var(--success); }
+.arena-status-loss   { background: #241616; color: var(--danger);  border: 1px solid var(--danger);  }
+
+/* Fight grid */
+.arena-fight-grid {
+    display: grid;
+    grid-template-columns: 1fr 40px 1fr;
+    align-items: start;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.arena-vs {
+    text-align: center; font-weight: 700; font-size: 16px;
+    color: var(--text-dim); padding-top: 20px;
+}
+.arena-combatant {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 12px 14px;
+}
+.arena-player { border-color: var(--gold-dim); }
+.arena-enemy  { border-color: #5a2020; }
+.arena-comb-name {
+    font-family: var(--font-heading);
+    font-size: 14px; font-weight: 600;
+    color: var(--gold); margin-bottom: 8px;
+}
+.arena-stat-row {
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 5px; font-size: 11px;
+}
+.arena-stat-label { width: 22px; color: var(--text-muted); flex-shrink: 0; }
+.arena-bar-track {
+    flex: 1; height: 7px;
+    background: var(--bg-elevated);
+    border-radius: 4px; overflow: hidden;
+}
+.arena-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s ease; }
+.arena-stat-val { width: 60px; text-align: right; color: var(--text-muted); font-size: 10px; }
+
+.arena-effects { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.arena-effect-tag {
+    font-size: 10px; padding: 1px 5px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--info);
+}
+.arena-cooldowns {
+    font-size: 10px; color: var(--text-dim); margin-top: 6px;
+}
+.arena-cd-tag {
+    display: inline-block; margin-right: 4px;
+    padding: 1px 5px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+/* Combat log */
+.arena-log {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+.arena-log-entries {
+    max-height: 220px; overflow-y: auto;
+    padding: 10px 14px;
+    display: flex; flex-direction: column; gap: 3px;
+}
+.arena-log-line {
+    font-size: 12px; color: var(--text-muted);
+    padding: 2px 0;
+    border-bottom: 1px solid var(--bg-elevated);
+}
+.arena-log-line:first-child { color: var(--text-primary); }
+
+.arena-actions { display: flex; gap: 10px; }
+
+/* ── Dev panel ──────────────────────────────────────────── */
+.dev-panel { grid-column: 1 / -1; }
+.dev-btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.dev-btn { font-size: 12px; padding: 5px 12px; }

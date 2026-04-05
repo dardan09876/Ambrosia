@@ -15,6 +15,7 @@ const Layout = {
         { page: 'market',    label: 'Market',    icon: '◎' },
         { page: 'abilities', label: 'Abilities', icon: '✧' },
         { page: 'map',       label: 'Map',       icon: '⬡' },
+        { page: 'arena',     label: 'Arena',     icon: '⚔' },
     ],
 
     STAT_CONFIG: [

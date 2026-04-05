@@ -165,6 +165,7 @@ const QuestSystem = {
             // Award XP and materials on success
             this._awardQuestXp(quest);
             this._awardQuestMaterials(quest, 1.0);
+            this._applyDurabilityWear(quest, 1.0);
 
         } else if (partial) {
             const gold = Math.floor(this._rand(quest.goldReward.min, quest.goldReward.max) * 0.4);
@@ -180,10 +181,12 @@ const QuestSystem = {
             // Award reduced XP and materials on partial success
             this._awardQuestXp(quest, 0.5);
             this._awardQuestMaterials(quest, 0.5);
+            this._applyDurabilityWear(quest, 0.65);
 
         } else {
             this.lastReward = { outcome: 'failure', questName: quest.name, gold: 0, chests: null };
             Log.add(`"${quest.name}" failed. No reward.`, 'danger');
+            this._applyDurabilityWear(quest, 0.40);
         }
 
         // Short completed history
@@ -300,6 +303,26 @@ const QuestSystem = {
     // ── Helpers ───────────────────────────────────────────────────────────────
     _rand(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
+    },
+
+    // ── Apply durability wear to equipped items after a quest ─────────────────
+    _applyDurabilityWear(quest, multiplier = 1.0) {
+        const player = PlayerSystem.current;
+        const WEAR_SLOTS = ['weapon', 'offhand', 'head', 'torso', 'back', 'hands', 'legs', 'feet'];
+        const tierWear   = [0, 3, 6, 10, 15, 22];
+        const baseWear   = tierWear[Math.max(1, Math.min(5, quest.tier))] || 3;
+        const wear       = Math.max(1, Math.round(baseWear * multiplier));
+
+        const broken = [];
+        for (const slot of WEAR_SLOTS) {
+            const item = player.equipment[slot];
+            if (!item || item.durability == null) continue;
+            item.durability = Math.max(0, item.durability - wear);
+            if (item.durability === 0) broken.push(item.name);
+        }
+        if (broken.length > 0) {
+            Log.add(`Equipment at 0 durability: ${broken.join(', ')}. Visit a smith to repair.`, 'danger');
+        }
     },
 
     // Add a chest to player.inventory as a stacked item.

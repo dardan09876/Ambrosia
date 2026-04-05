@@ -167,6 +167,23 @@ Router.register('home', function renderHome(container) {
                     </div>
                 </div>
 
+                <!-- Dev / Cheat panel -->
+                <div class="card dev-panel">
+                    <div class="card-header">Dev Tools</div>
+                    <div class="card-body">
+                        <div class="dev-btn-row">
+                            <button class="btn btn-secondary dev-btn" id="dev-fill-health">Fill Health</button>
+                            <button class="btn btn-secondary dev-btn" id="dev-fill-energy">Fill Energy</button>
+                            <button class="btn btn-secondary dev-btn" id="dev-fill-focus">Fill Focus</button>
+                            <button class="btn btn-secondary dev-btn" id="dev-fill-stamina">Fill Stamina</button>
+                            <button class="btn btn-secondary dev-btn" id="dev-fill-mana">Fill Mana</button>
+                            <button class="btn btn-secondary dev-btn" id="dev-fill-all">Fill All Stats</button>
+                            <button class="btn btn-secondary dev-btn" id="dev-fill-food">Fill Food</button>
+                            <button class="btn btn-secondary dev-btn" id="dev-add-gold">+10,000 Gold</button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     `;
@@ -176,4 +193,31 @@ Router.register('home', function renderHome(container) {
     if (talentBtn) {
         talentBtn.addEventListener('click', () => Router.navigate('talents'));
     }
+
+    // Dev tool bindings
+    const fillStat = (key) => {
+        const cap = PlayerSystem.getStatMax(key);
+        player.stats[key].value = cap;
+        Layout.updateStatBars();
+        SaveSystem.save();
+    };
+
+    container.querySelector('#dev-fill-health') ?.addEventListener('click', () => fillStat('health'));
+    container.querySelector('#dev-fill-energy') ?.addEventListener('click', () => fillStat('energy'));
+    container.querySelector('#dev-fill-focus')  ?.addEventListener('click', () => fillStat('focus'));
+    container.querySelector('#dev-fill-stamina')?.addEventListener('click', () => fillStat('stamina'));
+    container.querySelector('#dev-fill-mana')   ?.addEventListener('click', () => fillStat('mana'));
+    container.querySelector('#dev-fill-all')    ?.addEventListener('click', () => {
+        ['health','energy','focus','stamina','mana'].forEach(fillStat);
+    });
+    container.querySelector('#dev-fill-food')?.addEventListener('click', () => {
+        player.survival.food = player.survival.foodMax;
+        Layout.updateStatBars();
+        SaveSystem.save();
+    });
+    container.querySelector('#dev-add-gold')?.addEventListener('click', () => {
+        player.gold += 10000;
+        Layout.updateStatBars();
+        SaveSystem.save();
+    });
 });

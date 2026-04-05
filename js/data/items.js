@@ -1356,3 +1356,14 @@ function getItem(id) {
     if (copy.statBonuses) copy.statBonuses = Object.assign({}, copy.statBonuses);
     return copy;
 }
+
+// Returns all equippable (non-consumable) item definitions at the given tier.
+// Used by loot generation to pick tier-appropriate named items from chests.
+function getItemsByTier(tier) {
+    return Object.values(ITEMS).filter(item =>
+        item.tier === tier &&
+        item.type !== 'consumable' &&
+        item.category !== 'consumable' &&
+        item.slot != null
+    );
+}

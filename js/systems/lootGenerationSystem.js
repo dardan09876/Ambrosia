@@ -66,46 +66,40 @@ const LootGenerationSystem = {
         return item;
     },
 
-    // Generate multiple items from a chest
+    // Generate multiple items from a chest — draws from named ITEMS pool by tier
     generateChestLoot(tierNum = 1, sourceContext = {}) {
         const tier = typeof getLootTier !== 'undefined' ? getLootTier(tierNum) : null;
-        if (!tier) return { gold: 0, items: [], materials: [], consumables: [] };
+        const gold = (tier && typeof rollGold !== 'undefined') ? rollGold(tier) : tierNum * 30 + 20;
 
-        const gold = typeof rollGold !== 'undefined' ? rollGold(tier) : 50;
-
-        // Generate 1-2 items
+        // 40% chance for 2 items, otherwise 1
         const itemCount = Math.random() < 0.4 ? 2 : 1;
         const items = [];
         for (let i = 0; i < itemCount; i++) {
-            const item = this.generateItem(tierNum, sourceContext);
+            const item = this._pickNamedItem(tierNum);
             if (item) items.push(item);
         }
 
-        // Generate materials (rare)
-        const materials = [];
-        if (Math.random() < 0.3) {
-            materials.push({
-                id: 'crafting_scrap',
-                amount: Math.floor(Math.random() * 3) + 1,
-            });
-        }
+        return { gold, items, materials: [], consumables: [], reputationGains: [] };
+    },
 
-        // Generate consumables (uncommon)
-        const consumables = [];
-        if (Math.random() < 0.25) {
-            consumables.push({
-                id: 'minor_healing_draught',
-                amount: Math.floor(Math.random() * 2) + 1,
-            });
-        }
+    // Pick a random named item from ITEMS at the given tier.
+    // Falls back one tier down if nothing is found at the exact tier.
+    _pickNamedItem(tierNum) {
+        if (typeof getItemsByTier === 'undefined') return null;
 
-        return {
-            gold,
-            items,
-            materials,
-            consumables,
-            reputationGains: [],
-        };
+        let pool = getItemsByTier(tierNum);
+
+        // Fallback: if tier has no entries (shouldn't happen but safety net), try tier-1
+        if (pool.length === 0 && tierNum > 1) pool = getItemsByTier(tierNum - 1);
+        if (pool.length === 0) return null;
+
+        const base = pool[Math.floor(Math.random() * pool.length)];
+        const item = getItem(base.id);
+        if (!item) return null;
+
+        // Assign a unique instance id
+        item.uid = Date.now() * 10000 + Math.floor(Math.random() * 10000);
+        return item;
     },
 
     // Pick a category based on tier weights

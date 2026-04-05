@@ -20,14 +20,27 @@ const ChestSystem = {
         // Add items to inventory
         player.inventory.push(...loot.items);
 
-        // Add materials
-        for (const material of loot.materials) {
-            // TODO: Add to crafting materials storage
+        // Add materials to craftingMaterials
+        if (typeof CraftingSystem !== 'undefined') {
+            for (const material of loot.materials) {
+                CraftingSystem.addMaterial(player, material.id, material.amount);
+            }
         }
 
-        // Add consumables
+        // Consumables land in inventory as stacked items
         for (const consumable of loot.consumables) {
-            // TODO: Add to consumables storage
+            const existing = player.inventory.find(
+                i => i.type === 'consumable' && i.id === consumable.id
+            );
+            if (existing) {
+                existing.quantity = (existing.quantity || 1) + (consumable.amount || 1);
+            } else {
+                const template = (typeof getItem !== 'undefined') ? getItem(consumable.id) : null;
+                const entry = template
+                    ? Object.assign({}, template, { uid: Date.now() * 10000 + Math.floor(Math.random() * 10000), quantity: consumable.amount || 1 })
+                    : { uid: Date.now() * 10000 + Math.floor(Math.random() * 10000), id: consumable.id, type: 'consumable', name: consumable.id, quantity: consumable.amount || 1 };
+                player.inventory.push(entry);
+            }
         }
 
         // Log the loot
