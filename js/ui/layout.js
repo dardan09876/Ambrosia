@@ -15,7 +15,9 @@ const Layout = {
         { page: 'market',    label: 'Market',    icon: '◎' },
         { page: 'abilities', label: 'Abilities', icon: '✧' },
         { page: 'map',       label: 'Map',       icon: '⬡' },
-        { page: 'arena',     label: 'Arena',     icon: '⚔' },
+        { page: 'arena',      label: 'Arena',    icon: '⚔' },
+        { page: 'rift_delve', label: 'Delves',   icon: '🌀' },
+        { page: 'warbands',   label: 'Warbands', icon: '⚑' },
     ],
 
     STAT_CONFIG: [
@@ -74,7 +76,7 @@ const Layout = {
 
         const faction = FACTIONS.find(f => f.id === player.faction);
         el.innerHTML = `
-            <span class="player-name">${player.name}</span>
+            <span class="player-name">${player.name} <span class="player-level">Lv.${player.level}</span></span>
             <span class="player-faction" style="color:${faction ? faction.accentColor : '#c9a84c'}">
                 ${faction ? faction.name : ''}
             </span>

@@ -68,8 +68,12 @@ const CombatResolver = {
         const defenseVal = (target.skills.defense            || 0);
         const hitCount   = ability.hits || 1;
 
-        const attackPower = ability.baseDamage + Math.floor(skillVal * 0.55);
-        const mitigation  = Math.floor(defenseVal * 0.28);
+        // Equipment contributes directly: weapon damage adds to attack, armor reduces incoming
+        const equipAtk = user.equipAttack   || 0;
+        const equipDef = target.equipDefense || 0;
+
+        const attackPower = ability.baseDamage + Math.floor(skillVal * 0.65) + equipAtk;
+        const mitigation  = Math.floor(defenseVal * 0.28) + Math.floor(equipDef * 0.60);
         let   damage      = Math.max(1, attackPower - mitigation);
 
         // Arena damage multiplier (upgrades + Gladiator's Spear)

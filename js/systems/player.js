@@ -92,6 +92,7 @@ const PlayerSystem = {
             // ── Leveling & Experience ─────────────────────────
             level: 1,
             experience: 0,
+            statPoints: 0,          // unspent stat points — each spent for +5 to one stat max
             talent: null,           // null until level 15, then one of TALENTS[].id
             talentUnlockPrompted: false, // flag to show talent selection UI once
 
@@ -192,12 +193,28 @@ const PlayerSystem = {
             // 0–100. Gained from rift activities. Cleansed at faction shrines.
             corruption: 0,
 
+            // ── Warbands ──────────────────────────────────────
+            warbandInfluence: 0,
+            warbandMap:       [],   // populated by WarbandSystem.generateMap() after creation
+            warbandStats: {
+                activeRiftQuest:      null,
+                questCooldowns:       {},
+                tilesContested:       0,
+                questsCompleted:      0,
+                totalInfluenceEarned: 0,
+            },
+
             // ── Active temporary effects ──────────────────────
             // [{ type, stat, amount, label, expiresAt }]
             activeEffects: [],
 
             createdAt: Date.now(),
         };
+
+        // Generate warband map now that this.current is set
+        if (typeof WarbandSystem !== 'undefined') {
+            this.current.warbandMap = WarbandSystem.generateMap(this.current);
+        }
 
         return this.current;
     },
@@ -287,6 +304,19 @@ const PlayerSystem = {
         if (!this.current.discoveredLocations) this.current.discoveredLocations = [];
         // Backfill procedural region cache
         if (!this.current.generatedRegions) this.current.generatedRegions = {};
+        // Backfill stat point system
+        if (this.current.statPoints == null) this.current.statPoints = 0;
+        // Backfill warbands
+        if (this.current.warbandInfluence == null) this.current.warbandInfluence = 0;
+        if (!this.current.warbandStats) this.current.warbandStats = { activeRiftQuest: null, questCooldowns: {}, tilesContested: 0, questsCompleted: 0, totalInfluenceEarned: 0 };
+        if (!this.current.warbandStats.questCooldowns) this.current.warbandStats.questCooldowns = {};
+        if (!this.current.warbandMap || this.current.warbandMap.length === 0) {
+            if (typeof WarbandSystem !== 'undefined') {
+                this.current.warbandMap = WarbandSystem.generateMap(this.current);
+            } else {
+                this.current.warbandMap = [];
+            }
+        }
         // Recalculate derived maxes in case design values changed
         this._recalcStatMaxes();
     },
@@ -377,8 +407,11 @@ const PlayerSystem = {
             const equipBonus   = (typeof EquipSystem !== 'undefined')
                 ? EquipSystem.getStatBonuses(statName)
                 : 0;
-            const skillBonus   = this.getSkillStatBonus(statName);
-            stat.max = Math.floor((stat.baseMax + abilityBonus + equipBonus + skillBonus) * this.getSurvivalMultiplier());
+            const skillBonus    = this.getSkillStatBonus(statName);
+            const warbandBonus  = (statName === 'health' && typeof WarbandSystem !== 'undefined')
+                ? WarbandSystem.getStrongholdHealthBonus(this.current)
+                : 0;
+            stat.max = Math.floor((stat.baseMax + abilityBonus + equipBonus + skillBonus + warbandBonus) * this.getSurvivalMultiplier());
             if (stat.value > stat.max) stat.value = stat.max;
         }
     },
@@ -602,13 +635,10 @@ const PlayerSystem = {
         this.current.level += 1;
         const afterLevel = this.current.level;
 
-        Log.add(`Level up! You are now level ${afterLevel}.`, 'success');
+        // Grant 1 stat point to spend on a stat of the player's choice (+5 per point)
+        this.current.statPoints = (this.current.statPoints || 0) + 1;
 
-        // Stat bonus per level: +5 to each stat max
-        for (const statName of Object.keys(this.current.stats)) {
-            this.current.stats[statName].baseMax += 5;
-        }
-        this._recalcStatMaxes();
+        Log.add(`Level up! You are now level ${afterLevel}. You have ${this.current.statPoints} stat point${this.current.statPoints > 1 ? 's' : ''} to spend.`, 'success');
 
         // Check if talent should be unlocked
         if (afterLevel === 15 && !this.current.talent) {
@@ -618,6 +648,24 @@ const PlayerSystem = {
 
         // Continue checking for more level-ups
         this._checkLevelUp();
+    },
+
+    // ── Spend a stat point to raise one stat's base max by 5 ─────────────
+    spendStatPoint(statName) {
+        if (!this.current) return { ok: false, reason: 'No player.' };
+        if ((this.current.statPoints || 0) <= 0) return { ok: false, reason: 'No stat points available.' };
+        if (!this.current.stats[statName]) return { ok: false, reason: 'Unknown stat.' };
+
+        this.current.statPoints--;
+        this.current.stats[statName].baseMax += 5;
+        this._recalcStatMaxes();
+
+        const label = { health: 'Health', energy: 'Energy', focus: 'Focus', stamina: 'Stamina', mana: 'Mana' }[statName] || statName;
+        Log.add(`+5 ${label} max. ${this.current.statPoints} stat point${this.current.statPoints !== 1 ? 's' : ''} remaining.`, 'info');
+        SaveSystem.save();
+
+        if (typeof Router !== 'undefined' && Router._current === 'home') Router._load('home');
+        return { ok: true };
     },
 
     // ── Set player's talent (only available at level 15+) ────────────────

@@ -114,9 +114,15 @@ function _arenaLobbyMain(player, tokens) {
                     <p>Your stats carry into the run. Mana and stamina are spent during combat.
                        Health persists across rounds until the run ends.</p>
                     <p class="arena-warn">You cannot pause once you start.</p>
-                    <button class="btn btn-primary arena-start-btn" onclick="CombatEngine.startRun()">
-                        Start Arena Run
-                    </button>
+                    ${(() => {
+                        const hp    = player.stats.health.value;
+                        const maxHp = PlayerSystem.getStatMax('health');
+                        if (hp < maxHp) {
+                            return `<p class="arena-warn">You must be at full health to enter the arena. (${hp} / ${maxHp} HP)</p>
+                                    <button class="btn btn-disabled arena-start-btn" disabled>Start Arena Run</button>`;
+                        }
+                        return `<button class="btn btn-primary arena-start-btn" onclick="CombatEngine.startRun()">Start Arena Run</button>`;
+                    })()}
                 </div>
             </div>
         </div>

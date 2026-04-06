@@ -90,6 +90,26 @@ Router.register('home', function renderHome(container) {
                     </div>
                 </div>
 
+                ${(player.statPoints || 0) > 0 ? `
+                <div class="card" style="border-color:var(--gold)">
+                    <div class="card-header" style="color:var(--gold)">⊕ Stat Points — ${player.statPoints} available</div>
+                    <div class="card-body">
+                        <p class="muted-text" style="margin-bottom:10px;font-size:12px">Each point raises one stat's maximum by 5.</p>
+                        <div class="stat-point-grid">
+                            ${['health','energy','focus','stamina','mana'].map(s => {
+                                const label = { health:'Health', energy:'Energy', focus:'Focus', stamina:'Stamina', mana:'Mana' }[s];
+                                const cur = PlayerSystem.getStatMax(s);
+                                return `
+                                <div class="stat-point-row">
+                                    <span class="stat-point-label">${label} <span class="muted-text">(${cur} → ${cur + 5})</span></span>
+                                    <button class="btn btn-sm btn-secondary" onclick="PlayerSystem.spendStatPoint('${s}')">+5</button>
+                                </div>`;
+                            }).join('')}
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+
                 <!-- Survival status -->
                 <div class="card">
                     <div class="card-header">Survival</div>
@@ -112,6 +132,51 @@ Router.register('home', function renderHome(container) {
                         </div>
                     </div>
                 </div>
+
+                <!-- Corruption status -->
+                ${(() => {
+                    const corruption = player.corruption ?? 0;
+                    const tier       = PlayerSystem.getCorruptionTier();
+                    const power      = PlayerSystem.getEffectiveCorruptionPower();
+                    const pct        = Math.min(100, Math.round((corruption / 180) * 100));
+                    const cleanCost  = corruption > 0 ? Math.max(50, Math.floor(50 + corruption * corruption * 0.2)) : 0;
+
+                    const regenLabels = { health: 'Health', stamina: 'Stamina', energy: 'Energy', focus: 'Focus', mana: 'Mana' };
+                    const penalties   = Object.entries(tier.regenPenalties || {})
+                        .map(([k, v]) => `<span class="corruption-penalty">${regenLabels[k] ?? k} regen −${Math.round(v * 100)}%</span>`)
+                        .join('');
+
+                    const bonuses = corruption > 0
+                        ? `<span class="corruption-bonus">Quest power +${power}</span>
+                           <span class="corruption-bonus">Instability events</span>`
+                        : '';
+
+                    return `
+                    <div class="card">
+                        <div class="card-header" style="color:${tier.color}">
+                            Corruption — <span style="font-weight:700">${tier.label}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="corruption-bar-wrap" style="margin-bottom:6px">
+                                <div class="stat-bar-track">
+                                    <div class="stat-bar-fill" style="width:${pct}%;background:${tier.color}"></div>
+                                </div>
+                            </div>
+                            <div class="muted-text" style="font-size:11px;margin-bottom:8px">${corruption} corruption · ${tier.desc}</div>
+                            ${penalties || bonuses ? `
+                            <div class="corruption-effects">
+                                ${penalties}
+                                ${bonuses}
+                            </div>` : ''}
+                            ${corruption > 0 ? `
+                            <div class="muted-text" style="font-size:11px;margin-top:8px">
+                                Cleanse cost: <span style="color:var(--gold)">${cleanCost.toLocaleString()}g</span>
+                                <span style="color:#666"> — visit the Market to cleanse.</span>
+                            </div>` : ''}
+                        </div>
+                    </div>
+                    `;
+                })()}
 
                 <!-- Skills snapshot -->
                 <div class="card">

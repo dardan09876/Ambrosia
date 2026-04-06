@@ -17,6 +17,9 @@ const CombatEngine = {
         // Apply permanent upgrade: Iron Constitution (+5% HP per level)
         maxHealth = Math.floor(maxHealth * (1 + (upg.healthBoost || 0) * 0.05));
 
+        // Equipment stat contributions
+        const equipStats = (typeof EquipSystem !== 'undefined') ? EquipSystem.getTotalStats() : { totalDamage: 0, totalDefense: 0 };
+
         const snapshot = {
             id:          'player',
             name:        player.name,
@@ -31,6 +34,9 @@ const CombatEngine = {
             effects:     [],
             cooldowns:   {},
             alive:       true,
+            // Equipment-derived combat stats
+            equipAttack:  equipStats.totalDamage,
+            equipDefense: equipStats.totalDefense,
             // Arena damage multiplier from upgrades and items (1.0 = no bonus)
             arenaDamageMultiplier: 1 + (upg.combatDamage || 0) * 0.05,
             // Flat attack bonus from momentum (increments each round win)
@@ -139,6 +145,13 @@ const CombatEngine = {
     startRun() {
         const player = PlayerSystem.current;
         if (!player) return;
+
+        const hp    = player.stats.health.value;
+        const maxHp = PlayerSystem.getStatMax('health');
+        if (hp < maxHp) {
+            Log.add('You must be at full health to enter the arena.', 'warning');
+            return;
+        }
 
         ArenaState.reset();
         ArenaState.inRun   = true;

@@ -6,23 +6,22 @@ const ArenaRewards = {
     // Gold and tokens for completing a round
     roundReward(round) {
         const isBoss   = round % 5 === 0;
-        const gold     = round * 18 + (isBoss ? 60 : 0);
-        const tokens   = Math.floor(round / 3) + (isBoss ? 2 : 0);
+        const gold     = round * 6 + (isBoss ? 20 : 0);
+        const tokens   = Math.floor(round / 5) + (isBoss ? 1 : 0);
         return { gold, tokens };
     },
 
-    // Chest reward at milestone rounds
+    // Chest reward at milestone rounds — only every 10 rounds, capped at tier 3
     milestoneChest(round) {
-        if (round % 10 === 0) return { tier: Math.min(5, Math.floor(round / 10) + 1), count: 1 };
-        if (round % 5  === 0) return { tier: Math.min(3, Math.floor(round / 5)),       count: 1 };
+        if (round % 10 === 0) return { tier: Math.min(3, Math.floor(round / 10)), count: 1 };
         return null;
     },
 
     // XP awarded for clearing a round — scales with round number
-    // Round 1: ~80 xp  Round 5 (boss): ~600 xp  Round 10 (boss): ~1400 xp
+    // Round 1: ~20 xp  Round 5 (boss): ~150 xp  Round 10 (boss): ~350 xp
     roundXp(round) {
         const isBoss = round % 5 === 0;
-        return Math.floor(round * 60 * (isBoss ? 2 : 1));
+        return Math.floor(round * 18 * (isBoss ? 1.5 : 1));
     },
 
     // Apply round rewards to the player and ArenaState totals
@@ -72,6 +71,11 @@ const ArenaRewards = {
             parts.push(`1× ${chestName}`);
         }
 
+        // Corruption — +1 per round, +2 extra on boss rounds
+        const corruptionGain = (round % 5 === 0) ? 3 : 1;
+        if (typeof PlayerSystem !== 'undefined') PlayerSystem.gainCorruption(corruptionGain);
+        parts.push(`+${corruptionGain} ☠`);
+
         Log.add(`Round ${round} complete — ${parts.join(' · ')}.`, 'success');
         if (typeof SaveSystem !== 'undefined') SaveSystem.save();
     },
@@ -84,10 +88,10 @@ const ArenaRewards = {
         // If no combat skills yet, award to melee as a default
         const targets = trained.length > 0 ? trained : ['melee'];
 
-        // Give full XP to the highest skill; halve it for the rest
+        // Give full XP to the highest skill; 25% to the rest
         const sorted = targets.sort((a, b) => (player.skills[b] || 0) - (player.skills[a] || 0));
         for (let i = 0; i < sorted.length; i++) {
-            const share = i === 0 ? xp : Math.floor(xp * 0.5);
+            const share = i === 0 ? xp : Math.floor(xp * 0.25);
             PlayerSystem.gainSkillExperience(sorted[i], share);
         }
     },

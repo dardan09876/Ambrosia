@@ -58,6 +58,9 @@ const GameLoop = {
         // ── Quest tick (resolve completed quests) ─────────────
         QuestSystem.tick();
 
+        // ── Warband tick (resolve rift quests, enemy pressure) ─
+        if (typeof WarbandSystem !== 'undefined') WarbandSystem.tick();
+
         // ── Daily shelter cost ─────────────────────────────────
         this._checkShelterCost();
 

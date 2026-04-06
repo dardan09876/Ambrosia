@@ -52,16 +52,12 @@ const SalvageSystem = {
 
     // Check if an item can be salvaged
     canSalvage(item) {
-        if (!item) return false;
-
-        // Cannot salvage consumables
-        if (item.category === 'consumable') return false;
-
-        // Cannot salvage quest items or trophies
-        if (item.tags && (item.tags.includes('quest') || item.tags.includes('trophy'))) {
-            return false;
-        }
-
+        if (!item || !item.uid) return false;
+        if (item.type === 'chest') return false;
+        if (item.category === 'consumable' || item.type === 'consumable') return false;
+        if (item.tags && (item.tags.includes('quest') || item.tags.includes('trophy'))) return false;
+        // Must be actual equipment (has a slot or category indicating gear)
+        if (!item.slot && !item.category) return false;
         return true;
     },
 
@@ -70,7 +66,7 @@ const SalvageSystem = {
         if (!player || !player.inventory) return { ok: false, reason: 'No player or inventory.' };
 
         // Find item in inventory
-        const itemIdx = player.inventory.findIndex(i => i.uid === itemUid);
+        const itemIdx = player.inventory.findIndex(i => String(i.uid) === String(itemUid));
         if (itemIdx === -1) return { ok: false, reason: 'Item not found in inventory.' };
 
         const item = player.inventory[itemIdx];
@@ -90,8 +86,10 @@ const SalvageSystem = {
 
         const salvageTable = this.SALVAGE_TABLES[salvageType] || this.SALVAGE_TABLES.metal;
 
-        // Calculate durability modifier
-        const durabilityPercent = item.currentDurability / item.maxDurability;
+        // Calculate durability modifier (support both durability and currentDurability field names)
+        const curDur = item.durability ?? item.currentDurability ?? item.maxDurability ?? 100;
+        const maxDur = item.maxDurability ?? 100;
+        const durabilityPercent = maxDur > 0 ? curDur / maxDur : 1;
         let durabilityMod = 1.0;
         if (durabilityPercent < 0.4) durabilityMod = 0.25;
         else if (durabilityPercent < 0.75) durabilityMod = 0.5;
@@ -121,8 +119,9 @@ const SalvageSystem = {
         player.inventory.splice(itemIdx, 1);
 
         if (typeof Log !== 'undefined') {
-            const materialStr = materials.map(m => `${m.amount}x ${m.materialId}`).join(', ');
-            Log.add(`Salvaged ${item.displayName || item.itemId}: ${materialStr || 'nothing of value'}.`, 'info');
+            const itemName = item.name || item.displayName || item.id || 'item';
+            const materialStr = materials.map(m => `${m.amount}× ${m.materialId.replace(/_/g,' ')}`).join(', ');
+            Log.add(`Salvaged ${itemName}: ${materialStr || 'nothing of value'}.`, 'info');
         }
 
         if (typeof SaveSystem !== 'undefined') {
@@ -133,7 +132,7 @@ const SalvageSystem = {
             ok: true,
             item,
             materials,
-            message: `Successfully salvaged ${item.displayName || item.itemId}.`,
+            message: `Successfully salvaged ${item.name || item.displayName || 'item'}.`,
         };
     },
 

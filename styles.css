@@ -229,6 +229,12 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
     color: var(--text-primary);
     letter-spacing: 0.04em;
 }
+.player-level {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.03em;
+}
 .player-faction {
     font-size: 11px;
     color: var(--text-muted);
@@ -269,6 +275,16 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
 
 /* shelter cost in sub bar */
 .currency-shelter .currency-value { color: var(--gold-dim); }
+
+/* corruption card */
+.corruption-effects { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.corruption-penalty { font-size: 11px; padding: 2px 7px; border-radius: 4px; background: rgba(192,64,64,0.18); color: #e07060; border: 1px solid rgba(192,64,64,0.3); }
+.corruption-bonus   { font-size: 11px; padding: 2px 7px; border-radius: 4px; background: rgba(155,107,212,0.18); color: #b88ade; border: 1px solid rgba(155,107,212,0.3); }
+
+/* stat point allocation */
+.stat-point-grid { display: flex; flex-direction: column; gap: 6px; }
+.stat-point-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.stat-point-label { font-size: 13px; font-weight: 600; }
 
 /* shelter row in home survival card */
 .home-shelter-row {
@@ -4336,6 +4352,75 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
 .dev-btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .dev-btn { font-size: 12px; padding: 5px 12px; }
 
+/* ── Warbands ────────────────────────────────────────────── */
+.warbands-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 16px;
+    align-items: start;
+}
+@media (max-width: 860px) {
+    .warbands-layout { grid-template-columns: 1fr; }
+}
+.warbands-main   { display: flex; flex-direction: column; gap: 12px; }
+.warbands-sidebar { display: flex; flex-direction: column; gap: 12px; }
+
+.warbands-map-card .card-header {
+    display: flex; justify-content: space-between; align-items: center;
+}
+.wb-influence-badge {
+    font-size: 13px; font-weight: 700; color: var(--gold);
+    background: rgba(201,168,76,0.12); padding: 2px 10px; border-radius: 12px;
+}
+
+/* Map legend */
+.wb-map-legend {
+    display: flex; gap: 16px; justify-content: center;
+    margin-top: 10px; flex-wrap: wrap;
+}
+.wb-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #aaa; }
+.wb-legend-dot  { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+/* Tile detail */
+.wb-tile-detail { min-height: 120px; }
+.wb-detail-row  {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px; padding: 4px 0; border-bottom: 1px solid #2a2a2a;
+}
+.wb-detail-row:last-of-type { border-bottom: none; }
+.wb-tile-actions { display: flex; gap: 8px; margin-top: 10px; }
+.wb-influence-bar-wrap { width: 100%; }
+
+/* Rift quests */
+.wb-quest-card {
+    background: #1a1a2a; border: 1px solid #333; border-radius: 6px;
+    padding: 10px 12px; margin-bottom: 8px;
+}
+.wb-quest-card:last-child { margin-bottom: 0; }
+.wb-quest-header {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 4px;
+}
+.wb-quest-name   { font-weight: 600; font-size: 13px; }
+.wb-quest-type   { font-size: 11px; color: #888; }
+.wb-quest-desc   { font-size: 12px; color: #aaa; margin: 4px 0 8px; line-height: 1.5; }
+.wb-quest-footer {
+    display: flex; justify-content: space-between; align-items: center;
+}
+.wb-quest-reward { font-size: 12px; color: var(--gold); }
+.wb-quest-timer  { font-size: 12px; color: #9b9bcc; font-weight: 600; }
+
+/* Campaign stats / bonus rows */
+.wb-stat-row, .wb-bonus-row {
+    display: flex; justify-content: space-between;
+    font-size: 12px; padding: 4px 0; border-bottom: 1px solid #222;
+}
+.wb-stat-row:last-child, .wb-bonus-row:last-child { border-bottom: none; }
+
+/* SVG tile hover */
+.wb-tile rect { transition: filter 0.1s; }
+.wb-tile:hover rect { filter: brightness(1.25); }
+
 /* ── Arena tab bar ──────────────────────────────────────── */
 .arena-tab-bar {
     display: flex; gap: 4px;
@@ -4490,3 +4575,173 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
     border-radius: 2px;
     transition: width 0.3s ease;
 }
+
+/* ══════════════════════════════════════════════════════════
+   RIFT DELVE SYSTEM
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Board layout ────────────────────────────────────────── */
+.delve-board-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+}
+@media (max-width: 800px) {
+    .delve-board-layout { grid-template-columns: 1fr; }
+}
+
+.delve-card-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.delve-card {
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+.delve-card:hover        { background: var(--bg-elevated); border-color: var(--text-dim); }
+.delve-card-selected     { border-color: var(--accent) !important; background: var(--bg-elevated); }
+.delve-card-locked       { opacity: 0.55; cursor: default; }
+
+.delve-card-header {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 4px;
+}
+.delve-card-name  { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.delve-card-tier  { font-size: 11px; color: var(--text-dim); font-weight: 600; }
+.delve-card-subtitle { font-size: 12px; color: var(--text-muted); margin: 0 0 8px; font-style: italic; }
+
+.delve-card-ratings { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+.delve-rating-row   { display: flex; align-items: center; gap: 8px; }
+.delve-rating-label { font-size: 11px; color: var(--text-dim); width: 46px; flex-shrink: 0; }
+.delve-rating-dots  { font-size: 10px; letter-spacing: 1px; }
+.delve-rating-dots.danger { color: var(--danger); }
+.delve-rating-dots.reward { color: var(--accent); }
+
+.delve-card-desc { font-size: 11px; color: var(--text-muted); margin: 0; }
+.delve-card-lock { margin-top: 8px; font-size: 11px; color: var(--text-dim); }
+
+/* ── Briefing card ───────────────────────────────────────── */
+.delve-brief-card .card-body { display: flex; flex-direction: column; gap: 8px; }
+.delve-brief-row  { display: flex; justify-content: space-between; font-size: 13px; }
+.delve-brief-label { color: var(--text-dim); }
+.delve-doctrine-tag {
+    display: inline-block;
+    padding: 1px 8px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    font-size: 11px;
+    color: var(--accent);
+    text-transform: capitalize;
+}
+.delve-warn { font-size: 12px; color: var(--warning); margin: 2px 0 0; }
+.delve-hint { font-size: 12px; color: var(--text-dim); }
+.delve-start-btn { width: 100%; margin-top: 8px; }
+
+/* (old delve layout removed — replaced by canvas-aware styles below) */
+
+.text-danger { color: var(--danger); }
+
+/* ── Delve canvas ───────────────────────────────────────── */
+.delve-canvas-wrap {
+    position: relative;
+    width: 100%;
+    margin-bottom: 14px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: #05080e;
+    line-height: 0;   /* remove extra space below canvas */
+}
+#delve-canvas {
+    display: block;
+    width: 100%;
+    height: 240px;
+    image-rendering: pixelated;
+}
+.delve-canvas-overlay {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+.delve-node-label-overlay {
+    display: inline-block;
+    padding: 3px 12px;
+    background: rgba(0,0,0,0.65);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: var(--radius);
+    font-size: 12px;
+    color: rgba(255,255,255,0.75);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+/* ── Delve status bar (updated during playback) ────────── */
+.delve-status-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 10px;
+}
+.delve-status-label  { font-size: 12px; color: var(--text-dim); flex-shrink: 0; }
+.delve-node-counter  { font-size: 11px; color: var(--text-dim); flex-shrink: 0; }
+.delve-hp-bar-track  { flex: 1; height: 7px; background: var(--bg-elevated); border-radius: 4px; overflow: hidden; }
+.delve-hp-bar-fill   { height: 100%; border-radius: 4px; transition: width 0.5s ease, background 0.4s; }
+.delve-status-hp     { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
+
+/* ── Delve active two-column layout ────────────────────── */
+.delve-active-layout {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 14px;
+    margin-bottom: 12px;
+}
+@media (max-width: 720px) { .delve-active-layout { grid-template-columns: 1fr; } }
+
+/* ── Event card (text summary below canvas) ─────────────── */
+.delve-event-card-wrap { }
+.delve-event-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.delve-card-boss   { border-color: var(--danger); }
+.delve-card-reward { border-color: var(--accent); }
+.delve-card-death  { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 6%, var(--bg-card)); }
+.delve-card-retreat { border-color: var(--warning); }
+
+.delve-event-top   { display: flex; align-items: baseline; gap: 8px; }
+.delve-event-icon-sm  { font-size: 16px; }
+.delve-event-title-sm { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.delve-event-log   { display: flex; flex-direction: column; gap: 4px; }
+.delve-event-line  { font-size: 12px; color: var(--text-muted); margin: 0; line-height: 1.55; }
+
+/* ── Results panels ──────────────────────────────────────── */
+.delve-results-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 20px;
+}
+@media (max-width: 680px) { .delve-results-layout { grid-template-columns: 1fr; } }
+.delve-results-summary .card-body { display: flex; flex-direction: column; gap: 8px; }
+.delve-results-log .delve-log-scroll { max-height: 420px; }
+.delve-rewards-list { display: flex; flex-direction: column; gap: 6px; }
+.delve-reward-line  { font-size: 13px; color: var(--text-muted); padding: 4px 0; border-bottom: 1px solid var(--bg-elevated); }
+.delve-results-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }

@@ -243,8 +243,12 @@ function _bindCraftingEvents(container, player) {
 
 // Simple salvage modal
 function _showSalvageModal(player) {
-    if (!player.inventory || player.inventory.length === 0) {
-        Log.add('You have no items to salvage.', 'warning');
+    const salvageable = (player.inventory || []).filter(
+        item => typeof SalvageSystem !== 'undefined' && SalvageSystem.canSalvage(item)
+    );
+
+    if (salvageable.length === 0) {
+        Log.add('No salvageable items in your inventory.', 'warning');
         return;
     }
 
@@ -259,22 +263,20 @@ function _showSalvageModal(player) {
             </div>
             <div class="modal-body">
                 <div class="salvage-items">
-                    ${player.inventory.map((item, idx) => {
-                        if (!item.uid) return ''; // Skip non-items
-                        const canSalvage = typeof SalvageSystem !== 'undefined' ? SalvageSystem.canSalvage(item) : false;
+                    ${salvageable.map(item => {
+                        const itemName = item.name || item.displayName || item.id || 'Unknown Item';
+                        const durCur = item.durability ?? item.currentDurability ?? item.maxDurability ?? 100;
+                        const durMax = item.maxDurability ?? 100;
+                        const durLabel = `${durCur}/${durMax}`;
                         return `
-                            <div class="salvage-item ${canSalvage ? 'salvageable' : 'locked'}">
+                            <div class="salvage-item salvageable">
                                 <div class="salvage-item-info">
-                                    <div class="salvage-item-name">${item.displayName || item.itemId}</div>
+                                    <div class="salvage-item-name">${itemName}</div>
                                     <div class="salvage-item-rarity" style="color:${item.rarity ? _rarityColor(item.rarity) : '#999'}">
-                                        ${item.rarity || 'common'}
+                                        ${item.rarity || 'common'} · ${item.slot || item.category || ''} · ${durLabel} dur
                                     </div>
                                 </div>
-                                ${canSalvage ? `
-                                    <button class="btn-salvage" data-item-uid="${item.uid}">Salvage</button>
-                                ` : `
-                                    <span class="cant-salvage">Can't salvage</span>
-                                `}
+                                <button class="btn-salvage" data-item-uid="${item.uid}">Salvage</button>
                             </div>
                         `;
                     }).join('')}

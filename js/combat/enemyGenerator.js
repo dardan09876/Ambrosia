@@ -48,10 +48,10 @@ const EnemyGenerator = {
         const archetype      = ARENA_ARCHETYPES[archetypeIndex];
 
         // Base stats scale with round
-        const baseHealth    = 40 + round * 14;
-        const baseMana      = 20 + round * 6;
-        const baseStamina   = 20 + round * 6;
-        const baseSkillUnit = 8  + round * 4;
+        const baseHealth    = 60 + round * 22;
+        const baseMana      = 25 + round * 8;
+        const baseStamina   = 25 + round * 8;
+        const baseSkillUnit = 14 + round * 7;
 
         const skills = {};
         for (const [sk, bias] of Object.entries(archetype.skillBias)) {
