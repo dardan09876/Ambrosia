@@ -20,17 +20,21 @@ const MapSystem = {
     getAdjacentIds(regionId) {
         const region = MAP_REGIONS[regionId];
         if (!region) return [];
-        const { q, r } = region;
+        const { q, r, mapView } = region;
         const adj = [];
         for (const [dq, dr] of this.DIRECTIONS) {
             const nq = q + dq;
             const nr = r + dr;
+            let sameFaction = null;
+            let ruinsFallback = null;
             for (const [id, reg] of Object.entries(MAP_REGIONS)) {
-                if (reg.q === nq && reg.r === nr) {
-                    adj.push(id);
-                    break;
-                }
+                if (reg.q !== nq || reg.r !== nr) continue;
+                if (reg.mapView === mapView) { sameFaction = id; break; }
+                if (mapView === 'ruins' && !sameFaction) { sameFaction = id; break; }
+                if (reg.mapView === 'ruins' && !ruinsFallback) ruinsFallback = id;
             }
+            const pick = sameFaction ?? ruinsFallback;
+            if (pick) adj.push(pick);
         }
         return adj;
     },

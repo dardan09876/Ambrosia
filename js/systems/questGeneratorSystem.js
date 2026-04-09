@@ -206,8 +206,8 @@ const QuestGeneratorSystem = {
         return 1;
     },
 
-    _durationFromTier(tier) {
-        return [0, 600, 1800, 3600, 7200, 14400][tier] ?? 600;
+    _durationFromTier() {
+        return 1800;
     },
 
     // Normalize a raw generated quest to the format QuestSystem expects

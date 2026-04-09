@@ -2720,6 +2720,14 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
     padding-left: 8px;
 }
 
+.map-info-art {
+    width: 100%;
+    border-radius: 6px;
+    display: block;
+    margin-top: 14px;
+    object-fit: cover;
+}
+
 .map-info-activities {
     display: flex;
     flex-wrap: wrap;
@@ -2779,6 +2787,126 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
     color: #c08080;
     cursor: not-allowed;
     font-size: 11px;
+}
+
+.map-btn-enter-city {
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(18,80,26,0.18);
+    border: 1px solid rgba(74,158,107,0.35);
+    color: #7ab87a;
+    font-size: 12px;
+    font-family: 'Cinzel', serif;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    letter-spacing: 0.04em;
+}
+.map-btn-enter-city:hover {
+    background: rgba(18,80,26,0.32);
+    border-color: rgba(74,158,107,0.55);
+    color: #9fd89f;
+}
+.map-btn-enter-iron {
+    background: rgba(110,18,18,0.18);
+    border-color: rgba(192,60,60,0.35);
+    color: #c08080;
+}
+.map-btn-enter-iron:hover {
+    background: rgba(110,18,18,0.32);
+    border-color: rgba(192,60,60,0.55);
+    color: #d09090;
+}
+.map-btn-enter-ash {
+    background: rgba(15,32,80,0.22);
+    border-color: rgba(74,100,192,0.38);
+    color: #8090c8;
+}
+.map-btn-enter-ash:hover {
+    background: rgba(15,32,80,0.38);
+    border-color: rgba(74,100,192,0.58);
+    color: #a0b0dc;
+}
+
+/* ── City map overlay ──────────────────────────────────────── */
+.city-map-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.78);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.city-map-panel {
+    background: #181818;
+    border: 1px solid rgba(255,255,255,0.13);
+    border-radius: 8px;
+    width: min(720px, 95vw);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+}
+.city-map-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.09);
+    flex-shrink: 0;
+}
+.city-map-title {
+    font-family: 'Cinzel', serif;
+    font-size: 15px;
+    color: var(--gold);
+    letter-spacing: 0.06em;
+}
+.city-map-subtitle {
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+    margin-left: 10px;
+    font-style: italic;
+}
+.city-map-close {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.18);
+    color: rgba(255,255,255,0.5);
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    transition: background 0.12s, color 0.12s;
+}
+.city-map-close:hover {
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.9);
+}
+.city-map-svg-body {
+    overflow: auto;
+    flex: 1;
+}
+.city-map-svg-body svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+.city-building {
+    cursor: pointer;
+    transition: filter 0.15s;
+}
+.city-building:hover {
+    filter: drop-shadow(0 0 6px rgba(201,168,76,0.55)) brightness(2.2);
+}
+.city-bldg-label {
+    transition: fill 0.15s;
+}
+.city-building:hover .city-bldg-label {
+    fill: #f0d880 !important;
 }
 
 /* ============================================================

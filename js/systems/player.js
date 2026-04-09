@@ -834,7 +834,7 @@ const PlayerSystem = {
     // Gain guild reputation
     gainGuildReputation(guildId, amount) {
         if (!this.current) return;
-        if (!this.current.guildReputation[guildId]) return;
+        if (this.current.guildReputation[guildId] === undefined) return;
 
         const repBefore = this.current.guildReputation[guildId];
         const rankBefore = typeof getGuildRank !== 'undefined' ? getGuildRank(repBefore) : null;
@@ -842,6 +842,8 @@ const PlayerSystem = {
         this.current.guildReputation[guildId] += amount;
         const repAfter = this.current.guildReputation[guildId];
         const rankAfter = typeof getGuildRank !== 'undefined' ? getGuildRank(repAfter) : null;
+
+        Log.add(`+${amount} reputation with guild.`, 'info');
 
         if (rankBefore && rankAfter && rankAfter.rank > rankBefore.rank) {
             Log.add(`Guild Rank: ${rankAfter.title}! ${rankAfter.title} privileges unlocked.`, 'success');

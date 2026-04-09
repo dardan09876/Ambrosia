@@ -38,6 +38,7 @@ const MAP_RUINS = {
         description:'Ground zero of Aidia\'s ritual. Reality is thin here — the sky flickers between day and night without warning.',
         flavour:'This is where the empire ended. This is where everything began.',
         activities:['quests'], factionId:null,
+        image: '/img/Ruins of a forgotten ritual.png',
     },
     imperial_sanctum: {
         id:'imperial_sanctum', name:'Imperial Sanctum', label:'I. Sanctum',
@@ -381,6 +382,7 @@ const MAP_REGIONS_ID = {
         description:'The seat of Iron Dominion, built on a granite plateau. Banners of crimson iron hang from every gatehouse.',
         flavour:'"Discipline is not a virtue here. It is a requirement."',
         activities:['quests','market','training'], factionId:'iron_dominion',
+        image: 'img/Iron Capital under stormy skies.png',
     },
 
     // ── Tier 1 (r=12-14) ──────────────────────────────────────
@@ -820,6 +822,64 @@ const MAP_REGIONS_ID = {
         flavour:'"Two enemies visible from one tower. That is efficient, at least."',
         activities:['quests'], factionId:'iron_dominion',
     },
+
+    // ── Tier 3 (r=7-9, deep frontier) ────────────────────────────
+    eastern_breach_tw: {
+        id:'eastern_breach_tw', name:'Iron Breach', label:'Iron Breach',
+        type:'iron_dominion', mapView:'iron_dominion', terrain:'ruins',
+        q:0, r:7, tier:3, danger:3, accessReq:{totalSkill:300},
+        description:'A Dominion-held corridor through the western ruins edge, reinforced with iron stakes and signal fires to mark the advance.',
+        flavour:'"The breach was once an enemy\'s weakness. The Dominion made it their door."',
+        activities:['quests'], factionId:'iron_dominion',
+    },
+    bark_ridge: {
+        id:'bark_ridge', name:'Bark Ridge', label:'Bark Ridge',
+        type:'iron_dominion', mapView:'iron_dominion', terrain:'hills',
+        q:0, r:8, tier:3, danger:3, accessReq:{totalSkill:300},
+        description:'A ridge on the ruins\' edge that Dominion engineers stripped of cover to establish clear sightlines and defensible ground.',
+        flavour:'"They felled every tree within bowshot. The rangers have not forgiven this."',
+        activities:['quests'], factionId:'iron_dominion',
+    },
+    far_watch_tw: {
+        id:'far_watch_tw', name:'Western Vigil', label:'Western Vigil',
+        type:'iron_dominion', mapView:'iron_dominion', terrain:'tower',
+        q:0, r:9, tier:3, danger:3, accessReq:{totalSkill:300},
+        description:'The westernmost Dominion watchtower, anchoring iron control over the outer ruins perimeter. The last flag before the dark.',
+        flavour:'"The last iron banner before the ruins swallow the horizon."',
+        activities:['quests'], factionId:'iron_dominion',
+    },
+    shadow_hollow: {
+        id:'shadow_hollow', name:'Shadow Hollow', label:'Shadow Hollow',
+        type:'iron_dominion', mapView:'iron_dominion', terrain:'swamp',
+        q:6, r:7, tier:3, danger:3, accessReq:{totalSkill:300},
+        description:'A mist-laden hollow where Dominion patrols maintain a watchpoint on the ruins\' southern approach. Visibility ends at arm\'s length.',
+        flavour:'"Standing order: if you hear movement and see nothing, report it. Then move."',
+        activities:['quests'], factionId:'iron_dominion',
+    },
+    ash_ridge_far: {
+        id:'ash_ridge_far', name:'Far Ash Ridge', label:'Far Ash Ridge',
+        type:'iron_dominion', mapView:'iron_dominion', terrain:'hills',
+        q:6, r:8, tier:3, danger:3, accessReq:{totalSkill:300},
+        description:'A windswept ridge at the iron frontier\'s deepest point, where ash drifting from the ruins coats every surface grey.',
+        flavour:'"The ash here is not from fire. The soldiers learn not to ask what it is from."',
+        activities:['quests'], factionId:'iron_dominion',
+    },
+    eastern_vigil_ac: {
+        id:'eastern_vigil_ac', name:'Eastern Vigil', label:'Eastern Vigil',
+        type:'iron_dominion', mapView:'iron_dominion', terrain:'tower',
+        q:6, r:9, tier:3, danger:3, accessReq:{totalSkill:300},
+        description:'The southernmost Dominion watchtower at the ruins\' edge, maintaining watch over two hostile territories simultaneously.',
+        flavour:'"One tower. Two threats. The garrison has standing orders for both."',
+        activities:['quests'], factionId:'iron_dominion',
+    },
+    fen_patrol: {
+        id:'fen_patrol', name:'Fen Garrison', label:'Fen Garrison',
+        type:'iron_dominion', mapView:'iron_dominion', terrain:'camp',
+        q:7, r:8, tier:3, danger:3, accessReq:{totalSkill:300},
+        description:'A hardened patrol camp in the fenlands beyond the frontier, where Dominion soldiers rotate through on weekly assignments.',
+        flavour:'"Two weeks in the fen. Two weeks back. Nobody volunteers for a third rotation."',
+        activities:['quests'], factionId:'iron_dominion',
+    },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -837,6 +897,7 @@ const MAP_REGIONS_AC = {
         description:'The Covenant\'s capital, raised from the ash wastes. Spires of black glass house libraries that never close.',
         flavour:'"Knowledge is the only currency that appreciates with use."',
         activities:['quests','market','training'], factionId:'ashen_covenant',
+        image: 'img/The city of arcane knowledge.png'
     },
 
     // ── Tier 1 (q=12-14) ──────────────────────────────────────
@@ -871,6 +932,7 @@ const MAP_REGIONS_AC = {
         description:'A city of spire-libraries and alchemy markets where knowledge and reagents trade freely.',
         flavour:'"Every secret has a price. Here the prices are reasonable."',
         activities:['quests','market','training'], factionId:'ashen_covenant',
+        image: 'img/Twilight alchemist market in dark city.png',
     },
     apprentice_ward: {
         id:'apprentice_ward', name:'Apprentice Ward', label:'Apprent. Ward',
@@ -985,6 +1047,7 @@ const MAP_REGIONS_AC = {
         description:'A mid-territory city supplying the northern front with alchemical weapons and healing reagents.',
         flavour:'"Where iron becomes a problem, alchemy provides the solution."',
         activities:['quests','market','training'], factionId:'ashen_covenant',
+        image: 'img/Twilight market at the foot of a volcano.png'
     },
     ley_crossing: {
         id:'ley_crossing', name:'Ley Crossing', label:'Ley Crossing',
@@ -1099,6 +1162,7 @@ const MAP_REGIONS_AC = {
         description:'A fortified city of scholars and soldiers where Covenant forces prepare for the push into the ruins.',
         flavour:'"Every mage here has looked into a rift. Some have looked back."',
         activities:['quests','market','training'], factionId:'ashen_covenant',
+        image: 'img/Preparing for battle at dusk.png'
     },
     vanguard_post_ac: {
         id:'vanguard_post_ac', name:'Covenant Vanguard Post', label:'Cov. V. Post',
@@ -1188,14 +1252,6 @@ const MAP_REGIONS_AC = {
         flavour:'"The instruments say the rift is dormant. The cats disagree."',
         activities:['quests'], factionId:'ashen_covenant',
     },
-    fen_patrol: {
-        id:'fen_patrol', name:'Fen Patrol', label:'Fen Patrol',
-        type:'ashen_covenant', mapView:'ashen_covenant', terrain:'camp',
-        q:7, r:8, tier:3, danger:3, accessReq:{totalSkill:300},
-        description:'A rotating patrol camp along the fen border, watching for rift-spawn and Dominion scouts.',
-        flavour:'"Two threats from two directions. One unit to handle both."',
-        activities:['quests'], factionId:'ashen_covenant',
-    },
     ashen_approach: {
         id:'ashen_approach', name:'Ashen Approach', label:'Ashen Apprch',
         type:'ashen_covenant', mapView:'ashen_covenant', terrain:'ruins',
@@ -1243,6 +1299,7 @@ const MAP_REGIONS_AC = {
         description:'The frontier city at the edge of the ruins — part research station, part armed camp, part last resort.',
         flavour:'"This is where the empire ended. This is where the Covenant begins."',
         activities:['quests','market','training'], factionId:'ashen_covenant',
+        image: 'img/Ruins at twilight under a blue giant.png'
     },
     ashen_outpost: {
         id:'ashen_outpost', name:'Ashen Outpost', label:'Ashen Outpost',
@@ -1250,30 +1307,6 @@ const MAP_REGIONS_AC = {
         q:6, r:6, tier:3, danger:3, accessReq:{totalSkill:300},
         description:'A reinforced camp on the ruins border where scholars and soldiers maintain an uneasy partnership.',
         flavour:'"The mages outnumber the guards. The guards do not appreciate this."',
-        activities:['quests'], factionId:'ashen_covenant',
-    },
-    shadow_hollow: {
-        id:'shadow_hollow', name:'Shadow Hollow', label:'Shadow Hollow',
-        type:'ashen_covenant', mapView:'ashen_covenant', terrain:'swamp',
-        q:6, r:7, tier:3, danger:3, accessReq:{totalSkill:300},
-        description:'A mist-choked depression where visibility drops to arm\'s length, used as a natural buffer zone.',
-        flavour:'"If you hear footsteps and see nothing, keep walking. Faster."',
-        activities:['quests'], factionId:'ashen_covenant',
-    },
-    ash_ridge_far: {
-        id:'ash_ridge_far', name:'Far Ash Ridge', label:'Far Ash Ridge',
-        type:'ashen_covenant', mapView:'ashen_covenant', terrain:'hills',
-        q:6, r:8, tier:3, danger:3, accessReq:{totalSkill:300},
-        description:'The outermost Covenant ridgeline, where ash falls thicker and the ruins are visible to the naked eye.',
-        flavour:'"From here, even the ruins look peaceful. They are not."',
-        activities:['quests'], factionId:'ashen_covenant',
-    },
-    eastern_vigil_ac: {
-        id:'eastern_vigil_ac', name:'Eastern Vigil', label:'Eastern Vigil',
-        type:'ashen_covenant', mapView:'ashen_covenant', terrain:'tower',
-        q:6, r:9, tier:3, danger:3, accessReq:{totalSkill:300},
-        description:'The northernmost Covenant watchtower, watching the ruins\' eastern approach and Dominion movements.',
-        flavour:'"Two enemies. One tower. Excellent view of both."',
         activities:['quests'], factionId:'ashen_covenant',
     },
 };
@@ -1293,6 +1326,7 @@ const MAP_REGIONS_TW = {
         description:'The heart of the Thornwood, beneath a canopy so thick it blocks the sun. Timber halls and rope bridges.',
         flavour:'"No walls, no throne, no tax collector. Just trees and the right to keep them."',
         activities:['quests','market','training'], factionId:'thornwood',
+        image: 'img/The Thornwood village at twilight.png',
     },
 
     // ── Tier 1 (q=-6 to -8) ───────────────────────────────────
@@ -1706,30 +1740,6 @@ const MAP_REGIONS_TW = {
         q:0, r:6, tier:3, danger:3, accessReq:{totalSkill:300},
         description:'A well-hidden camp on the ruins\' western approach, invisible from the air.',
         flavour:'"The Dominion has sent scouts here four times. None returned."',
-        activities:['quests'], factionId:'thornwood',
-    },
-    eastern_breach_tw: {
-        id:'eastern_breach_tw', name:'Eastern Breach', label:'Eastern Breach',
-        type:'thornwood', mapView:'thornwood', terrain:'ruins',
-        q:0, r:7, tier:3, danger:3, accessReq:{totalSkill:300},
-        description:'The eastern gap in the ruins wall, used by Thornwood rangers to flank into the inner ruins.',
-        flavour:'"Three factions fight over this gap. The gap seems unconcerned."',
-        activities:['quests'], factionId:'thornwood',
-    },
-    bark_ridge: {
-        id:'bark_ridge', name:'Bark Ridge', label:'Bark Ridge',
-        type:'thornwood', mapView:'thornwood', terrain:'hills',
-        q:0, r:8, tier:3, danger:3, accessReq:{totalSkill:300},
-        description:'A bark-covered ridge where the forest clings stubbornly to the very edge of the ruins zone.',
-        flavour:'"The trees here grow toward the ruins. Nobody knows why."',
-        activities:['quests'], factionId:'thornwood',
-    },
-    far_watch_tw: {
-        id:'far_watch_tw', name:'Far Watch', label:'Far Watch',
-        type:'thornwood', mapView:'thornwood', terrain:'tower',
-        q:0, r:9, tier:3, danger:3, accessReq:{totalSkill:300},
-        description:'The furthest Thornwood observation post, watching both the ruins and the Covenant\'s western approach.',
-        flavour:'"The best watchtower in Alaia. Nobody wants to be stationed there."',
         activities:['quests'], factionId:'thornwood',
     },
 };
