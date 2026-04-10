@@ -198,6 +198,10 @@ Router.register('skills', function renderSkills(container) {
 
 // ── Page render ────────────────────────────────────────────────────────────────
 function _renderSkillsPage(container) {
+    if (typeof _tutorialComplete === 'function' && !_tutorialComplete()) {
+        container.innerHTML = `<div class="page"><div class="page-header"><h1 class="page-title">Skills</h1></div><div class="page-body"><p class="page-empty-state">Complete your faction's introduction in the capital city to unlock this page.</p></div></div>`;
+        return;
+    }
     const canTrain   = _skillsHasTraining();
     const regionName = typeof MapSystem !== 'undefined' ? MapSystem.getCurrentRegionName() : '';
 

@@ -208,6 +208,12 @@ const PlayerSystem = {
             // [{ type, stat, amount, label, expiresAt }]
             activeEffects: [],
 
+            // ── World progression flags ───────────────────────
+            flags: {
+                boardQuestSuccesses: 0,  // count of successful board quests (post-tutorial)
+                worldUnlocked:       false,
+            },
+
             createdAt: Date.now(),
         };
 
@@ -306,6 +312,10 @@ const PlayerSystem = {
         if (!this.current.generatedRegions) this.current.generatedRegions = {};
         // Backfill stat point system
         if (this.current.statPoints == null) this.current.statPoints = 0;
+        // Backfill world progression flags
+        if (!this.current.flags) this.current.flags = { boardQuestSuccesses: 0, worldUnlocked: false };
+        if (this.current.flags.boardQuestSuccesses == null) this.current.flags.boardQuestSuccesses = 0;
+        if (this.current.flags.worldUnlocked == null) this.current.flags.worldUnlocked = false;
         // Backfill warbands
         if (this.current.warbandInfluence == null) this.current.warbandInfluence = 0;
         if (!this.current.warbandStats) this.current.warbandStats = { activeRiftQuest: null, questCooldowns: {}, tilesContested: 0, questsCompleted: 0, totalInfluenceEarned: 0 };

@@ -72,6 +72,12 @@ const MapSystem = {
         const dest = MAP_REGIONS[toId];
         if (!dest) return { ok: false, reason: 'Unknown region.' };
 
+        if (!player.flags?.worldUnlocked) {
+            if (dest.factionId !== player.faction) {
+                return { ok: false, reason: 'You must complete your faction\'s proving mission before venturing beyond your territory.' };
+            }
+        }
+
         if (!this.meetsReq(player, dest.accessReq)) {
             const req = dest.accessReq;
             if (req.totalSkill != null) {
@@ -93,6 +99,7 @@ const MapSystem = {
         const player = PlayerSystem.current;
         const destRegion = MAP_REGIONS[toId];
         if (!destRegion || !this.meetsReq(player, destRegion.accessReq)) return null;
+        if (!player.flags?.worldUnlocked && destRegion.factionId !== player.faction) return null;
 
         const visited = new Set([fromId]);
         const queue   = [[fromId, []]];
@@ -105,7 +112,9 @@ const MapSystem = {
                 if (nbrId === toId) return newPath;
                 const region = MAP_REGIONS[nbrId];
                 if (region && this.meetsReq(player, region.accessReq)) {
-                    queue.push([nbrId, newPath]);
+                    if (player.flags?.worldUnlocked || region.factionId === player.faction) {
+                        queue.push([nbrId, newPath]);
+                    }
                 }
             }
         }

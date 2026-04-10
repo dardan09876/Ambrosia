@@ -9,18 +9,22 @@ Router.register("map", function () {
 
 // ── Region art ────────────────────────────────────────────────────────────────
 const _MAP_REGION_ART = {
+  // Valdros
   valdros_heart: "img/Ruins under a cosmic sky.png",
+  // Dominion
   ironfront: "img/Fortress in the foggy wasteland.png",
   steelwarden: "img/Dark fortress on a war-torn horizon.png",
   forgecrest: "img/The grand forge of Alaia.png",
   hammerveil: "img/Twilight at the blacksmiths forge.png",
   ironhold: "img/Iron Dominion under fiery skies.png",
+  // Covenant
   ashenmire: "img/City of spires and shadows.png",
-  thornhaven: "img/Enchanted village in the forest.png",
   veilspire: "img/Twilight market in a gothic city.png",
   ashfall_city: "img/Volcanic ash over a gothic city.png",
   dusk_citadel: "img/Citadel at twilight with gathering forces.png",
   ashenveil: "img/Frontier city beneath the gas giant.png",
+  // Thornwood
+  thornhaven: "img/Enchanted village in the forest.png",
   deeproot_city: "img/Mystical city beneath the ancient tree.png",
   mosshaven: "img/Moss-covered town on the river.png",
   briarwall: "img/Fortress at the forest's edge.png",
@@ -370,6 +374,22 @@ function _buildMapSvg(locId, adjIds) {
         `font-family="'Cinzel',serif" pointer-events="none"` +
         `>${shortLabel}</text>`,
     );
+
+    // ── Faction quest exclamation marker (intro or main proving quest) ────────
+    const _showMarkerForHex = (id === 'ironhold' && (_showIronholdIntroMarker() || _showMainQuestMarker('iron_dominion')))
+      || (id === 'thornhaven' && (_showThornhavenIntroMarker() || _showMainQuestMarker('thornwood')))
+      || (id === 'ashenmire' && (_showAshenmireIntroMarker() || _showMainQuestMarker('ashen_covenant')));
+    if (_showMarkerForHex) {
+      const mx = (x + S * 0.55).toFixed(1);
+      const my = (y - S * 0.55).toFixed(1);
+      labels.push(
+        `<g class="map-quest-marker" pointer-events="none">` +
+          `<circle cx="${mx}" cy="${my}" r="7" fill="#c9a84c" stroke="#3a2800" stroke-width="1.2"/>` +
+          `<text x="${mx}" y="${(parseFloat(my) + 4.5).toFixed(1)}" text-anchor="middle" ` +
+            `font-size="11" font-weight="bold" fill="#1a0e00" font-family="serif">!</text>` +
+        `</g>`,
+      );
+    }
   }
 
   const land = landMask.join("");
@@ -900,6 +920,56 @@ function _buildIronholdSvg() {
     <text x="385" y="237" text-anchor="middle" font-size="9" fill="#939393" font-family="Cinzel,serif" class="city-bldg-label">Quests</text>
   </g>
 
+  ${_showIronholdIntroMarker() ? `
+  <!-- FACTION INTRO QUEST marker — south gatehouse entrance -->
+  <g class="city-quest-marker" onclick="_openIronholdIntroDialogue()" role="button" aria-label="Quest available" style="cursor:pointer">
+    <circle cx="350" cy="476" r="10" fill="#c9a84c" stroke="#1a0e00" stroke-width="1.5"/>
+    <text x="350" y="481" text-anchor="middle" font-size="14" font-weight="bold" fill="#1a0e00" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showIronholdBldgMarker('ironhold_intro_crafting') ? `
+  <g class="city-quest-marker" onclick="_openIronholdBldgDialogue('ironhold_intro_crafting')" role="button" style="cursor:pointer">
+    <circle cx="175" cy="83" r="8" fill="#c9a84c" stroke="#1a0e00" stroke-width="1.5"/>
+    <text x="175" y="87" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a0e00" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showIronholdBldgMarker('ironhold_intro_market') ? `
+  <g class="city-quest-marker" onclick="_openIronholdBldgDialogue('ironhold_intro_market')" role="button" style="cursor:pointer">
+    <circle cx="569" cy="83" r="8" fill="#c9a84c" stroke="#1a0e00" stroke-width="1.5"/>
+    <text x="569" y="87" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a0e00" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showIronholdBldgMarker('ironhold_intro_training') ? `
+  <g class="city-quest-marker" onclick="_openIronholdBldgDialogue('ironhold_intro_training')" role="button" style="cursor:pointer">
+    <circle cx="175" cy="386" r="8" fill="#c9a84c" stroke="#1a0e00" stroke-width="1.5"/>
+    <text x="175" y="390" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a0e00" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showIronholdBldgMarker('ironhold_intro_guilds') ? `
+  <g class="city-quest-marker" onclick="_openIronholdBldgDialogue('ironhold_intro_guilds')" role="button" style="cursor:pointer">
+    <circle cx="569" cy="386" r="8" fill="#c9a84c" stroke="#1a0e00" stroke-width="1.5"/>
+    <text x="569" y="390" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a0e00" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showIronholdBldgMarker('ironhold_intro_shrine') ? `
+  <g class="city-quest-marker" onclick="_openIronholdBldgDialogue('ironhold_intro_shrine')" role="button" style="cursor:pointer">
+    <circle cx="305" cy="210" r="8" fill="#c9a84c" stroke="#1a0e00" stroke-width="1.5"/>
+    <text x="305" y="214" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a0e00" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showIronholdBldgMarker('ironhold_intro_quests') ? `
+  <g class="city-quest-marker" onclick="_openIronholdBldgDialogue('ironhold_intro_quests')" role="button" style="cursor:pointer">
+    <circle cx="409" cy="234" r="8" fill="#c9a84c" stroke="#1a0e00" stroke-width="1.5"/>
+    <text x="409" y="238" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a0e00" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showMainQuestMarker('iron_dominion') ? `
+  <!-- MAIN PROVING QUEST marker — inner courtyard, centre of map -->
+  <g class="city-quest-marker" onclick="_openIronholdMainQuestDialogue()" role="button" aria-label="Proving quest" style="cursor:pointer">
+    <circle cx="350" cy="260" r="12" fill="#e8c84c" stroke="#1a0e00" stroke-width="2"/>
+    <text x="350" y="265" text-anchor="middle" font-size="16" font-weight="bold" fill="#1a0e00" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
 </svg>`;
 }
 
@@ -1071,6 +1141,55 @@ function _buildThornhavenSvg() {
     <line x1="398" y1="456" x2="398" y2="472" stroke="#1b1b1b" stroke-width="1.5"/>
     <text x="398" y="444" text-anchor="middle" font-size="9" fill="#939393" font-family="Cinzel,serif" class="city-bldg-label">Quests</text>
   </g>
+
+  ${_showThornhavenScoutMarker() ? `
+  <g class="city-quest-marker" onclick="_openThornhavenIntroDialogue()" role="button" style="cursor:pointer">
+    <circle cx="350" cy="505" r="10" fill="#c9a84c" stroke="#1a1200" stroke-width="1.5"/>
+    <text x="350" y="510" text-anchor="middle" font-size="14" font-weight="bold" fill="#1a1200" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showThornhavenBldgMarker('thornhaven_intro_market') ? `
+  <g class="city-quest-marker" onclick="_openThornhavenBldgDialogue('thornhaven_intro_market')" role="button" style="cursor:pointer">
+    <circle cx="110" cy="148" r="8" fill="#c9a84c" stroke="#1a1200" stroke-width="1.5"/>
+    <text x="110" y="152" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a1200" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showThornhavenBldgMarker('thornhaven_intro_training') ? `
+  <g class="city-quest-marker" onclick="_openThornhavenBldgDialogue('thornhaven_intro_training')" role="button" style="cursor:pointer">
+    <circle cx="98" cy="342" r="8" fill="#c9a84c" stroke="#1a1200" stroke-width="1.5"/>
+    <text x="98" y="346" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a1200" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showThornhavenBldgMarker('thornhaven_intro_shrine') ? `
+  <g class="city-quest-marker" onclick="_openThornhavenBldgDialogue('thornhaven_intro_shrine')" role="button" style="cursor:pointer">
+    <circle cx="403" cy="40" r="8" fill="#c9a84c" stroke="#1a1200" stroke-width="1.5"/>
+    <text x="403" y="44" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a1200" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showThornhavenBldgMarker('thornhaven_intro_guilds') ? `
+  <g class="city-quest-marker" onclick="_openThornhavenBldgDialogue('thornhaven_intro_guilds')" role="button" style="cursor:pointer">
+    <circle cx="596" cy="148" r="8" fill="#c9a84c" stroke="#1a1200" stroke-width="1.5"/>
+    <text x="596" y="152" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a1200" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showThornhavenBldgMarker('thornhaven_intro_crafting') ? `
+  <g class="city-quest-marker" onclick="_openThornhavenBldgDialogue('thornhaven_intro_crafting')" role="button" style="cursor:pointer">
+    <circle cx="602" cy="400" r="8" fill="#c9a84c" stroke="#1a1200" stroke-width="1.5"/>
+    <text x="602" y="404" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a1200" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showThornhavenBldgMarker('thornhaven_intro_quests') ? `
+  <g class="city-quest-marker" onclick="_openThornhavenBldgDialogue('thornhaven_intro_quests')" role="button" style="cursor:pointer">
+    <circle cx="422" cy="440" r="8" fill="#c9a84c" stroke="#1a1200" stroke-width="1.5"/>
+    <text x="422" y="444" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a1200" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showMainQuestMarker('thornwood') ? `
+  <!-- MAIN PROVING QUEST marker — central hub platform -->
+  <g class="city-quest-marker" onclick="_openThornhavenMainQuestDialogue()" role="button" aria-label="Proving quest" style="cursor:pointer">
+    <circle cx="350" cy="260" r="12" fill="#e8c84c" stroke="#1a1200" stroke-width="2"/>
+    <text x="350" y="265" text-anchor="middle" font-size="16" font-weight="bold" fill="#1a1200" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
 
 </svg>`;
 }
@@ -1254,6 +1373,55 @@ function _buildAshenmireSvg() {
   <!--  BUILDINGS — six outer district buildings, one per sector  -->
   <!-- ══════════════════════════════════════════════════════════ -->
   ${buildings}
+
+  ${_showAshenmireSentinelMarker() ? `
+  <g class="city-quest-marker" onclick="_openAshenmireIntroDialogue()" role="button" style="cursor:pointer">
+    <circle cx="350" cy="476" r="10" fill="#c9a84c" stroke="#060e1e" stroke-width="1.5"/>
+    <text x="350" y="481" text-anchor="middle" font-size="14" font-weight="bold" fill="#060e1e" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showAshenmireBldgMarker('ashenmire_intro_quests') ? `
+  <g class="city-quest-marker" onclick="_openAshenmireBldgDialogue('ashenmire_intro_quests')" role="button" style="cursor:pointer">
+    <circle cx="368" cy="98" r="8" fill="#c9a84c" stroke="#060e1e" stroke-width="1.5"/>
+    <text x="368" y="102" text-anchor="middle" font-size="12" font-weight="bold" fill="#060e1e" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showAshenmireBldgMarker('ashenmire_intro_market') ? `
+  <g class="city-quest-marker" onclick="_openAshenmireBldgDialogue('ashenmire_intro_market')" role="button" style="cursor:pointer">
+    <circle cx="498" cy="170" r="8" fill="#c9a84c" stroke="#060e1e" stroke-width="1.5"/>
+    <text x="498" y="174" text-anchor="middle" font-size="12" font-weight="bold" fill="#060e1e" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showAshenmireBldgMarker('ashenmire_intro_crafting') ? `
+  <g class="city-quest-marker" onclick="_openAshenmireBldgDialogue('ashenmire_intro_crafting')" role="button" style="cursor:pointer">
+    <circle cx="498" cy="346" r="8" fill="#c9a84c" stroke="#060e1e" stroke-width="1.5"/>
+    <text x="498" y="350" text-anchor="middle" font-size="12" font-weight="bold" fill="#060e1e" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showAshenmireBldgMarker('ashenmire_intro_training') ? `
+  <g class="city-quest-marker" onclick="_openAshenmireBldgDialogue('ashenmire_intro_training')" role="button" style="cursor:pointer">
+    <circle cx="368" cy="422" r="8" fill="#c9a84c" stroke="#060e1e" stroke-width="1.5"/>
+    <text x="368" y="426" text-anchor="middle" font-size="12" font-weight="bold" fill="#060e1e" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showAshenmireBldgMarker('ashenmire_intro_guilds') ? `
+  <g class="city-quest-marker" onclick="_openAshenmireBldgDialogue('ashenmire_intro_guilds')" role="button" style="cursor:pointer">
+    <circle cx="202" cy="346" r="8" fill="#c9a84c" stroke="#060e1e" stroke-width="1.5"/>
+    <text x="202" y="350" text-anchor="middle" font-size="12" font-weight="bold" fill="#060e1e" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showAshenmireBldgMarker('ashenmire_intro_shrine') ? `
+  <g class="city-quest-marker" onclick="_openAshenmireBldgDialogue('ashenmire_intro_shrine')" role="button" style="cursor:pointer">
+    <circle cx="202" cy="170" r="8" fill="#c9a84c" stroke="#060e1e" stroke-width="1.5"/>
+    <text x="202" y="174" text-anchor="middle" font-size="12" font-weight="bold" fill="#060e1e" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
+
+  ${_showMainQuestMarker('ashen_covenant') ? `
+  <!-- MAIN PROVING QUEST marker — central plaza -->
+  <g class="city-quest-marker" onclick="_openAshenmireMainQuestDialogue()" role="button" aria-label="Proving quest" style="cursor:pointer">
+    <circle cx="350" cy="260" r="12" fill="#e8c84c" stroke="#060e1e" stroke-width="2"/>
+    <text x="350" y="265" text-anchor="middle" font-size="16" font-weight="bold" fill="#060e1e" font-family="serif" pointer-events="none">!</text>
+  </g>` : ''}
 
 </svg>`;
 }
@@ -2033,4 +2201,1271 @@ function _buildIronfrontSvg() {
   </g>
 
 </svg>`;
+}
+
+// ── Ironhold intro quest ──────────────────────────────────────────────────────
+
+// Returns true if the player has completed ALL tutorial intro quests for their faction.
+function _tutorialComplete() {
+  const player = PlayerSystem.current;
+  if (!player) return false;
+  const completed = player.quests?.completed || [];
+  const done = id => completed.some(c => c.questId === id);
+  if (player.faction === 'iron_dominion') {
+    return ['ironhold_guard_intro','ironhold_intro_crafting','ironhold_intro_market',
+      'ironhold_intro_training','ironhold_intro_guilds','ironhold_intro_shrine','ironhold_intro_quests']
+      .every(done);
+  }
+  if (player.faction === 'thornwood') {
+    return ['thornhaven_scout_intro','thornhaven_intro_market','thornhaven_intro_training',
+      'thornhaven_intro_crafting','thornhaven_intro_guilds','thornhaven_intro_quests','thornhaven_intro_shrine']
+      .every(done);
+  }
+  if (player.faction === 'ashen_covenant') {
+    return ['ashenmire_sentinel_intro','ashenmire_intro_market','ashenmire_intro_training',
+      'ashenmire_intro_crafting','ashenmire_intro_guilds','ashenmire_intro_quests','ashenmire_intro_shrine']
+      .every(done);
+  }
+  return false;
+}
+
+// ── Main proving quest markers ────────────────────────────────────────────────
+// Shows after tutorial is done, until the world is unlocked.
+
+function _showMainQuestMarker(faction) {
+  const player = PlayerSystem.current;
+  if (!player || player.faction !== faction) return false;
+  if (player.flags?.worldUnlocked) return false;
+  return _tutorialComplete();
+}
+
+function _mainQuestAccepted() {
+  const player = PlayerSystem.current;
+  return player?.quests?.completed?.some(c => c.questId === 'main_proving_quest_accepted') ?? false;
+}
+
+function _boardQuestsDone() {
+  const player = PlayerSystem.current;
+  return (player?.flags?.boardQuestSuccesses || 0) >= 5;
+}
+
+function _showIronholdIntroMarker() {
+  const player = PlayerSystem.current;
+  if (!player || player.faction !== 'iron_dominion') return false;
+  const completed = player.quests.completed || [];
+  const ids = ['ironhold_guard_intro','ironhold_intro_crafting','ironhold_intro_market',
+    'ironhold_intro_training','ironhold_intro_guilds','ironhold_intro_shrine','ironhold_intro_quests'];
+  return ids.some(id => !completed.some(c => c.questId === id));
+}
+
+function _showThornhavenIntroMarker() {
+  const player = PlayerSystem.current;
+  if (!player || player.faction !== 'thornwood') return false;
+  const completed = player.quests.completed || [];
+  const ids = ['thornhaven_scout_intro','thornhaven_intro_market','thornhaven_intro_training',
+    'thornhaven_intro_crafting','thornhaven_intro_guilds','thornhaven_intro_quests','thornhaven_intro_shrine'];
+  return ids.some(id => !completed.some(c => c.questId === id));
+}
+
+function _showAshenmireIntroMarker() {
+  const player = PlayerSystem.current;
+  if (!player || player.faction !== 'ashen_covenant') return false;
+  const completed = player.quests.completed || [];
+  const ids = ['ashenmire_sentinel_intro','ashenmire_intro_market','ashenmire_intro_training',
+    'ashenmire_intro_crafting','ashenmire_intro_guilds','ashenmire_intro_quests','ashenmire_intro_shrine'];
+  return ids.some(id => !completed.some(c => c.questId === id));
+}
+
+function _openIronholdIntroDialogue() {
+  if (document.getElementById('ironhold-intro-overlay')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'ironhold-intro-overlay';
+  overlay.className = 'city-map-overlay';
+
+  function render(step) {
+    let body = '';
+    if (step === 1) {
+      body = `
+        <div class="idlg-speaker">Gate Guard</div>
+        <div class="idlg-line">
+          "Hold. You there — stop where you are."
+        </div>
+        <div class="idlg-line">
+          A broad-shouldered guard in iron-plate steps in front of you, one gauntleted hand raised.
+          His eyes move across you with the practiced suspicion of someone who has stopped a hundred people today.
+        </div>
+        <div class="idlg-line">
+          "Standard entry protocol. Drop your pack and open it. We check everything going into Ironhold."
+        </div>
+        <div class="idlg-actions">
+          <button class="idlg-btn-primary" data-step="2">Comply — open your pack</button>
+          <button class="idlg-btn-secondary" data-step="3">Ask why this is necessary</button>
+        </div>`;
+    } else if (step === 2) {
+      body = `
+        <div class="idlg-speaker">Gate Guard</div>
+        <div class="idlg-line">
+          You lower your pack to the ground and unbuckle it. The guard crouches, rifles through
+          the contents with efficient hands, checks the lining, then stands.
+        </div>
+        <div class="idlg-line">
+          "Nothing flagged. You're clear."
+        </div>
+        <div class="idlg-line">
+          He steps aside and jerks his head toward the gate.
+          "Welcome to Ironhold. Try not to be a problem."
+        </div>
+        <div class="idlg-actions">
+          <button class="idlg-btn-primary" data-accept="1">Enter the city</button>
+        </div>`;
+    } else if (step === 3) {
+      body = `
+        <div class="idlg-speaker">Gate Guard</div>
+        <div class="idlg-line">
+          The guard's expression doesn't change.
+        </div>
+        <div class="idlg-line">
+          "Because Ironhold has had three assassination attempts, two smuggled weapons caches, and
+          one incident I'm not allowed to describe in the last season alone. That's why."
+        </div>
+        <div class="idlg-line">
+          "Pack. Open it. Now."
+        </div>
+        <div class="idlg-actions">
+          <button class="idlg-btn-primary" data-step="2">Comply — open your pack</button>
+          <button class="idlg-btn-danger" data-step="4">Refuse</button>
+        </div>`;
+    } else if (step === 4) {
+      body = `
+        <div class="idlg-speaker">Gate Guard</div>
+        <div class="idlg-line">
+          The guard's hand moves to the hilt at his side. Two more guards step up from the
+          gatehouse without being called.
+        </div>
+        <div class="idlg-line">
+          "Last time I ask. Open the pack, or turn around and don't come back today."
+        </div>
+        <div class="idlg-actions">
+          <button class="idlg-btn-primary" data-step="2">Comply — open your pack</button>
+          <button class="idlg-btn-danger" data-dismiss="1">Turn around and leave</button>
+        </div>`;
+    }
+
+    overlay.innerHTML = `
+      <div class="idlg-panel">
+        <div class="idlg-header">
+          <span class="idlg-title">Gates of Ironhold</span>
+          <button class="city-map-close" data-dismiss="1">✕</button>
+        </div>
+        <div class="idlg-body">${body}</div>
+      </div>`;
+
+    // Wire up buttons
+    overlay.querySelectorAll('[data-step]').forEach(btn => {
+      btn.addEventListener('click', () => render(parseInt(btn.dataset.step)));
+    });
+    overlay.querySelectorAll('[data-accept]').forEach(btn => {
+      btn.addEventListener('click', () => _completeIronholdIntro());
+    });
+    overlay.querySelectorAll('[data-dismiss]').forEach(btn => {
+      btn.addEventListener('click', () => overlay.remove());
+    });
+  }
+
+  render(1);
+  document.body.appendChild(overlay);
+
+  overlay._keyHandler = function (e) {
+    if (e.key === 'Escape') overlay.remove();
+  };
+  document.addEventListener('keydown', overlay._keyHandler);
+  overlay.addEventListener('click', function (e) {
+    if (e.target === overlay) overlay.remove();
+  });
+}
+
+function _completeIronholdIntro() {
+  const overlay = document.getElementById('ironhold-intro-overlay');
+  if (overlay) {
+    if (overlay._keyHandler) document.removeEventListener('keydown', overlay._keyHandler);
+    overlay.remove();
+  }
+  const player = PlayerSystem.current;
+  if (!player) return;
+  if (!player.quests.completed) player.quests.completed = [];
+  player.quests.completed.push({ questId: 'ironhold_guard_intro', outcome: 'success', ts: Date.now() });
+  SaveSystem.save();
+  _renderMapPage();
+}
+
+// ── Ironhold building intro quests ────────────────────────────────────────────
+
+function _ironholdGuardDone() {
+  const player = PlayerSystem.current;
+  if (!player) return false;
+  return (player.quests.completed || []).some(c => c.questId === 'ironhold_guard_intro');
+}
+
+function _showIronholdBldgMarker(questId) {
+  if (!_ironholdGuardDone()) return false;
+  const player = PlayerSystem.current;
+  if (!player || player.faction !== 'iron_dominion') return false;
+  return !(player.quests.completed || []).some(c => c.questId === questId);
+}
+
+function _completeIronholdBldgQuest(questId, overlayId) {
+  const overlay = document.getElementById(overlayId);
+  if (overlay) {
+    if (overlay._keyHandler) document.removeEventListener('keydown', overlay._keyHandler);
+    overlay.remove();
+  }
+  // Close any open city overlay so the map re-renders cleanly
+  document.querySelectorAll('.city-map-overlay').forEach(o => o.remove());
+  const player = PlayerSystem.current;
+  if (!player) return;
+  if (!player.quests.completed) player.quests.completed = [];
+  player.quests.completed.push({ questId, outcome: 'success', ts: Date.now() });
+  SaveSystem.save();
+  _renderMapPage();
+}
+
+const _IRONHOLD_BLDG_DIALOGUES = {
+  ironhold_intro_crafting: {
+    overlayId: 'ironhold-bldg-crafting-overlay',
+    title: 'The Forge',
+    steps: [
+      {
+        speaker: 'Master Smith Vrenn',
+        lines: [
+          '"You\'re standing in front of the best forge in the Dominion and you look lost. That\'s fixable."',
+          'A heavyset woman in a scorched apron sizes you up from the doorway. Behind her, the sound of hammers and heat.',
+          '"Crafting works like this: gather materials out in the field, bring them here, and I\'ll show you what can be made from them. Different professions cover different gear — blacksmithing for weapons, armorsmithing for plate, and so on."',
+        ],
+        actions: [{ label: 'Ask about materials', next: 2 }, { label: 'Come back later', dismiss: true }],
+      },
+      {
+        speaker: 'Master Smith Vrenn',
+        lines: [
+          '"Materials drop from enemies, salvage, quests — you\'ll find them. The crafting page shows you everything available to make at your current skill level."',
+          '"The higher your crafting skill, the better the gear you can produce. I\'d start with something simple, get your hands dirty, then work up."',
+          '"Door\'s open. Don\'t waste my time once you\'re inside."',
+        ],
+        actions: [{ label: 'Understood', complete: true }],
+      },
+    ],
+  },
+
+  ironhold_intro_market: {
+    overlayId: 'ironhold-bldg-market-overlay',
+    title: 'The Armory Market',
+    steps: [
+      {
+        speaker: 'Quartermaster Dael',
+        lines: [
+          '"Eyes up. You\'re browsing, or you need something specific?"',
+          'A lean man behind a cluttered counter glances up from a ledger, quill still in hand.',
+          '"The market covers three things: food, gear repair, and the shrine exchange. Food keeps your survival stats from degrading in the field — ignore it and your performance drops. Repair keeps your equipment from falling apart mid-fight."',
+        ],
+        actions: [{ label: 'Ask about the shrine exchange', next: 2 }, { label: 'Come back later', dismiss: true }],
+      },
+      {
+        speaker: 'Quartermaster Dael',
+        lines: [
+          '"Shrine tab is further in — it\'s where you offload corruption. You pick that up in dangerous areas. Let it build and it starts affecting your stats in ways you won\'t enjoy."',
+          '"Everything else is standard supply. Prices vary by region, so don\'t complain to me about what you paid somewhere else."',
+          'He goes back to his ledger.',
+          '"Buy something or move on."',
+        ],
+        actions: [{ label: 'Understood', complete: true }],
+      },
+    ],
+  },
+
+  ironhold_intro_training: {
+    overlayId: 'ironhold-bldg-training-overlay',
+    title: 'The Barracks',
+    steps: [
+      {
+        speaker: 'Drill Sergeant Orath',
+        lines: [
+          '"You. In front of my barracks. What do you want?"',
+          'He doesn\'t stop doing push-ups when he says it.',
+          '"Training. That\'s what this building is for. Six combat skills and seven crafting skills — each one you can raise by spending stat points, which you earn by completing quests and levelling up."',
+        ],
+        actions: [{ label: 'Ask how skills affect combat', next: 2 }, { label: 'Come back later', dismiss: true }],
+      },
+      {
+        speaker: 'Drill Sergeant Orath',
+        lines: [
+          '"Higher skill means better quest success rates, better crafting output, and better arena performance. Simple."',
+          '"Effective skill isn\'t just raw investment — there\'s a formula. Diminishing returns kick in eventually, so spreading across complementary skills is usually smarter than stacking one."',
+          'He finally stands up.',
+          '"Stop standing outside and go read the board."',
+        ],
+        actions: [{ label: 'Understood', complete: true }],
+      },
+    ],
+  },
+
+  ironhold_intro_guilds: {
+    overlayId: 'ironhold-bldg-guilds-overlay',
+    title: 'The War Council Hall',
+    steps: [
+      {
+        speaker: 'Guild Registrar Maren',
+        lines: [
+          '"Before you walk in there and make a bad impression, let me brief you."',
+          'A composed woman with a wax seal on her collar intercepts you at the door.',
+          '"Three guilds operate here: the Ashguard, the Black Sigil, and the Veil Syndicate. Each has its own focus — fighters, mages, and operatives respectively. You can join one. Only one."',
+        ],
+        actions: [{ label: 'Ask about guild benefits', next: 2 }, { label: 'Come back later', dismiss: true }],
+      },
+      {
+        speaker: 'Guild Registrar Maren',
+        lines: [
+          '"Guild membership unlocks a second quest board with better rewards. You\'ll also earn reputation, which determines what contracts you can take on."',
+          '"Reputation is earned slowly and lost fast. Don\'t embarrass your guild — it matters more than you think out here."',
+          'She steps aside from the door.',
+          '"Make your choice carefully. The guilds remember who walked away."',
+        ],
+        actions: [{ label: 'Understood', complete: true }],
+      },
+    ],
+  },
+
+  ironhold_intro_quests: {
+    overlayId: 'ironhold-bldg-quests-overlay',
+    title: 'The Command Post',
+    steps: [
+      {
+        speaker: 'Operations Officer Cael',
+        lines: [
+          '"The board doesn\'t explain itself. I will."',
+          'A young officer with ink on his fingers gestures to a wall of pinned contracts behind him.',
+          '"Daily quests refresh each morning. Each one has a skill requirement — your effective skill versus the required level determines your success chance. Too far below the requirement and you\'ll fail more than you complete."',
+        ],
+        actions: [{ label: 'Ask about rewards', next: 2 }, { label: 'Come back later', dismiss: true }],
+      },
+      {
+        speaker: 'Operations Officer Cael',
+        lines: [
+          '"Rewards are gold and loot chests. Higher tier quests pay more but demand more. You can only run one quest at a time — they take real time to complete."',
+          '"Guild members get a second board with guild-specific contracts. Separate from the daily board, better rewards, harder requirements."',
+          '"Check in daily. The board rotates and some contracts don\'t last."',
+        ],
+        actions: [{ label: 'Understood', complete: true }],
+      },
+    ],
+  },
+
+  ironhold_intro_shrine: {
+    overlayId: 'ironhold-bldg-shrine-overlay',
+    title: 'The Iron Chapel',
+    steps: [
+      {
+        speaker: 'Iron Chaplain Sera',
+        lines: [
+          '"Most soldiers walk past without stopping. That\'s usually when they need it most."',
+          'A quiet woman in grey iron-trimmed robes looks up from a candle she was tending.',
+          '"The shrine handles corruption — a residue that accumulates when you spend time in dangerous or magically tainted areas. You might not notice it building up until it\'s affecting your stats."',
+        ],
+        actions: [{ label: 'Ask how to clear it', next: 2 }, { label: 'Come back later', dismiss: true }],
+      },
+      {
+        speaker: 'Iron Chaplain Sera',
+        lines: [
+          '"Cleansing costs a small amount of gold and clears your corruption completely. The longer you leave it, the worse the effect — and it doesn\'t cap cleanly."',
+          '"You\'ll find the shrine through the market. It\'s the third tab. I\'m here whenever you need it."',
+          'She turns back to the candle.',
+          '"Try not to let it accumulate. It\'s easier to maintain than to fix."',
+        ],
+        actions: [{ label: 'Understood', complete: true }],
+      },
+    ],
+  },
+};
+
+function _openIronholdBldgDialogue(questId) {
+  const cfg = _IRONHOLD_BLDG_DIALOGUES[questId];
+  if (!cfg) return;
+  if (document.getElementById(cfg.overlayId)) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = cfg.overlayId;
+  overlay.className = 'city-map-overlay';
+
+  function render(stepIndex) {
+    const step = cfg.steps[stepIndex - 1];
+    const linesHtml = step.lines.map(l => `<div class="idlg-line">${l}</div>`).join('');
+    const actionsHtml = step.actions.map(a => {
+      if (a.dismiss) return `<button class="idlg-btn-secondary" data-dismiss="1">${a.label}</button>`;
+      if (a.next)    return `<button class="idlg-btn-primary" data-step="${a.next}">${a.label}</button>`;
+      if (a.complete) return `<button class="idlg-btn-primary" data-complete="1">${a.label}</button>`;
+      return '';
+    }).join('');
+
+    overlay.innerHTML = `
+      <div class="idlg-panel">
+        <div class="idlg-header">
+          <span class="idlg-title">${cfg.title}</span>
+          <button class="city-map-close" data-dismiss="1">✕</button>
+        </div>
+        <div class="idlg-body">
+          <div class="idlg-speaker">${step.speaker}</div>
+          ${linesHtml}
+          <div class="idlg-actions">${actionsHtml}</div>
+        </div>
+      </div>`;
+
+    overlay.querySelectorAll('[data-step]').forEach(btn =>
+      btn.addEventListener('click', () => render(parseInt(btn.dataset.step))));
+    overlay.querySelectorAll('[data-dismiss]').forEach(btn =>
+      btn.addEventListener('click', () => overlay.remove()));
+    overlay.querySelectorAll('[data-complete]').forEach(btn =>
+      btn.addEventListener('click', () =>
+        _completeIronholdBldgQuest(questId, cfg.overlayId)));
+  }
+
+  render(1);
+  document.body.appendChild(overlay);
+  overlay._keyHandler = e => { if (e.key === 'Escape') overlay.remove(); };
+  document.addEventListener('keydown', overlay._keyHandler);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+// ── Thornhaven intro quests ───────────────────────────────────────────────────
+
+function _showThornhavenScoutMarker() {
+  const player = PlayerSystem.current;
+  if (!player || player.faction !== 'thornwood') return false;
+  return !(player.quests.completed || []).some(c => c.questId === 'thornhaven_scout_intro');
+}
+
+function _thornhavenScoutDone() {
+  const player = PlayerSystem.current;
+  if (!player) return false;
+  return (player.quests.completed || []).some(c => c.questId === 'thornhaven_scout_intro');
+}
+
+function _showThornhavenBldgMarker(questId) {
+  if (!_thornhavenScoutDone()) return false;
+  const player = PlayerSystem.current;
+  if (!player || player.faction !== 'thornwood') return false;
+  return !(player.quests.completed || []).some(c => c.questId === questId);
+}
+
+function _openThornhavenIntroDialogue() {
+  if (document.getElementById('thornhaven-intro-overlay')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'thornhaven-intro-overlay';
+  overlay.className = 'city-map-overlay';
+
+  function render(step) {
+    let body = '';
+    if (step === 1) {
+      body = `
+        <div class="idlg-speaker">Scout Senna</div>
+        <div class="idlg-line">"Eyes on you since the ridge."</div>
+        <div class="idlg-line">A voice from somewhere above. You look up — a figure perched in the canopy twenty feet overhead, one leg hanging easy over the branch, a shortbow across her lap. Not drawn. Yet.</div>
+        <div class="idlg-line">"New face. You carrying anything that burns?"</div>
+        <div class="idlg-actions">
+          <button class="idlg-btn-primary" data-step="2">Hold out your hands — nothing to hide</button>
+          <button class="idlg-btn-secondary" data-step="3">Ask why the scrutiny</button>
+        </div>`;
+    } else if (step === 2) {
+      body = `
+        <div class="idlg-speaker">Scout Senna</div>
+        <div class="idlg-line">She studies you for a moment. Then she drops — a clean fifteen-foot fall, lands like it's nothing, and straightens up to face you.</div>
+        <div class="idlg-line">"Good. No torches, no iron powder, nothing wrapped in oilcloth." She glances at your pack one more time. "We've had issues."</div>
+        <div class="idlg-line">"You're clear. Thornhaven's up in the canopy — follow the rope bridges and don't lean on the old ones. Welcome."</div>
+        <div class="idlg-actions">
+          <button class="idlg-btn-primary" data-accept="1">Climb into the canopy</button>
+        </div>`;
+    } else if (step === 3) {
+      body = `
+        <div class="idlg-speaker">Scout Senna</div>
+        <div class="idlg-line">She tilts her head, still relaxed in the branch.</div>
+        <div class="idlg-line">"Three months ago, a Dominion infiltrator came through with a signal torch buried under his bedroll and a full week's worth of fire-starter packed into a false canteen bottom. Burned two platforms before we got it out."</div>
+        <div class="idlg-line">"So now we check. Anything else you want to debate, or can I go back to watching the ridge?"</div>
+        <div class="idlg-actions">
+          <button class="idlg-btn-primary" data-step="2">Hold out your hands — nothing to hide</button>
+        </div>`;
+    }
+
+    overlay.innerHTML = `
+      <div class="idlg-panel">
+        <div class="idlg-header">
+          <span class="idlg-title">Approach to Thornhaven</span>
+          <button class="city-map-close" data-dismiss="1">✕</button>
+        </div>
+        <div class="idlg-body">${body}</div>
+      </div>`;
+
+    overlay.querySelectorAll('[data-step]').forEach(btn =>
+      btn.addEventListener('click', () => render(parseInt(btn.dataset.step))));
+    overlay.querySelectorAll('[data-accept]').forEach(btn =>
+      btn.addEventListener('click', () => _completeThornhavenIntro()));
+    overlay.querySelectorAll('[data-dismiss]').forEach(btn =>
+      btn.addEventListener('click', () => overlay.remove()));
+  }
+
+  render(1);
+  document.body.appendChild(overlay);
+  overlay._keyHandler = e => { if (e.key === 'Escape') overlay.remove(); };
+  document.addEventListener('keydown', overlay._keyHandler);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+function _completeThornhavenIntro() {
+  const overlay = document.getElementById('thornhaven-intro-overlay');
+  if (overlay) {
+    if (overlay._keyHandler) document.removeEventListener('keydown', overlay._keyHandler);
+    overlay.remove();
+  }
+  const player = PlayerSystem.current;
+  if (!player) return;
+  if (!player.quests.completed) player.quests.completed = [];
+  player.quests.completed.push({ questId: 'thornhaven_scout_intro', outcome: 'success', ts: Date.now() });
+  SaveSystem.save();
+  _renderMapPage();
+}
+
+function _completeTWBldgQuest(questId, overlayId) {
+  const overlay = document.getElementById(overlayId);
+  if (overlay) {
+    if (overlay._keyHandler) document.removeEventListener('keydown', overlay._keyHandler);
+    overlay.remove();
+  }
+  document.querySelectorAll('.city-map-overlay').forEach(o => o.remove());
+  const player = PlayerSystem.current;
+  if (!player) return;
+  if (!player.quests.completed) player.quests.completed = [];
+  player.quests.completed.push({ questId, outcome: 'success', ts: Date.now() });
+  SaveSystem.save();
+  _renderMapPage();
+}
+
+const _THORNHAVEN_BLDG_DIALOGUES = {
+  thornhaven_intro_market: {
+    overlayId: 'tw-bldg-market-overlay',
+    title: 'The Trading Post',
+    steps: [
+      {
+        speaker: 'Trader Nin',
+        lines: [
+          '"Sit down if you want. Or don\'t. I\'m not going anywhere."',
+          'A wiry man with bark-dyed sleeves leans back against a post, arms crossed, entirely unhurried.',
+          '"We run three things here: provisions, gear repair, and the cleansing basin — that\'s what other factions call a shrine. Food matters out in the field. Go hungry long enough and you\'ll feel it in your hands before you feel it in your stomach."',
+        ],
+        actions: [{ label: 'Ask about gear repair', next: 2 }, { label: 'Come back later', dismiss: true }],
+      },
+      {
+        speaker: 'Trader Nin',
+        lines: [
+          '"Repair\'s simple. Equipment degrades. Degraded equipment costs you in fights. Bring it here and we\'ll see it right."',
+          '"Cleansing basin is the third tab inside — that\'s for corruption. Tainted areas leave a residue. Leave it long enough and it starts pulling at you. The basin clears it."',
+          'He uncrosses his arms and picks up a mug.',
+          '"No rush. Thornhaven doesn\'t work on Dominion time."',
+        ],
+        actions: [{ label: 'Understood', complete: true }],
+      },
+    ],
+  },
+
+  thornhaven_intro_training: {
+    overlayId: 'tw-bldg-training-overlay',
+    title: 'The Rangerpost',
+    steps: [
+      {
+        speaker: 'Rangermaster Vaen',
+        lines: [
+          '"You want to improve. Good instinct — most people wait until they\'re losing."',
+          'A tall, unhurried figure with a carved shortbow over one shoulder meets your eyes without ceremony.',
+          '"Skills here are the same as anywhere — melee, ranged, magic, stealth, restoration, defense, and the crafting disciplines. You invest stat points to raise them. Points come from quests and levelling."',
+        ],
+        actions: [{ label: 'Ask how skills scale', next: 2 }, { label: 'Come back later', dismiss: true }],
+      },
+      {
+        speaker: 'Rangermaster Vaen',
+        lines: [
+          '"Effective skill isn\'t a straight line from raw points. It curves. That\'s by design — the first points in a skill give the most return. After a threshold, you\'re getting less per point."',
+          '"Most experienced fighters spread across a few skills rather than sinking everything into one. Think about what you\'re trying to survive out there and invest accordingly."',
+          'He gestures toward the training floor.',
+          '"Door\'s open."',
+        ],
+        actions: [{ label: 'Understood', complete: true }],
+      },
+    ],
+  },
+
+  thornhaven_intro_crafting: {
+    overlayId: 'tw-bldg-crafting-overlay',
+    title: 'The Woodwright\'s Loft',
+    steps: [
+      {
+        speaker: 'Woodwright Lira',
+        lines: [
+          '"Oh good — someone who doesn\'t immediately ask where the iron is."',
+          'A young woman with sawdust in her hair and a very focused expression looks up from a half-finished bow stave.',
+          '"Crafting here works the same as anywhere mechanically, but our materials are different. We work with natural materials — hide, bone, wood, fibre. Lighter than plate, more flexible, and in the right hands, just as effective."',
+        ],
+        actions: [{ label: 'Ask about professions', next: 2 }, { label: 'Come back later', dismiss: true }],
+      },
+      {
+        speaker: 'Woodwright Lira',
+        lines: [
+          '"Different professions cover different categories — woodworking, tailoring, alchemy, and so on. Each has its own skill track. The higher your skill in a profession, the better the quality of what you produce."',
+          '"Materials come from the field. The crafting page will show you what you can make with what you\'ve got. I\'d suggest starting with something practical — something you\'ll actually use."',
+          'She goes back to the bow stave.',
+          '"Come in whenever you\'re ready."',
+        ],
+        actions: [{ label: 'Understood', complete: true }],
+      },
+    ],
+  },
+
+  thornhaven_intro_guilds: {
+    overlayId: 'tw-bldg-guilds-overlay',
+    title: 'The Hollow Hall',
+    steps: [
+      {
+        speaker: 'Elder Rowan',
+        lines: [
+          '"The guilds don\'t advertise. You have to know to look."',
+          'An older woman with a carved staff and a patient expression is sitting outside the hall, watching the canopy sway.',
+          '"Three guilds operate within our network: the Ashguard, the Black Sigil, and the Veil Syndicate. Each aligns with a different kind of work — fighting, arcane, and covert. You pick one."',
+        ],
+        actions: [{ label: 'Ask what guild membership means', next: 2 }, { label: 'Come back later', dismiss: true }],
+      },
+      {
+        speaker: 'Elder Rowan',
+        lines: [
+          '"A guild gives you a second contract board — better assignments, better pay, harder requirements. You also build reputation. Reputation opens more of that board over time."',
+          '"Lose reputation and those doors close. We value reliability here, not just results."',
+          'She stands slowly.',
+          '"Go inside and have a look. No obligation yet."',
+        ],
+        actions: [{ label: 'Understood', complete: true }],
+      },
+    ],
+  },
+
+  thornhaven_intro_quests: {
+    overlayId: 'tw-bldg-quests-overlay',
+    title: 'The Assignment Board',
+    steps: [
+      {
+        speaker: 'Coordinator Ash',
+        lines: [
+          '"The board is woven, not pinned. Wind takes things sometimes. Check it daily."',
+          'A calm, methodical young man is running a finger along the board\'s edge, making small adjustments.',
+          '"Assignments refresh each morning. Every one has a skill requirement — your effective skill versus the requirement determines your odds. We don\'t pad the numbers here. If you\'re below threshold, you\'ll feel it."',
+        ],
+        actions: [{ label: 'Ask about the rewards', next: 2 }, { label: 'Come back later', dismiss: true }],
+      },
+      {
+        speaker: 'Coordinator Ash',
+        lines: [
+          '"Rewards are gold and loot. Higher tiers pay more. You can only hold one active assignment at a time, and they run on a real clock."',
+          '"If you\'re in a guild, you\'ll have a second board separate from this one. Guild assignments are harder, pay better, and require reputation to unlock."',
+          '"Come back tomorrow if the board looks thin today. Rotation matters."',
+        ],
+        actions: [{ label: 'Understood', complete: true }],
+      },
+    ],
+  },
+
+  thornhaven_intro_shrine: {
+    overlayId: 'tw-bldg-shrine-overlay',
+    title: 'The Canopy Shrine',
+    steps: [
+      {
+        speaker: 'Canopy Warden Fen',
+        lines: [
+          '"You\'re carrying something with you. Not in your pack — in your aura. Sit down for a moment."',
+          'A slight figure in grey-green cloth is perched on a curved root, eyes half-closed.',
+          '"Corruption. Most people don\'t notice it until it\'s too late to ignore. It builds when you spend time in tainted areas — ruins, cursed ground, anywhere the old magic went wrong. It doesn\'t hurt at first."',
+        ],
+        actions: [{ label: 'Ask what happens if it builds up', next: 2 }, { label: 'Come back later', dismiss: true }],
+      },
+      {
+        speaker: 'Canopy Warden Fen',
+        lines: [
+          '"Eventually it degrades your performance — your stats erode, your focus clouds. The shrine clears it. It costs a little gold, takes a moment, and the effect is immediate."',
+          '"You\'ll find the cleansing basin through the market. Third tab. I tend it, and I\'m here most days."',
+          'She opens her eyes fully.',
+          '"Don\'t wait until you can feel it. Come before that."',
+        ],
+        actions: [{ label: 'Understood', complete: true }],
+      },
+    ],
+  },
+};
+
+function _openThornhavenBldgDialogue(questId) {
+  const cfg = _THORNHAVEN_BLDG_DIALOGUES[questId];
+  if (!cfg) return;
+  if (document.getElementById(cfg.overlayId)) return;
+  const overlay = document.createElement('div');
+  overlay.id = cfg.overlayId;
+  overlay.className = 'city-map-overlay';
+
+  function render(stepIndex) {
+    const step = cfg.steps[stepIndex - 1];
+    const linesHtml = step.lines.map(l => `<div class="idlg-line">${l}</div>`).join('');
+    const actionsHtml = step.actions.map(a => {
+      if (a.dismiss) return `<button class="idlg-btn-secondary" data-dismiss="1">${a.label}</button>`;
+      if (a.next)    return `<button class="idlg-btn-primary" data-step="${a.next}">${a.label}</button>`;
+      if (a.complete) return `<button class="idlg-btn-primary" data-complete="1">${a.label}</button>`;
+      return '';
+    }).join('');
+    overlay.innerHTML = `
+      <div class="idlg-panel">
+        <div class="idlg-header">
+          <span class="idlg-title">${cfg.title}</span>
+          <button class="city-map-close" data-dismiss="1">✕</button>
+        </div>
+        <div class="idlg-body">
+          <div class="idlg-speaker">${step.speaker}</div>
+          ${linesHtml}
+          <div class="idlg-actions">${actionsHtml}</div>
+        </div>
+      </div>`;
+    overlay.querySelectorAll('[data-step]').forEach(btn =>
+      btn.addEventListener('click', () => render(parseInt(btn.dataset.step))));
+    overlay.querySelectorAll('[data-dismiss]').forEach(btn =>
+      btn.addEventListener('click', () => overlay.remove()));
+    overlay.querySelectorAll('[data-complete]').forEach(btn =>
+      btn.addEventListener('click', () =>
+        _completeTWBldgQuest(questId, cfg.overlayId)));
+  }
+
+  render(1);
+  document.body.appendChild(overlay);
+  overlay._keyHandler = e => { if (e.key === 'Escape') overlay.remove(); };
+  document.addEventListener('keydown', overlay._keyHandler);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+// ── Ashenmire intro quests ────────────────────────────────────────────────────
+
+function _showAshenmireSentinelMarker() {
+  const player = PlayerSystem.current;
+  if (!player || player.faction !== 'ashen_covenant') return false;
+  return !(player.quests.completed || []).some(c => c.questId === 'ashenmire_sentinel_intro');
+}
+
+function _ashenmireSentinelDone() {
+  const player = PlayerSystem.current;
+  if (!player) return false;
+  return (player.quests.completed || []).some(c => c.questId === 'ashenmire_sentinel_intro');
+}
+
+function _showAshenmireBldgMarker(questId) {
+  if (!_ashenmireSentinelDone()) return false;
+  const player = PlayerSystem.current;
+  if (!player || player.faction !== 'ashen_covenant') return false;
+  return !(player.quests.completed || []).some(c => c.questId === questId);
+}
+
+function _openAshenmireIntroDialogue() {
+  if (document.getElementById('ashenmire-intro-overlay')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'ashenmire-intro-overlay';
+  overlay.className = 'city-map-overlay';
+
+  function render(step) {
+    let body = '';
+    if (step === 1) {
+      body = `
+        <div class="idlg-speaker">Ash Sentinel Thael</div>
+        <div class="idlg-line">"Hold."</div>
+        <div class="idlg-line">The word is quiet but the effect is immediate — a faint runic lattice shimmers across the road in front of you, translucent and geometric, like frost patterns made of pale blue light. A figure in grey-black robes steps out from the outer wall's shadow, staff lowered horizontally across the path.</div>
+        <div class="idlg-line">"You've walked into a ley-line intersection. Intentionally or not, the city has already catalogued you. I need to complete the registration before you can proceed."</div>
+        <div class="idlg-actions">
+          <button class="idlg-btn-primary" data-step="2">Stand still and let them work</button>
+          <button class="idlg-btn-secondary" data-step="3">Ask what registration means</button>
+        </div>`;
+    } else if (step === 2) {
+      body = `
+        <div class="idlg-speaker">Ash Sentinel Thael</div>
+        <div class="idlg-line">The sentinel raises the staff. The runes shift and compress, moving toward you slowly, then dissolving into a brief warmth against your chest. The lattice across the road fades.</div>
+        <div class="idlg-line">"Resonance class: non-hostile. Affiliation confirmed." He steps aside. "You may pass."</div>
+        <div class="idlg-line">A pause. "Ashenmire is not a city that tolerates ignorance of its rules. Familiarise yourself with the districts before you wander."</div>
+        <div class="idlg-actions">
+          <button class="idlg-btn-primary" data-accept="1">Enter Ashenmire</button>
+        </div>`;
+    } else if (step === 3) {
+      body = `
+        <div class="idlg-speaker">Ash Sentinel Thael</div>
+        <div class="idlg-line">"Every individual who enters Ashenmire carries an arcane signature — a residue from exposure to magic, intentional or ambient. Unregistered signatures have caused incidents. We do not permit repeats."</div>
+        <div class="idlg-line">"The registration takes seconds. It records your resonance profile and associates it with your entry. If something goes wrong inside the city, we know who was where."</div>
+        <div class="idlg-line">"Any further objections, or may we proceed?"</div>
+        <div class="idlg-actions">
+          <button class="idlg-btn-primary" data-step="2">Stand still and let them work</button>
+          <button class="idlg-btn-danger" data-step="4">Refuse</button>
+        </div>`;
+    } else if (step === 4) {
+      body = `
+        <div class="idlg-speaker">Ash Sentinel Thael</div>
+        <div class="idlg-line">The sentinel regards you with an expression that suggests he has had this conversation before and found it equally unproductive each time.</div>
+        <div class="idlg-line">"The lattice remains until registration is complete. You are welcome to stand here for as long as you like."</div>
+        <div class="idlg-line">The barrier hums quietly. It isn't going anywhere.</div>
+        <div class="idlg-actions">
+          <button class="idlg-btn-primary" data-step="2">Stand still and let them work</button>
+          <button class="idlg-btn-danger" data-dismiss="1">Turn back for now</button>
+        </div>`;
+    }
+
+    overlay.innerHTML = `
+      <div class="idlg-panel">
+        <div class="idlg-header">
+          <span class="idlg-title">The Gates of Ashenmire</span>
+          <button class="city-map-close" data-dismiss="1">✕</button>
+        </div>
+        <div class="idlg-body">${body}</div>
+      </div>`;
+
+    overlay.querySelectorAll('[data-step]').forEach(btn =>
+      btn.addEventListener('click', () => render(parseInt(btn.dataset.step))));
+    overlay.querySelectorAll('[data-accept]').forEach(btn =>
+      btn.addEventListener('click', () => _completeAshenmireIntro()));
+    overlay.querySelectorAll('[data-dismiss]').forEach(btn =>
+      btn.addEventListener('click', () => overlay.remove()));
+  }
+
+  render(1);
+  document.body.appendChild(overlay);
+  overlay._keyHandler = e => { if (e.key === 'Escape') overlay.remove(); };
+  document.addEventListener('keydown', overlay._keyHandler);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+function _completeAshenmireIntro() {
+  const overlay = document.getElementById('ashenmire-intro-overlay');
+  if (overlay) {
+    if (overlay._keyHandler) document.removeEventListener('keydown', overlay._keyHandler);
+    overlay.remove();
+  }
+  const player = PlayerSystem.current;
+  if (!player) return;
+  if (!player.quests.completed) player.quests.completed = [];
+  player.quests.completed.push({ questId: 'ashenmire_sentinel_intro', outcome: 'success', ts: Date.now() });
+  SaveSystem.save();
+  _renderMapPage();
+}
+
+function _completeACBldgQuest(questId, overlayId) {
+  const overlay = document.getElementById(overlayId);
+  if (overlay) {
+    if (overlay._keyHandler) document.removeEventListener('keydown', overlay._keyHandler);
+    overlay.remove();
+  }
+  document.querySelectorAll('.city-map-overlay').forEach(o => o.remove());
+  const player = PlayerSystem.current;
+  if (!player) return;
+  if (!player.quests.completed) player.quests.completed = [];
+  player.quests.completed.push({ questId, outcome: 'success', ts: Date.now() });
+  SaveSystem.save();
+  _renderMapPage();
+}
+
+const _ASHENMIRE_BLDG_DIALOGUES = {
+  ashenmire_intro_quests: {
+    overlayId: 'ac-bldg-quests-overlay',
+    title: 'The Archivum',
+    steps: [
+      {
+        speaker: 'Senior Archivist Mael',
+        lines: [
+          '"You\'re looking at the assignment board as if it\'s supposed to explain itself. It won\'t."',
+          'A thin man in layered ash-grey robes glances over his shoulder without turning fully around.',
+          '"Assignments are research contracts and field operations — we don\'t use the word \'quest\' here, but the mechanics are identical. Each has a required skill threshold. Your effective skill against that threshold determines your probability of success. We publish the numbers. Read them."',
+        ],
+        actions: [{ label: 'Ask about completion rewards', next: 2 }, { label: 'Come back later', dismiss: true }],
+      },
+      {
+        speaker: 'Senior Archivist Mael',
+        lines: [
+          '"Successful completion earns gold and material chests. Higher-tier assignments carry higher risk and commensurate reward. You may hold one active assignment at any time — they run on a real clock, not an abstracted one."',
+          '"The board refreshes daily. Guild members receive a secondary listing with elevated requirements and better compensation."',
+          'He finally turns to face you fully.',
+          '"The Archivum expects results, not excuses. Now — do you intend to take an assignment, or merely study the board?"',
+        ],
+        actions: [{ label: 'Understood', complete: true }],
+      },
+    ],
+  },
+
+  ashenmire_intro_market: {
+    overlayId: 'ac-bldg-market-overlay',
+    title: 'The Alchemists\' Exchange',
+    steps: [
+      {
+        speaker: 'Exchanger Velith',
+        lines: [
+          '"Transaction or inquiry? I have time for one."',
+          'A precise woman with ink-stained fingers and a measuring scale on the counter looks at you without warmth.',
+          '"The Exchange handles provisions, equipment maintenance, and corruption offloading — that last one is through the Ossuary tab. Provisions sustain your survival state in the field. Neglect them and your effective output degrades. Equipment maintenance prevents further degradation from combat wear."',
+        ],
+        actions: [{ label: 'Ask about corruption offloading', next: 2 }, { label: 'Come back later', dismiss: true }],
+      },
+      {
+        speaker: 'Exchanger Velith',
+        lines: [
+          '"Corruption accumulates in tainted regions. The Ossuary tab allows cleansing for a fee. The Covenant doesn\'t recommend allowing it to accumulate — the degradation curves are non-linear and unpleasant."',
+          '"Prices here reflect Covenant rates. They are what they are."',
+          'She goes back to her scale.',
+          '"Make a selection or make room for paying customers."',
+        ],
+        actions: [{ label: 'Understood', complete: true }],
+      },
+    ],
+  },
+
+  ashenmire_intro_training: {
+    overlayId: 'ac-bldg-training-overlay',
+    title: 'The Sanctum of Forms',
+    steps: [
+      {
+        speaker: 'Tutor Aleth',
+        lines: [
+          '"Ah. Someone who actually found the Sanctum. Most wander the outer ring for twenty minutes first."',
+          'A composed figure with silver-threaded robes and an expression of measured patience gestures you inside.',
+          '"Skills are your foundation. Six combat disciplines, seven crafting disciplines. Each is raised with stat points — earned through quests and level advancement. The relationship between raw skill and effective skill is logarithmic, not linear. You should know that before you invest."',
+        ],
+        actions: [{ label: 'Ask what that means practically', next: 2 }, { label: 'Come back later', dismiss: true }],
+      },
+      {
+        speaker: 'Tutor Aleth',
+        lines: [
+          '"It means your first twenty points in any skill return more value than your next twenty. The Covenant recommends spreading investment across complementary disciplines rather than over-specialising in one."',
+          '"Your effective skill determines success rates on assignments, quality of crafted output, and performance in combat. It is the number that matters — not the raw value."',
+          '"The training hall is yours to use. I am available for consultation."',
+        ],
+        actions: [{ label: 'Understood', complete: true }],
+      },
+    ],
+  },
+
+  ashenmire_intro_crafting: {
+    overlayId: 'ac-bldg-crafting-overlay',
+    title: 'The Scriptorum',
+    steps: [
+      {
+        speaker: 'Scribe Dorn',
+        lines: [
+          'He doesn\'t look up when you enter. There are three open books on his desk and he\'s writing in all of them.',
+          '"Crafting," he says finally. "You\'re here about crafting. Stand there, I\'ll be a moment."',
+          'A long pause. He closes two of the books.',
+          '"Materials — gathered in the field, from enemies, from salvage — are brought here. Different professions cover different categories of output. Blacksmithing, armorsmithing, alchemy, inscription. Each has its own skill track."',
+        ],
+        actions: [{ label: 'Ask how to improve crafting skill', next: 2 }, { label: 'Come back later', dismiss: true }],
+      },
+      {
+        speaker: 'Scribe Dorn',
+        lines: [
+          '"Crafting skill is raised the same as combat skill — stat points, earned through quests. Higher skill unlocks better recipes and improves output quality."',
+          '"The Scriptorum\'s speciality is inscription and magesmithing. If you intend to work with arcane materials, this is where you\'ll do it."',
+          'He reopens one of the books.',
+          '"The workbench is free. Don\'t touch anything on my desk."',
+        ],
+        actions: [{ label: 'Understood', complete: true }],
+      },
+    ],
+  },
+
+  ashenmire_intro_guilds: {
+    overlayId: 'ac-bldg-guilds-overlay',
+    title: 'The Covenant Conclave',
+    steps: [
+      {
+        speaker: 'Conclave Steward Yvara',
+        lines: [
+          '"You\'ve been registered. That means you\'re eligible. Whether you\'re suitable is a different question."',
+          'A tall woman with a layered ceremonial collar stops you at the conclave entrance, evaluating.',
+          '"Three guilds hold presence within Ashenmire: the Ashguard, the Black Sigil, and the Veil Syndicate. Each represents a different operational discipline. You may affiliate with one. The choice is not reversible without significant consequence."',
+        ],
+        actions: [{ label: 'Ask what affiliation provides', next: 2 }, { label: 'Come back later', dismiss: true }],
+      },
+      {
+        speaker: 'Conclave Steward Yvara',
+        lines: [
+          '"Affiliation grants access to a secondary assignment board — elevated difficulty, elevated compensation. You also accrue reputation within your guild, which determines what becomes available to you over time."',
+          '"Reputation lost is difficult to recover. The Covenant expects consistency."',
+          'She steps aside from the door with a measured gesture.',
+          '"Review the options inside before you commit. We prefer informed affiliates."',
+        ],
+        actions: [{ label: 'Understood', complete: true }],
+      },
+    ],
+  },
+
+  ashenmire_intro_shrine: {
+    overlayId: 'ac-bldg-shrine-overlay',
+    title: 'The Ossuary Spire',
+    steps: [
+      {
+        speaker: 'Keeper Vayne',
+        lines: [
+          '"You carry it already. Most people who come to Ashenmire do — the ley-lines here attract it."',
+          'The Ossuary is quieter than the rest of the city. A figure in deep charcoal robes stands before a low basin filled with still grey water.',
+          '"Corruption. It\'s a residue — an echo of exposure to broken magic, tainted ground, places where the world\'s fabric has frayed. The body accumulates it. Over time it erodes performance in ways that are difficult to isolate until they\'re severe."',
+        ],
+        actions: [{ label: 'Ask how cleansing works', next: 2 }, { label: 'Come back later', dismiss: true }],
+      },
+      {
+        speaker: 'Keeper Vayne',
+        lines: [
+          '"The basin draws it out. The process costs gold — not much, but the materials are not free. The effect is immediate and complete."',
+          '"You\'ll find the Ossuary through the market\'s third tab. I tend the basin. I am here consistently."',
+          'She looks at the water for a moment.',
+          '"The Covenant does not recommend carrying corruption indefinitely. The curve past a certain threshold becomes steep."',
+        ],
+        actions: [{ label: 'Understood', complete: true }],
+      },
+    ],
+  },
+};
+
+function _openAshenmireBldgDialogue(questId) {
+  const cfg = _ASHENMIRE_BLDG_DIALOGUES[questId];
+  if (!cfg) return;
+  if (document.getElementById(cfg.overlayId)) return;
+  const overlay = document.createElement('div');
+  overlay.id = cfg.overlayId;
+  overlay.className = 'city-map-overlay';
+
+  function render(stepIndex) {
+    const step = cfg.steps[stepIndex - 1];
+    const linesHtml = step.lines.map(l => `<div class="idlg-line">${l}</div>`).join('');
+    const actionsHtml = step.actions.map(a => {
+      if (a.dismiss) return `<button class="idlg-btn-secondary" data-dismiss="1">${a.label}</button>`;
+      if (a.next)    return `<button class="idlg-btn-primary" data-step="${a.next}">${a.label}</button>`;
+      if (a.complete) return `<button class="idlg-btn-primary" data-complete="1">${a.label}</button>`;
+      return '';
+    }).join('');
+    overlay.innerHTML = `
+      <div class="idlg-panel">
+        <div class="idlg-header">
+          <span class="idlg-title">${cfg.title}</span>
+          <button class="city-map-close" data-dismiss="1">✕</button>
+        </div>
+        <div class="idlg-body">
+          <div class="idlg-speaker">${step.speaker}</div>
+          ${linesHtml}
+          <div class="idlg-actions">${actionsHtml}</div>
+        </div>
+      </div>`;
+    overlay.querySelectorAll('[data-step]').forEach(btn =>
+      btn.addEventListener('click', () => render(parseInt(btn.dataset.step))));
+    overlay.querySelectorAll('[data-dismiss]').forEach(btn =>
+      btn.addEventListener('click', () => overlay.remove()));
+    overlay.querySelectorAll('[data-complete]').forEach(btn =>
+      btn.addEventListener('click', () =>
+        _completeACBldgQuest(questId, cfg.overlayId)));
+  }
+
+  render(1);
+  document.body.appendChild(overlay);
+  overlay._keyHandler = e => { if (e.key === 'Escape') overlay.remove(); };
+  document.addEventListener('keydown', overlay._keyHandler);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+// ── Main proving quest helpers ────────────────────────────────────────────────
+
+function _unlockWorld() {
+  const player = PlayerSystem.current;
+  if (!player) return;
+  if (!player.flags) player.flags = { boardQuestSuccesses: 0, worldUnlocked: false };
+  player.flags.worldUnlocked = true;
+  SaveSystem.save();
+  _renderMapPage();
+}
+
+function _acceptProvingQuest() {
+  const player = PlayerSystem.current;
+  if (!player) return;
+  if (!player.quests.completed) player.quests.completed = [];
+  player.quests.completed.push({ questId: 'main_proving_quest_accepted', outcome: 'success', ts: Date.now() });
+  SaveSystem.save();
+}
+
+function _openMainQuestOverlay(overlayId, titleHtml, renderFn) {
+  if (document.getElementById(overlayId)) return;
+  const overlay = document.createElement('div');
+  overlay.id = overlayId;
+  overlay.className = 'city-map-overlay';
+  const accepted = _mainQuestAccepted();
+  const ready    = _boardQuestsDone();
+  const count    = Math.min(PlayerSystem.current?.flags?.boardQuestSuccesses || 0, 5);
+
+  function render(step) {
+    const html = renderFn(step, accepted, ready, count);
+    overlay.innerHTML = `
+      <div class="idlg-panel">
+        <div class="idlg-header">
+          <span class="idlg-title">${titleHtml}</span>
+          <button class="city-map-close" data-dismiss="1">&#x2715;</button>
+        </div>
+        <div class="idlg-body">${html}</div>
+      </div>`;
+    overlay.querySelectorAll('[data-step]').forEach(btn =>
+      btn.addEventListener('click', () => render(parseInt(btn.dataset.step))));
+    overlay.querySelectorAll('[data-dismiss]').forEach(btn =>
+      btn.addEventListener('click', () => overlay.remove()));
+    overlay.querySelectorAll('[data-accept]').forEach(btn =>
+      btn.addEventListener('click', () => {
+        _acceptProvingQuest();
+        overlay.remove();
+        document.querySelectorAll('.city-map-overlay').forEach(o => o.remove());
+        _renderMapPage();
+      }));
+    overlay.querySelectorAll('[data-unlock]').forEach(btn =>
+      btn.addEventListener('click', () => {
+        overlay.remove();
+        document.querySelectorAll('.city-map-overlay').forEach(o => o.remove());
+        _unlockWorld();
+      }));
+  }
+
+  render(1);
+  document.body.appendChild(overlay);
+  overlay._keyHandler = e => { if (e.key === 'Escape') overlay.remove(); };
+  document.addEventListener('keydown', overlay._keyHandler);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+// ── Iron Dominion — Commander Aldren ─────────────────────────────────────────
+
+function _openIronholdMainQuestDialogue() {
+  _openMainQuestOverlay('ironhold-main-quest-overlay', "Commander's Quarters", function(step, accepted, ready, count) {
+    if (!accepted) {
+      if (step === 1) return `
+        <div class="idlg-speaker">Commander Aldren</div>
+        <div class="idlg-line">"You've found your footing. Good. But standing in Ironhold and knowing where the forge is doesn't make you useful to the Dominion."</div>
+        <div class="idlg-line">He unfolds a worn map across the table. Campaign markers and route lines cover every inch of it.</div>
+        <div class="idlg-line">"The Dominion's reach extends far beyond these walls. The other factions are out there — the Thornwood to the west, the Covenant to the north. Contested ruins between all of us. We hold what we take and keep what we earn."</div>
+        <div class="idlg-actions">
+          <button class="idlg-btn-primary" data-step="2">Ask what is required of you</button>
+          <button class="idlg-btn-secondary" data-dismiss="1">Come back later</button>
+        </div>`;
+      return `
+        <div class="idlg-speaker">Commander Aldren</div>
+        <div class="idlg-line">"The world doesn't open for free. Before you ride out, you prove you can handle it. That means real work — not drills in the yard."</div>
+        <div class="idlg-line">"Five contracts from the quest board. Any tier, any type. Complete them successfully and you'll have earned the right to travel beyond our borders."</div>
+        <div class="idlg-line">"Don't come back until it's done. The gate records every departure."</div>
+        <div class="idlg-actions">
+          <button class="idlg-btn-primary" data-accept="1">Understood. I'll return when it's done.</button>
+          <button class="idlg-btn-secondary" data-step="1">Ask him to explain again</button>
+        </div>`;
+    }
+    if (!ready) return `
+      <div class="idlg-speaker">Commander Aldren</div>
+      <div class="idlg-line">"You're back early. I said five contracts."</div>
+      <div class="idlg-line">He taps the campaign map without looking up.</div>
+      <div class="idlg-line">"Come back when you've completed five. You're at ${count} of 5."</div>
+      <div class="idlg-actions">
+        <button class="idlg-btn-secondary" data-dismiss="1">I'll keep working.</button>
+      </div>`;
+    return `
+      <div class="idlg-speaker">Commander Aldren</div>
+      <div class="idlg-line">Aldren sets down his quill and looks you over properly for the first time.</div>
+      <div class="idlg-line">"Five contracts. All successful. You've done what I asked."</div>
+      <div class="idlg-line">"The Dominion's borders are open to you now. The ruins zone, Covenant territories, the Thornwood — you'll find work, enemies, and opportunity in all of them. Watch your back out there."</div>
+      <div class="idlg-line">He marks something in his ledger and nods once. <em>The gates are open.</em></div>
+      <div class="idlg-actions">
+        <button class="idlg-btn-primary" data-unlock="1">Thank him and go.</button>
+      </div>`;
+  });
+}
+
+// ── Thornwood — Elder Rowan ───────────────────────────────────────────────────
+
+function _openThornhavenMainQuestDialogue() {
+  _openMainQuestOverlay('thornhaven-main-quest-overlay', "The Elder's Platform", function(step, accepted, ready, count) {
+    if (!accepted) {
+      if (step === 1) return `
+        <div class="idlg-speaker">Elder Rowan</div>
+        <div class="idlg-line">The old woman is sitting cross-legged on the platform edge, bare feet dangling over the canopy below. She doesn't turn when you approach.</div>
+        <div class="idlg-line">"You've learned where the food is and where the healers sleep. That's a start. Thornhaven teaches quickly — the forest doesn't wait for slow learners."</div>
+        <div class="idlg-line">"But knowing the village isn't the same as knowing the world. Out past the treeline, things get complicated. Other factions. Old ruins. Creatures that don't care whose colours you wear."</div>
+        <div class="idlg-actions">
+          <button class="idlg-btn-primary" data-step="2">Ask how to earn the right to travel</button>
+          <button class="idlg-btn-secondary" data-dismiss="1">Give her space</button>
+        </div>`;
+      return `
+        <div class="idlg-speaker">Elder Rowan</div>
+        <div class="idlg-line">She finally looks at you. Her eyes are the colour of deep bark.</div>
+        <div class="idlg-line">"The Thornwood doesn't send untested folk beyond its borders. It's not about trust — it's about survival. Yours, mostly."</div>
+        <div class="idlg-line">"Five jobs from the notice board. See them through — not partial, not abandoned, through. When it's done, come back here."</div>
+        <div class="idlg-actions">
+          <button class="idlg-btn-primary" data-accept="1">I'll be back when it's done.</button>
+          <button class="idlg-btn-secondary" data-step="1">Ask her to say more</button>
+        </div>`;
+    }
+    if (!ready) return `
+      <div class="idlg-speaker">Elder Rowan</div>
+      <div class="idlg-line">She glances over from whatever she's carving.</div>
+      <div class="idlg-line">"Five jobs from the board. You've done ${count} of them. The other ${5 - count} won't finish themselves."</div>
+      <div class="idlg-line">"Come back when you're done. I'll be here."</div>
+      <div class="idlg-actions">
+        <button class="idlg-btn-secondary" data-dismiss="1">Back to work.</button>
+      </div>`;
+    return `
+      <div class="idlg-speaker">Elder Rowan</div>
+      <div class="idlg-line">She sets her carving aside and stands — faster than someone her age has any right to.</div>
+      <div class="idlg-line">"Five jobs. All finished. You've done well."</div>
+      <div class="idlg-line">"The forest beyond Thornhaven is yours to walk now. The Dominion's roads, the Covenant's spires, the ruins — all of it. We don't keep people caged. We just make sure they're ready first."</div>
+      <div class="idlg-line">She presses a small carved token into your hand. <em>"Safe paths."</em></div>
+      <div class="idlg-actions">
+        <button class="idlg-btn-primary" data-unlock="1">Thank her and go.</button>
+      </div>`;
+  });
+}
+
+// ── Ashen Covenant — Conclave Overseer Thann ─────────────────────────────────
+
+function _openAshenmireMainQuestDialogue() {
+  _openMainQuestOverlay('ashenmire-main-quest-overlay', "The Conclave Plaza", function(step, accepted, ready, count) {
+    if (!accepted) {
+      if (step === 1) return `
+        <div class="idlg-speaker">Conclave Overseer Thann</div>
+        <div class="idlg-line">The Overseer stands at the centre of the plaza, fingers interlaced, watching resonance patterns drift across the paving stones.</div>
+        <div class="idlg-line">"You have been catalogued, oriented, and briefed. The Covenant's infrastructure is no longer a mystery to you. That is precisely as intended."</div>
+        <div class="idlg-line">"What remains is demonstration. Knowledge without application is merely potential — and the Covenant does not extend travel clearance on potential alone."</div>
+        <div class="idlg-actions">
+          <button class="idlg-btn-primary" data-step="2">Ask what demonstration is required</button>
+          <button class="idlg-btn-secondary" data-dismiss="1">Request time to consider</button>
+        </div>`;
+      return `
+        <div class="idlg-speaker">Conclave Overseer Thann</div>
+        <div class="idlg-line">"The assignment board maintains a list of open contracts. Field work. You will complete five of them — successfully, not partially — and present yourself here upon conclusion."</div>
+        <div class="idlg-line">"Once verified, your travel registry will be updated to unrestricted. The ruins zone, the Dominion territories, the Thornwood — all accessible."</div>
+        <div class="idlg-line">"The Covenant's reach is broad. We simply require our operatives to be capable before extending it to them."</div>
+        <div class="idlg-actions">
+          <button class="idlg-btn-primary" data-accept="1">I will return when the five are complete.</button>
+          <button class="idlg-btn-secondary" data-step="1">Ask for clarification</button>
+        </div>`;
+    }
+    if (!ready) return `
+      <div class="idlg-speaker">Conclave Overseer Thann</div>
+      <div class="idlg-line">He consults a small inscription plate without looking up.</div>
+      <div class="idlg-line">"Your registry shows ${count} completed contracts of the required five. Return when the remainder are concluded."</div>
+      <div class="idlg-line">"Efficiency is appreciated. Haste is not."</div>
+      <div class="idlg-actions">
+        <button class="idlg-btn-secondary" data-dismiss="1">Understood.</button>
+      </div>`;
+    return `
+      <div class="idlg-speaker">Conclave Overseer Thann</div>
+      <div class="idlg-line">He consults the inscription plate, then sets it aside with something approaching approval.</div>
+      <div class="idlg-line">"Five contracts. All resolved successfully. Your registry has been updated."</div>
+      <div class="idlg-line">"Unrestricted travel clearance is now active. The ruins zone, Dominion territories, and the Thornwood are accessible to you. Do not draw attention to the Covenant in hostile territory, and report anything of arcane significance upon your return."</div>
+      <div class="idlg-line"><em>A soft chime resonates from the plaza stones as your travel registry updates.</em></div>
+      <div class="idlg-actions">
+        <button class="idlg-btn-primary" data-unlock="1">Acknowledged. I'll go.</button>
+      </div>`;
+  });
 }

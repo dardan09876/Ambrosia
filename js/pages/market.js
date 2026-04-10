@@ -20,6 +20,10 @@ function _renderMarketPage() {
     if (!el) return;
 
     const player     = PlayerSystem.current;
+    if (player && typeof _tutorialComplete === 'function' && !_tutorialComplete()) {
+        el.innerHTML = `<div class="page"><div class="page-header"><h1 class="page-title">Market</h1></div><div class="page-body"><p class="page-empty-state">Complete your faction's introduction in the capital city to unlock this page.</p></div></div>`;
+        return;
+    }
     const hasMarket  = typeof MapSystem === 'undefined' || MapSystem.hasActivity('market');
     const regionName = typeof MapSystem !== 'undefined' ? MapSystem.getCurrentRegionName() : '';
 

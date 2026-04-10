@@ -191,7 +191,20 @@ const QuestSystem = {
 
         // Short completed history
         player.quests.completed.unshift({ questId: quest.id, outcome: this.lastReward.outcome, ts: Date.now() });
-        if (player.quests.completed.length > 20) player.quests.completed.length = 20;
+        // Cap board quest history at 20, but always preserve story/tutorial entries
+        // so that tutorial completion checks remain valid no matter how many quests are done.
+        const _isStoryEntry = e => /(_intro_|_guard_intro|_scout_intro|_sentinel_intro|main_proving_quest)/.test(e.questId);
+        const _storyEntries = player.quests.completed.filter(_isStoryEntry);
+        const _boardEntries = player.quests.completed.filter(e => !_isStoryEntry(e));
+        if (_boardEntries.length > 20) _boardEntries.length = 20;
+        player.quests.completed = [..._storyEntries, ..._boardEntries];
+
+        // Count successful board quests toward world-unlock progression
+        const isTutorialQuest = /(_intro_|_guard_intro|_scout_intro|_sentinel_intro)/.test(quest.id);
+        if (success && !isTutorialQuest) {
+            if (!player.flags) player.flags = { boardQuestSuccesses: 0, worldUnlocked: false };
+            player.flags.boardQuestSuccesses = (player.flags.boardQuestSuccesses || 0) + 1;
+        }
 
         SaveSystem.save();
         if (Router._current === 'quests' || Router._current === 'guilds') Router._load(Router._current);

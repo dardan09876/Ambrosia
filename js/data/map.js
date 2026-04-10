@@ -827,7 +827,7 @@ const MAP_REGIONS_ID = {
     eastern_breach_tw: {
         id:'eastern_breach_tw', name:'Iron Breach', label:'Iron Breach',
         type:'iron_dominion', mapView:'iron_dominion', terrain:'ruins',
-        q:0, r:7, tier:3, danger:3, accessReq:{totalSkill:300},
+        q:6, r:6, tier:3, danger:3, accessReq:{totalSkill:300},
         description:'A Dominion-held corridor through the western ruins edge, reinforced with iron stakes and signal fires to mark the advance.',
         flavour:'"The breach was once an enemy\'s weakness. The Dominion made it their door."',
         activities:['quests'], factionId:'iron_dominion',
@@ -835,7 +835,7 @@ const MAP_REGIONS_ID = {
     bark_ridge: {
         id:'bark_ridge', name:'Bark Ridge', label:'Bark Ridge',
         type:'iron_dominion', mapView:'iron_dominion', terrain:'hills',
-        q:0, r:8, tier:3, danger:3, accessReq:{totalSkill:300},
+        q:7, r:6, tier:3, danger:3, accessReq:{totalSkill:300},
         description:'A ridge on the ruins\' edge that Dominion engineers stripped of cover to establish clear sightlines and defensible ground.',
         flavour:'"They felled every tree within bowshot. The rangers have not forgiven this."',
         activities:['quests'], factionId:'iron_dominion',
@@ -843,7 +843,7 @@ const MAP_REGIONS_ID = {
     far_watch_tw: {
         id:'far_watch_tw', name:'Western Vigil', label:'Western Vigil',
         type:'iron_dominion', mapView:'iron_dominion', terrain:'tower',
-        q:0, r:9, tier:3, danger:3, accessReq:{totalSkill:300},
+        q:8, r:6, tier:3, danger:3, accessReq:{totalSkill:300},
         description:'The westernmost Dominion watchtower, anchoring iron control over the outer ruins perimeter. The last flag before the dark.',
         flavour:'"The last iron banner before the ruins swallow the horizon."',
         activities:['quests'], factionId:'iron_dominion',
@@ -851,7 +851,7 @@ const MAP_REGIONS_ID = {
     shadow_hollow: {
         id:'shadow_hollow', name:'Shadow Hollow', label:'Shadow Hollow',
         type:'iron_dominion', mapView:'iron_dominion', terrain:'swamp',
-        q:6, r:7, tier:3, danger:3, accessReq:{totalSkill:300},
+        q:8, r:8, tier:3, danger:3, accessReq:{totalSkill:300},
         description:'A mist-laden hollow where Dominion patrols maintain a watchpoint on the ruins\' southern approach. Visibility ends at arm\'s length.',
         flavour:'"Standing order: if you hear movement and see nothing, report it. Then move."',
         activities:['quests'], factionId:'iron_dominion',
@@ -859,7 +859,7 @@ const MAP_REGIONS_ID = {
     ash_ridge_far: {
         id:'ash_ridge_far', name:'Far Ash Ridge', label:'Far Ash Ridge',
         type:'iron_dominion', mapView:'iron_dominion', terrain:'hills',
-        q:6, r:8, tier:3, danger:3, accessReq:{totalSkill:300},
+        q:9, r:7, tier:3, danger:3, accessReq:{totalSkill:300},
         description:'A windswept ridge at the iron frontier\'s deepest point, where ash drifting from the ruins coats every surface grey.',
         flavour:'"The ash here is not from fire. The soldiers learn not to ask what it is from."',
         activities:['quests'], factionId:'iron_dominion',
@@ -867,7 +867,7 @@ const MAP_REGIONS_ID = {
     eastern_vigil_ac: {
         id:'eastern_vigil_ac', name:'Eastern Vigil', label:'Eastern Vigil',
         type:'iron_dominion', mapView:'iron_dominion', terrain:'tower',
-        q:6, r:9, tier:3, danger:3, accessReq:{totalSkill:300},
+        q:7, r:9, tier:3, danger:3, accessReq:{totalSkill:300},
         description:'The southernmost Dominion watchtower at the ruins\' edge, maintaining watch over two hostile territories simultaneously.',
         flavour:'"One tower. Two threats. The garrison has standing orders for both."',
         activities:['quests'], factionId:'iron_dominion',
@@ -875,7 +875,7 @@ const MAP_REGIONS_ID = {
     fen_patrol: {
         id:'fen_patrol', name:'Fen Garrison', label:'Fen Garrison',
         type:'iron_dominion', mapView:'iron_dominion', terrain:'camp',
-        q:7, r:8, tier:3, danger:3, accessReq:{totalSkill:300},
+        q:8, r:9, tier:3, danger:3, accessReq:{totalSkill:300},
         description:'A hardened patrol camp in the fenlands beyond the frontier, where Dominion soldiers rotate through on weekly assignments.',
         flavour:'"Two weeks in the fen. Two weeks back. Nobody volunteers for a third rotation."',
         activities:['quests'], factionId:'iron_dominion',

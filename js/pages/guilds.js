@@ -13,6 +13,10 @@ Router.register('guilds', function renderGuilds(container) {
 
 function _renderGuildsPage(container) {
     const player = PlayerSystem.current;
+    if (player && typeof _tutorialComplete === 'function' && !_tutorialComplete()) {
+        container.innerHTML = `<div class="page"><div class="page-header"><h1 class="page-title">Guilds</h1></div><div class="page-body"><p class="page-empty-state">Complete your faction's introduction in the capital city to unlock this page.</p></div></div>`;
+        return;
+    }
     const currentGuild = player.guild ? PlayerSystem.getGuild() : null;
     const availableGuilds = PlayerSystem.getAvailableGuilds();
 

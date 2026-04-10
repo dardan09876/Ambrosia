@@ -448,6 +448,7 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
     margin-bottom: 4px;
 }
 .page-subtitle { color: var(--text-muted); font-size: 13px; }
+.page-empty-state { color: var(--text-muted); font-size: 14px; font-style: italic; text-align: center; padding: 40px 20px; }
 
 .home-grid {
     display: grid;
@@ -2907,6 +2908,112 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
 }
 .city-building:hover .city-bldg-label {
     fill: #f0d880 !important;
+}
+
+/* ── Map quest marker (!) — passive indicator on world map ─── */
+.map-quest-marker {
+    opacity: 0.9;
+}
+
+/* ── City quest marker (!) — clickable inside city SVG ──────── */
+.city-quest-marker circle {
+    transition: filter 0.15s;
+}
+.city-quest-marker:hover circle {
+    filter: drop-shadow(0 0 6px rgba(201,168,76,0.9)) brightness(1.3);
+}
+
+/* ── Intro dialogue panel ───────────────────────────────────── */
+.idlg-panel {
+    background: #161616;
+    border: 1px solid rgba(201,168,76,0.22);
+    border-radius: 8px;
+    width: min(560px, 94vw);
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.8);
+    overflow: hidden;
+}
+.idlg-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 16px;
+    border-bottom: 1px solid rgba(201,168,76,0.15);
+    flex-shrink: 0;
+}
+.idlg-title {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 0.06em;
+}
+.idlg-body {
+    padding: 20px 22px 22px;
+    overflow-y: auto;
+    flex: 1;
+}
+.idlg-speaker {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    color: rgba(201,168,76,0.7);
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+.idlg-line {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.65;
+    margin-bottom: 12px;
+}
+.idlg-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 18px;
+}
+.idlg-btn-primary,
+.idlg-btn-secondary,
+.idlg-btn-danger {
+    padding: 9px 16px;
+    border-radius: 5px;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+    font-family: inherit;
+}
+.idlg-btn-primary {
+    background: rgba(201,168,76,0.12);
+    border: 1px solid rgba(201,168,76,0.3);
+    color: #d4b86a;
+}
+.idlg-btn-primary:hover {
+    background: rgba(201,168,76,0.22);
+    border-color: rgba(201,168,76,0.55);
+    color: #f0d880;
+}
+.idlg-btn-secondary {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.14);
+    color: rgba(255,255,255,0.55);
+}
+.idlg-btn-secondary:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.28);
+    color: rgba(255,255,255,0.82);
+}
+.idlg-btn-danger {
+    background: rgba(140,30,30,0.12);
+    border: 1px solid rgba(192,60,60,0.28);
+    color: #c07070;
+}
+.idlg-btn-danger:hover {
+    background: rgba(140,30,30,0.24);
+    border-color: rgba(192,60,60,0.5);
+    color: #d08080;
 }
 
 /* ============================================================
