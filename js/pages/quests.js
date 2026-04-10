@@ -62,29 +62,45 @@ function _buildRewardBanner() {
     if (!r) return '';
 
     const cfg = {
-        success: { cls: 'reward-success', icon: '✦' },
-        partial:  { cls: 'reward-partial',  icon: '◈' },
-        failure:  { cls: 'reward-failure',  icon: '✗' },
-    }[r.outcome] || { cls: 'reward-partial', icon: '◈' };
+        success: { cls: 'reward-success', icon: '✦', label: 'Quest Complete' },
+        partial:  { cls: 'reward-partial',  icon: '◈', label: 'Partial Success' },
+        failure:  { cls: 'reward-failure',  icon: '✗', label: 'Quest Failed' },
+    }[r.outcome] || { cls: 'reward-partial', icon: '◈', label: 'Quest Done' };
 
     let detail = '';
     if (r.outcome === 'success') {
         const chestDef = CHEST_DEFS[r.chests?.tier];
         detail = `+${r.gold.toLocaleString()} gold  ·  ${r.chests?.count}× ${chestDef?.name ?? 'chest'}`;
     } else if (r.outcome === 'partial') {
-        detail = `+${r.gold.toLocaleString()} gold  ·  no chest (partial success)`;
+        detail = `+${r.gold.toLocaleString()} gold  ·  no chest`;
     } else {
         detail = 'Skill check failed — no reward.';
     }
 
+    // Phase log
+    const log = r.log ?? [];
+    const logHtml = log.length
+        ? `<div class="reward-log">
+            ${log.map(line =>
+                line.startsWith('—')
+                    ? `<div class="reward-log-phase">${line}</div>`
+                    : `<div class="reward-log-line">${line}</div>`
+            ).join('')}
+        </div>`
+        : '';
+
     return `
         <div class="quest-reward-banner ${cfg.cls}">
-            <span class="reward-icon">${cfg.icon}</span>
-            <div class="reward-body">
-                <div class="reward-title">${r.questName}</div>
-                <div class="reward-detail">${detail}</div>
+            <div class="reward-top">
+                <span class="reward-icon">${cfg.icon}</span>
+                <div class="reward-body">
+                    <div class="reward-title">${r.questName}</div>
+                    <div class="reward-outcome-label">${cfg.label}</div>
+                    <div class="reward-detail">${detail}</div>
+                </div>
+                <button class="reward-dismiss" id="dismiss-reward">✕</button>
             </div>
-            <button class="reward-dismiss" id="dismiss-reward">✕</button>
+            ${logHtml}
         </div>
     `;
 }
@@ -94,31 +110,82 @@ function _buildActiveQuestSection(player) {
     const active = player.quests.active;
     if (!active) return '<div id="active-quest-wrap"></div>';
 
-    const quest    = QUESTS.find(q => q.id === active.questId);
+    const quest = QUESTS.find(q => q.id === active.questId)
+        ?? player.quests.guildBoard?.quests?.find(q => q.id === active.questId);
     if (!quest) return '<div id="active-quest-wrap"></div>';
 
-    const remaining = QuestSystem.getRemainingMs();
-    const progress  = QuestSystem.getProgress();
-    const chance    = QuestSystem.getSuccessChance(quest);
+    const remaining     = QuestSystem.getRemainingMs();
+    const chance        = QuestSystem.getSuccessChance(quest);
+    const currentPhase  = QuestSystem.getCurrentPhase();
+    const phaseRemMs    = QuestSystem.getPhaseRemainingMs();
+    const phaseProg     = QuestSystem.getPhaseProgress();
+    const phases        = active.phases ?? [];
+    const doneIndex     = active.currentPhaseIndex ?? 0;
+
+    // Phase timeline dots
+    const phaseTimeline = phases.length
+        ? `<div class="aq-phase-timeline">
+            ${phases.map((p, i) => {
+                const isDone    = i < doneIndex;
+                const isActive  = i === doneIndex;
+                return `<div class="aq-phase-dot ${isDone ? 'done' : ''} ${isActive ? 'active' : ''}" title="${p.name}">
+                    <span class="aq-phase-dot-label">${p.name}</span>
+                </div>`;
+            }).join('<div class="aq-phase-connector"></div>')}
+        </div>`
+        : '';
+
+    // Quest log
+    const log = active.log ?? [];
+    const logHtml = log.length
+        ? `<div class="aq-log" id="aq-log">
+            ${log.map(line =>
+                line.startsWith('—')
+                    ? `<div class="aq-log-phase">${line}</div>`
+                    : `<div class="aq-log-line">${line}</div>`
+            ).join('')}
+        </div>`
+        : `<div class="aq-log" id="aq-log"><div class="aq-log-line aq-log-muted">Awaiting first phase…</div></div>`;
+
+    // Reward multiplier hint
+    const mult    = active.rewardMultiplier ?? 1.0;
+    const multPct = Math.round((mult - 1) * 100);
+    const multStr = multPct > 0 ? `+${multPct}%` : multPct < 0 ? `${multPct}%` : '';
+    const multCls = multPct > 0 ? 'aq-mult-pos' : multPct < 0 ? 'aq-mult-neg' : '';
 
     return `
         <div id="active-quest-wrap">
             <div class="active-quest-card">
                 <div class="aq-header">
                     <div class="aq-label">Active Quest</div>
-                    <span class="quest-tier-badge tier-badge-${quest.tier}">Tier ${quest.tier}</span>
+                    <div style="display:flex;align-items:center;gap:8px">
+                        ${multStr ? `<span class="aq-mult ${multCls}" title="Reward modifier from phase events">${multStr} reward</span>` : ''}
+                        <span class="quest-tier-badge tier-badge-${quest.tier}">Tier ${quest.tier}</span>
+                    </div>
                 </div>
                 <div class="aq-name">${quest.name}</div>
                 <div class="aq-meta">
                     <span>Eff. ${skillLabel(quest.skillCheck.skill)} ${quest.skillCheck.required.toLocaleString()} required</span>
                     <span class="aq-chance" style="color:${successColor(chance)}">${chance}% success</span>
                 </div>
+
+                ${phaseTimeline}
+
+                <div class="aq-phase-status">
+                    <span class="aq-phase-name" id="aq-phase-name">${currentPhase ? currentPhase.name : 'Complete'}</span>
+                    <span class="aq-phase-timer" id="aq-phase-timer">${currentPhase ? formatMs(phaseRemMs) : ''}</span>
+                </div>
+
                 <div class="aq-progress-row">
                     <div class="aq-progress-track">
-                        <div class="aq-progress-fill" id="aq-progress-fill" style="width:${progress}%"></div>
+                        <div class="aq-progress-fill" id="aq-progress-fill" style="width:${phaseProg}%"></div>
                     </div>
-                    <div class="aq-timer" id="quest-countdown">${formatMs(remaining)}</div>
+                    <div class="aq-timer" id="quest-countdown">${formatMs(remaining)} total</div>
                 </div>
+
+                <div class="aq-log-header">Quest Log</div>
+                ${logHtml}
+
                 <div class="aq-actions">
                     <button class="btn-secondary btn-sm" id="abandon-quest">Abandon quest</button>
                 </div>
@@ -168,9 +235,6 @@ function _buildQuestCard(quest, player) {
     const chestDef   = CHEST_DEFS[quest.chestReward.tier];
 
     const completions = player.quests.completed.filter(c => c.questId === quest.id).length;
-    const todayDone   = player.quests.completed.filter(
-        c => c.questId === quest.id && Date.now() - c.ts < 86400000
-    ).length;
 
     let btnLabel = 'Begin Quest →';
     let btnTitle = `Start: ${quest.name}`;
@@ -285,14 +349,69 @@ function _startQuestTimer() {
             return;
         }
 
-        // Quest countdown
+        // Quest countdown + phase display
         const countdownEl = document.getElementById('quest-countdown');
         if (countdownEl) {
-            countdownEl.textContent = formatMs(QuestSystem.getRemainingMs());
+            countdownEl.textContent = `${formatMs(QuestSystem.getRemainingMs())} total`;
         }
         const progressEl = document.getElementById('aq-progress-fill');
         if (progressEl) {
-            progressEl.style.width = `${QuestSystem.getProgress()}%`;
+            progressEl.style.width = `${QuestSystem.getPhaseProgress()}%`;
+        }
+        const phaseNameEl = document.getElementById('aq-phase-name');
+        const phaseTimerEl = document.getElementById('aq-phase-timer');
+        if (phaseNameEl || phaseTimerEl) {
+            const phase = QuestSystem.getCurrentPhase();
+            const active = PlayerSystem.current?.quests?.active;
+            const doneIdx = active?.currentPhaseIndex ?? 0;
+            if (phaseNameEl) phaseNameEl.textContent = phase ? phase.name : 'Complete';
+            if (phaseTimerEl) phaseTimerEl.textContent = phase ? formatMs(QuestSystem.getPhaseRemainingMs()) : '';
+            // Update phase dots in case a phase just completed
+            if (active?.phases) {
+                document.querySelectorAll('.aq-phase-dot').forEach((dot, i) => {
+                    dot.classList.toggle('done',   i < doneIdx);
+                    dot.classList.toggle('active', i === doneIdx);
+                });
+            }
+            // Refresh log if new entries exist
+            const logEl = document.getElementById('aq-log');
+            if (logEl && active?.log) {
+                const newHtml = active.log.map(line =>
+                    line.startsWith('—')
+                        ? `<div class="aq-log-phase">${line}</div>`
+                        : `<div class="aq-log-line">${line}</div>`
+                ).join('');
+                if (logEl.innerHTML !== newHtml) {
+                    logEl.innerHTML = newHtml;
+                    logEl.scrollTop = logEl.scrollHeight;
+                }
+            }
+            // Refresh reward multiplier badge
+            const multEl = document.querySelector('.aq-mult');
+            if (multEl !== null || active) {
+                const mult    = active?.rewardMultiplier ?? 1.0;
+                const multPct = Math.round((mult - 1) * 100);
+                const multStr = multPct > 0 ? `+${multPct}%` : multPct < 0 ? `${multPct}%` : '';
+                const header  = document.querySelector('.aq-header');
+                if (header) {
+                    let badge = header.querySelector('.aq-mult');
+                    if (multStr) {
+                        const cls = multPct > 0 ? 'aq-mult-pos' : 'aq-mult-neg';
+                        if (badge) {
+                            badge.textContent = `${multStr} reward`;
+                            badge.className = `aq-mult ${cls}`;
+                        } else {
+                            const span = document.createElement('span');
+                            span.className = `aq-mult ${cls}`;
+                            span.title = 'Reward modifier from phase events';
+                            span.textContent = `${multStr} reward`;
+                            header.querySelector('div[style]')?.prepend(span);
+                        }
+                    } else if (badge) {
+                        badge.remove();
+                    }
+                }
+            }
         }
 
         // Board reset timer

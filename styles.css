@@ -1102,8 +1102,8 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
 /* ── Reward banner ─────────────────────────────────────────── */
 .quest-reward-banner {
     display: flex;
-    align-items: center;
-    gap: 14px;
+    flex-direction: column;
+    gap: 0;
     padding: 14px 18px;
     border-radius: var(--radius-lg);
     border: 1px solid;
@@ -1113,13 +1113,23 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
 .reward-partial  { background: rgba(201,168,76,.08); border-color: rgba(201,168,76,.3);  }
 .reward-failure  { background: rgba(192,64,64,.08);  border-color: rgba(192,64,64,.3);   }
 
-.reward-icon { font-size: 22px; flex-shrink: 0; }
+/* top row: icon + summary + dismiss */
+.reward-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+.reward-icon { font-size: 22px; flex-shrink: 0; padding-top: 2px; }
 .reward-success .reward-icon { color: var(--success); }
 .reward-partial  .reward-icon { color: var(--warning); }
 .reward-failure  .reward-icon { color: var(--danger); }
 
 .reward-body { flex: 1; }
-.reward-title  { font-weight: 600; font-size: 14px; color: var(--text-primary); margin-bottom: 2px; }
+.reward-title         { font-weight: 600; font-size: 14px; color: var(--text-primary); margin-bottom: 1px; }
+.reward-outcome-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 3px; }
+.reward-success .reward-outcome-label { color: var(--success); }
+.reward-partial  .reward-outcome-label { color: var(--warning); }
+.reward-failure  .reward-outcome-label { color: var(--danger);  }
 .reward-detail { font-size: 12px; color: var(--text-muted); }
 
 .reward-dismiss {
@@ -1132,8 +1142,35 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
     border-radius: var(--radius);
     transition: color var(--transition);
     flex-shrink: 0;
+    margin-left: auto;
 }
 .reward-dismiss:hover { color: var(--text-muted); }
+
+/* phase log inside the banner */
+.reward-log {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    max-height: 200px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+}
+.reward-log-phase {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 8px;
+    margin-bottom: 3px;
+}
+.reward-log-phase:first-child { margin-top: 0; }
+.reward-log-line {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.55;
+    padding: 1px 0;
+}
 
 /* ── Daily status bar ──────────────────────────────────────── */
 .daily-status-bar {
@@ -1274,6 +1311,119 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
     text-align: right;
 }
 .aq-actions { display: flex; justify-content: flex-end; }
+
+/* ── Phase timeline ────────────────────────────────────────── */
+.aq-phase-timeline {
+    display: flex;
+    align-items: center;
+    margin: 14px 0 10px;
+}
+.aq-phase-connector {
+    flex: 1;
+    height: 2px;
+    background: var(--border);
+}
+.aq-phase-dot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    position: relative;
+}
+.aq-phase-dot::before {
+    content: '';
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--border-light);
+    background: var(--bg-base);
+    transition: background var(--transition), border-color var(--transition);
+    flex-shrink: 0;
+}
+.aq-phase-dot.done::before {
+    background: var(--gold-dim);
+    border-color: var(--gold-dim);
+}
+.aq-phase-dot.active::before {
+    background: var(--gold);
+    border-color: var(--gold);
+    box-shadow: 0 0 6px var(--gold);
+}
+.aq-phase-dot-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    transition: color var(--transition);
+}
+.aq-phase-dot.done  .aq-phase-dot-label { color: var(--gold-dim); }
+.aq-phase-dot.active .aq-phase-dot-label { color: var(--gold); font-weight: 600; }
+
+/* ── Phase status row ──────────────────────────────────────── */
+.aq-phase-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+.aq-phase-name {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gold);
+}
+.aq-phase-timer {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* ── Quest log ─────────────────────────────────────────────── */
+.aq-log-header {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    font-weight: 600;
+    margin: 14px 0 6px;
+}
+.aq-log {
+    background: var(--bg-base);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    max-height: 160px;
+    overflow-y: auto;
+    margin-bottom: 14px;
+    scroll-behavior: smooth;
+}
+.aq-log-phase {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 8px;
+    margin-bottom: 3px;
+}
+.aq-log-phase:first-child { margin-top: 0; }
+.aq-log-line {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.55;
+    padding: 1px 0;
+}
+.aq-log-muted { color: var(--text-dim); font-style: italic; }
+
+/* ── Reward multiplier badge ───────────────────────────────── */
+.aq-mult {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: var(--radius);
+    border: 1px solid currentColor;
+}
+.aq-mult-pos { color: var(--success); }
+.aq-mult-neg { color: var(--danger);  }
 
 /* ── Section headers ───────────────────────────────────────── */
 .quest-section-header {

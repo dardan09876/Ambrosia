@@ -75,6 +75,24 @@ const QuestSystem = {
         return guildQuests?.find(q => q.id === questId) ?? null;
     },
 
+    // ── Build phase schedule for a quest ─────────────────────────────────────
+    _buildPhases(quest, startAt) {
+        const skill  = quest.skillCheck?.skill ?? 'melee';
+        const names  = (typeof QUEST_PHASE_NAMES !== 'undefined' && QUEST_PHASE_NAMES[skill])
+            ? QUEST_PHASE_NAMES[skill]
+            : ['Approach', 'Engage', 'Objective', 'Return'];
+        const totalMs = quest.duration * 1000;
+        // Phase duration ratios: 20 / 30 / 30 / 20
+        const ratios  = [0.20, 0.30, 0.30, 0.20];
+        let cursor = startAt;
+        return ratios.map((ratio, i) => {
+            const durationMs = Math.floor(totalMs * ratio);
+            const phase = { index: i, name: names[i], durationMs, startAt: cursor };
+            cursor += durationMs;
+            return phase;
+        });
+    },
+
     // ── Start a quest ─────────────────────────────────────────────────────────
     start(questId) {
         const player = PlayerSystem.current;
@@ -98,6 +116,10 @@ const QuestSystem = {
             questId,
             startedAt: now,
             endsAt: now + quest.duration * 1000,
+            phases: this._buildPhases(quest, now),
+            currentPhaseIndex: 0,
+            log: [],
+            rewardMultiplier: 1.0,
         };
 
         Log.add(`Quest started: "${quest.name}". Returns in ${formatDuration(quest.duration)}.`, 'info');
@@ -125,7 +147,68 @@ const QuestSystem = {
     tick() {
         const player = PlayerSystem.current;
         if (!player?.quests?.active) return;
-        if (Date.now() >= player.quests.active.endsAt) this.resolve();
+        const active = player.quests.active;
+        // Migrate old active quests that lack phase data
+        if (!active.phases) {
+            const quest = this._findQuest(active.questId);
+            if (quest) {
+                active.phases = this._buildPhases(quest, active.startedAt);
+                active.currentPhaseIndex = 0;
+                active.log = [];
+                active.rewardMultiplier = 1.0;
+            }
+        }
+        // Advance phases
+        const quest = this._findQuest(active.questId);
+        if (quest) this._catchUpPhases(active, quest);
+        if (Date.now() >= active.endsAt) this.resolve();
+    },
+
+    // ── Resolve completed phases (also handles offline catch-up) ──────────────
+    _catchUpPhases(active, quest) {
+        const now = Date.now();
+        let dirty = false;
+        // Safety limit: max 4 phases to process per call
+        let safety = 4;
+        while (
+            safety > 0 &&
+            active.currentPhaseIndex < (active.phases?.length ?? 0)
+        ) {
+            const phase = active.phases[active.currentPhaseIndex];
+            const phaseEndsAt = phase.startAt + phase.durationMs;
+            if (now < phaseEndsAt) break;
+            this._resolvePhaseEvent(active, quest, phase);
+            active.currentPhaseIndex++;
+            dirty = true;
+            safety--;
+        }
+        if (dirty) SaveSystem.save();
+    },
+
+    // ── Fire one narrative event for a phase ──────────────────────────────────
+    _resolvePhaseEvent(active, quest, phase) {
+        const skill  = quest.skillCheck?.skill ?? 'melee';
+        const pool   = (typeof QUEST_PHASE_EVENTS !== 'undefined' && QUEST_PHASE_EVENTS[skill])
+            ? QUEST_PHASE_EVENTS[skill]
+            : null;
+        if (!pool || !pool.length) return;
+
+        const event = pool[Math.floor(Math.random() * pool.length)];
+
+        // Use the quest's success chance adjusted by the event's difficulty modifier
+        const baseChance   = this.getSuccessChance(quest);
+        const eventChance  = Math.min(95, Math.max(5, baseChance / event.difficultyMod));
+        const success      = Math.random() * 100 < eventChance;
+
+        active.log.push(`— ${phase.name} —`);
+        active.log.push(event.logIntro);
+        const lines = success ? event.logSuccess : event.logFailure;
+        for (const line of lines) active.log.push(line);
+
+        const mod = success ? event.successEffect.rewardMod : event.failureEffect.rewardMod;
+        active.rewardMultiplier = Math.min(1.5, Math.max(0.3,
+            (active.rewardMultiplier ?? 1.0) + mod
+        ));
     },
 
     // ── Resolve completed quest ───────────────────────────────────────────────
@@ -144,8 +227,10 @@ const QuestSystem = {
         const success = rolled < chance;
         const partial = !success && rolled < chance * 1.5;
 
+        const mult = Math.min(1.5, Math.max(0.3, activeData.rewardMultiplier ?? 1.0));
+
         if (success) {
-            const gold = this._rand(quest.goldReward.min, quest.goldReward.max);
+            const gold = Math.round(this._rand(quest.goldReward.min, quest.goldReward.max) * mult);
             player.gold += gold;
             const isGuild = !!quest.isGuildQuest;
             for (let i = 0; i < quest.chestReward.count; i++) {
@@ -154,7 +239,7 @@ const QuestSystem = {
             const chestName = isGuild
                 ? (LOOT_TIERS[quest.chestReward.tier]?.name ?? `Tier ${quest.chestReward.tier} Cache`)
                 : (CHEST_DEFS[quest.chestReward.tier]?.name ?? `Tier ${quest.chestReward.tier} Chest`);
-            this.lastReward = { outcome: 'success', questName: quest.name, gold, chests: quest.chestReward };
+            this.lastReward = { outcome: 'success', questName: quest.name, gold, chests: quest.chestReward, log: activeData.log ?? [] };
             Log.add(`"${quest.name}" complete! +${gold.toLocaleString()} gold · ${quest.chestReward.count}× ${chestName}.`, 'success');
 
             // Award guild reputation on success
@@ -168,9 +253,9 @@ const QuestSystem = {
             this._applyDurabilityWear(quest, 1.0);
 
         } else if (partial) {
-            const gold = Math.floor(this._rand(quest.goldReward.min, quest.goldReward.max) * 0.4);
+            const gold = Math.round(this._rand(quest.goldReward.min, quest.goldReward.max) * 0.4 * mult);
             player.gold += gold;
-            this.lastReward = { outcome: 'partial', questName: quest.name, gold, chests: null };
+            this.lastReward = { outcome: 'partial', questName: quest.name, gold, chests: null, log: activeData.log ?? [] };
             Log.add(`"${quest.name}" — partial success. +${gold.toLocaleString()} gold, no chest.`, 'warning');
 
             // Award half reputation on partial
@@ -184,7 +269,7 @@ const QuestSystem = {
             this._applyDurabilityWear(quest, 0.65);
 
         } else {
-            this.lastReward = { outcome: 'failure', questName: quest.name, gold: 0, chests: null };
+            this.lastReward = { outcome: 'failure', questName: quest.name, gold: 0, chests: null, log: activeData.log ?? [] };
             Log.add(`"${quest.name}" failed. No reward.`, 'danger');
             this._applyDurabilityWear(quest, 0.40);
         }
@@ -311,6 +396,33 @@ const QuestSystem = {
         const total   = active.endsAt - active.startedAt;
         const elapsed = Date.now() - active.startedAt;
         return Math.min(100, Math.round((elapsed / total) * 100));
+    },
+
+    // ── Phase helpers for UI ──────────────────────────────────────────────────
+    getCurrentPhase() {
+        const active = PlayerSystem.current?.quests?.active;
+        if (!active?.phases) return null;
+        const idx = Math.min(active.currentPhaseIndex, active.phases.length - 1);
+        return active.phases[idx] ?? null;
+    },
+
+    getPhaseRemainingMs() {
+        const active = PlayerSystem.current?.quests?.active;
+        if (!active?.phases) return 0;
+        const idx = active.currentPhaseIndex;
+        if (idx >= active.phases.length) return 0;
+        const phase = active.phases[idx];
+        return Math.max(0, (phase.startAt + phase.durationMs) - Date.now());
+    },
+
+    getPhaseProgress() {
+        const active = PlayerSystem.current?.quests?.active;
+        if (!active?.phases) return 0;
+        const idx = active.currentPhaseIndex;
+        if (idx >= active.phases.length) return 100;
+        const phase = active.phases[idx];
+        const elapsed = Date.now() - phase.startAt;
+        return Math.min(100, Math.round((elapsed / phase.durationMs) * 100));
     },
 
     // ── Helpers ───────────────────────────────────────────────────────────────
