@@ -4744,37 +4744,131 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
     gap: 16px;
     align-items: start;
 }
-@media (max-width: 860px) {
-    .warbands-layout { grid-template-columns: 1fr; }
-}
-.warbands-main   { display: flex; flex-direction: column; gap: 12px; }
+@media (max-width: 860px) { .warbands-layout { grid-template-columns: 1fr; } }
+.warbands-main    { display: flex; flex-direction: column; gap: 12px; }
 .warbands-sidebar { display: flex; flex-direction: column; gap: 12px; }
 
-.warbands-map-card .card-header {
-    display: flex; justify-content: space-between; align-items: center;
-}
+.warbands-map-card .card-header { display: flex; justify-content: space-between; align-items: center; }
 .wb-influence-badge {
     font-size: 13px; font-weight: 700; color: var(--gold);
     background: rgba(201,168,76,0.12); padding: 2px 10px; border-radius: 12px;
 }
+.wb-inf-rate {
+    font-size: 11px; font-weight: 600; color: #4a9e6b;
+    margin-left: 4px; font-variant-numeric: tabular-nums;
+}
 
 /* Map legend */
-.wb-map-legend {
-    display: flex; gap: 16px; justify-content: center;
-    margin-top: 10px; flex-wrap: wrap;
-}
+.wb-map-legend { display: flex; gap: 14px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
 .wb-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #aaa; }
 .wb-legend-dot  { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
 
 /* Tile detail */
 .wb-tile-detail { min-height: 120px; }
-.wb-detail-row  {
+.wb-detail-row {
     display: flex; justify-content: space-between; align-items: center;
     font-size: 12px; padding: 4px 0; border-bottom: 1px solid #2a2a2a;
 }
 .wb-detail-row:last-of-type { border-bottom: none; }
-.wb-tile-actions { display: flex; gap: 8px; margin-top: 10px; }
-.wb-influence-bar-wrap { width: 100%; }
+.wb-tile-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+/* Tile info badges */
+.wb-tier-badge, .wb-zone-badge, .wb-sp-badge, .wb-cp-badge, .wb-lane-badge {
+    display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 600;
+}
+.wb-tier-outer  { background: rgba(80,80,60,0.3);  color: #aaa; border: 1px solid #444; }
+.wb-tier-mid    { background: rgba(100,80,40,0.3);  color: #c9a84c; border: 1px solid #664; }
+.wb-tier-inner  { background: rgba(120,40,40,0.3);  color: #e08070; border: 1px solid #844; }
+.wb-tier-center { background: rgba(140,20,140,0.3); color: #e070e0; border: 1px solid #848; }
+.wb-zone-badge  { background: rgba(60,20,20,0.4);   color: #c07060; border: 1px solid #622; }
+.wb-sp-badge    { background: rgba(80,0,0,0.4);     color: #cc4040; border: 1px solid #822; }
+.wb-cp-badge    { background: rgba(80,70,10,0.4);   color: #c9a84c; border: 1px solid #664; }
+.wb-lane-badge  { background: rgba(30,30,50,0.5);   color: #9090c0; border: 1px solid #445; }
+.wb-modifier-badge {
+    margin-bottom: 8px; padding: 5px 10px; border-radius: 5px;
+    background: rgba(60,50,20,0.4); border: 1px solid rgba(200,160,60,0.3);
+    font-size: 11px; color: #c9a84c; line-height: 1.4;
+}
+
+/* ── Idle screen ─────────────────────────────────────────────────────────── */
+.wb-idle-screen {
+    max-width: 560px; margin: 40px auto; padding: 40px 36px;
+    background: #161620; border: 1px solid #2a2a3a; border-radius: 10px;
+    text-align: center;
+}
+.wb-idle-icon  { font-size: 48px; margin-bottom: 12px; line-height: 1; }
+.wb-idle-title { font-size: 22px; font-weight: 700; color: #eee; margin: 0 0 12px; }
+.wb-idle-desc  {
+    font-size: 13px; color: #999; line-height: 1.6;
+    margin-bottom: 24px;
+}
+.wb-idle-desc strong { color: #ccc; }
+.wb-idle-note  { font-size: 11px; color: #666; margin: 16px 0 24px; }
+.wb-idle-note strong { color: #888; }
+
+.wb-duration-picker  { margin-bottom: 4px; }
+.wb-dur-label        { font-size: 11px; color: #777; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.wb-dur-btns         { display: flex; gap: 10px; justify-content: center; }
+.wb-dur-btn {
+    flex: 1; max-width: 120px; padding: 10px 8px; border-radius: 7px; cursor: pointer;
+    background: #1e1e2e; border: 1px solid #333; color: #aaa;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    transition: border-color 0.15s, color 0.15s;
+}
+.wb-dur-btn:hover      { border-color: #555; color: #ccc; }
+.wb-dur-time           { font-size: 16px; font-weight: 700; color: inherit; }
+.wb-dur-sub            { font-size: 10px; color: #666; }
+.wb-dur-active         { border-color: var(--gold, #c9a84c) !important; color: var(--gold, #c9a84c) !important; background: rgba(201,168,76,0.08); }
+.wb-dur-active .wb-dur-sub { color: rgba(201,168,76,0.6); }
+
+.wb-start-btn { margin-top: 0; padding: 12px 40px; font-size: 15px; font-weight: 600; }
+
+/* ── Countdown overlay ───────────────────────────────────────────────────── */
+.wb-countdown-overlay {
+    position: absolute; inset: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(8,8,12,0.80); border-radius: 6px;
+    backdrop-filter: blur(2px);
+}
+.wb-countdown-box   { text-align: center; }
+.wb-countdown-num   {
+    font-size: 72px; font-weight: 800; line-height: 1;
+    color: var(--gold, #c9a84c);
+    text-shadow: 0 0 30px rgba(201,168,76,0.5);
+    animation: wb-pulse 1s ease-in-out infinite;
+}
+.wb-countdown-label { font-size: 14px; color: #aaa; margin-top: 8px; letter-spacing: 0.5px; }
+@keyframes wb-pulse  { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.7; transform:scale(0.95); } }
+
+/* ── Game timer badge (in card header) ───────────────────────────────────── */
+.wb-game-timer {
+    margin-left: auto; font-size: 14px; font-weight: 700;
+    font-variant-numeric: tabular-nums; letter-spacing: 0.5px;
+}
+
+/* ── Ended screen ────────────────────────────────────────────────────────── */
+.wb-ended-screen {
+    max-width: 480px; margin: 40px auto; padding: 40px 36px;
+    background: #161620; border: 1px solid #2a2a3a; border-radius: 10px;
+    text-align: center;
+}
+.wb-ended-icon  { font-size: 48px; margin-bottom: 10px; line-height: 1; }
+.wb-ended-title { font-size: 26px; font-weight: 800; margin: 0 0 8px; }
+.wb-ended-win   { color: #4a9e6b; }
+.wb-ended-loss  { color: #c04040; }
+.wb-ended-reason {
+    font-size: 13px; color: #999; margin-bottom: 24px; line-height: 1.5;
+}
+.wb-ended-stats {
+    background: #1a1a28; border: 1px solid #2a2a3a; border-radius: 7px;
+    padding: 12px 16px; margin-bottom: 24px; text-align: left;
+}
+
+.wb-heart-note  {
+    margin: 6px 0; padding: 6px 8px;
+    background: rgba(120,40,120,0.2); border-left: 2px solid #cc44cc;
+    font-size: 12px; color: #e090e0; border-radius: 4px;
+}
 
 /* Rift quests */
 .wb-quest-card {
@@ -4782,16 +4876,11 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
     padding: 10px 12px; margin-bottom: 8px;
 }
 .wb-quest-card:last-child { margin-bottom: 0; }
-.wb-quest-header {
-    display: flex; justify-content: space-between; align-items: baseline;
-    margin-bottom: 4px;
-}
+.wb-quest-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
 .wb-quest-name   { font-weight: 600; font-size: 13px; }
 .wb-quest-type   { font-size: 11px; color: #888; }
 .wb-quest-desc   { font-size: 12px; color: #aaa; margin: 4px 0 8px; line-height: 1.5; }
-.wb-quest-footer {
-    display: flex; justify-content: space-between; align-items: center;
-}
+.wb-quest-footer { display: flex; justify-content: space-between; align-items: center; }
 .wb-quest-reward { font-size: 12px; color: var(--gold); }
 .wb-quest-timer  { font-size: 12px; color: #9b9bcc; font-weight: 600; }
 
@@ -4805,6 +4894,120 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
 /* SVG tile hover */
 .wb-tile rect { transition: filter 0.1s; }
 .wb-tile:hover rect { filter: brightness(1.25); }
+
+/* Control bar */
+.wb-control-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+.wb-control-bar-wrap { width: 100%; }
+.stat-bar-track      { height: 6px; background: #1a1a1a; border-radius: 4px; overflow: hidden; }
+
+/* Outcomes */
+.wb-outcome      { padding: 10px 16px; border-radius: 6px; font-weight: 600; margin-bottom: 12px; }
+.wb-outcome-win  { background: rgba(74,158,107,0.2); border: 1px solid #4a9e6b; color: #7acf97; }
+.wb-outcome-loss { background: rgba(192,64,64,0.2);  border: 1px solid #c04040; color: #e07070; }
+
+.wb-cost { font-size: 10px; color: var(--gold); margin-left: 3px; }
+
+.wb-faction-active {
+    display: flex; gap: 10px; align-items: flex-start;
+    background: #1a1a2a; border: 1px solid #333; border-radius: 6px; padding: 10px;
+}
+
+/* ── Status Banner (phase + territory) ────────────────── */
+.wb-status-banner {
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px 14px; margin-bottom: 14px;
+}
+
+/* Phase pill */
+.wb-phase-pill {
+    display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    border: 1px solid; border-radius: 14px; padding: 3px 12px;
+    font-size: 12px; font-weight: 700; margin-bottom: 8px;
+}
+.wb-phase-desc { font-weight: 400; color: #888; font-size: 11px; }
+
+/* Active order badge */
+.wb-active-order-badge {
+    display: inline-block; padding: 2px 10px; border-radius: 12px;
+    background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.3);
+    color: #c9a84c; font-size: 11px; font-weight: 600; margin-bottom: 8px; margin-right: 6px;
+}
+
+/* Faction badges */
+.wb-faction-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.wb-faction-badge {
+    display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+    background: #111; border: 1px solid #333; border-radius: 14px;
+    padding: 3px 10px; font-size: 12px;
+}
+.wb-faction-player { border-color: #4a9e6b; }
+.wb-faction-iron   { border-color: #4a7ec0; }
+.wb-faction-ashen  { border-color: #8b4ac0; }
+.wb-faction-enemy  { border-color: #7a1a1a; }
+.wb-fb-name  { color: #aaa; font-size: 11px; }
+.wb-intent   { font-size: 10px; color: #666; font-style: italic; }
+
+/* Territory bar */
+.wb-territory-bar {
+    display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: #111; margin-top: 2px;
+}
+.wb-territory-bar > div { transition: width 0.4s; min-width: 0; }
+
+/* ── Strategic Orders ─────────────────────────────────── */
+.wb-action-row { display: flex; gap: 12px; }
+.wb-action-row > .card { min-width: 0; }
+@media (max-width: 700px) { .wb-action-row { flex-direction: column; } }
+
+.wb-orders-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.wb-order-btn {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+    background: #1a1a2a; border: 1px solid #333; border-radius: 6px;
+    padding: 8px 10px; cursor: pointer; text-align: left;
+    transition: border-color 0.15s, background 0.15s;
+}
+.wb-order-btn:hover:not(.wb-btn-dim) { border-color: #c9a84c; background: rgba(201,168,76,0.08); }
+.wb-btn-dim    { opacity: 0.45; cursor: default; }
+.wb-order-icon { font-size: 18px; margin-bottom: 2px; }
+.wb-order-name { font-size: 12px; font-weight: 600; color: #ddd; }
+.wb-order-meta { font-size: 10px; color: #888; }
+
+.wb-order-active-panel {
+    text-align: center; padding: 10px;
+    background: rgba(201,168,76,0.07); border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 6px; margin-bottom: 8px;
+}
+.wb-order-target-hint {
+    background: rgba(255,153,51,0.12); border: 1px solid rgba(255,153,51,0.3);
+    color: #ffaa55; font-size: 12px; padding: 6px 10px; border-radius: 5px; margin-bottom: 8px;
+}
+.wb-order-target-hint a { color: #ff9933; }
+
+/* ── Tactical Abilities ───────────────────────────────── */
+.wb-abilities-list { display: flex; flex-direction: column; gap: 8px; }
+.wb-ability-row {
+    display: flex; align-items: center; gap: 10px;
+    background: #1a1a2a; border: 1px solid #2a2a3a; border-radius: 6px; padding: 8px 10px;
+}
+.wb-ability-dim  { opacity: 0.5; }
+.wb-ability-icon { font-size: 20px; flex-shrink: 0; width: 24px; text-align: center; }
+.wb-ability-info { flex: 1; min-width: 0; }
+.wb-ability-name { font-size: 12px; font-weight: 600; color: #ddd; }
+.wb-ability-desc { font-size: 11px; color: #888; margin-top: 1px; }
+
+/* ── War Log ──────────────────────────────────────────── */
+.wb-war-log {
+    max-height: 220px; overflow-y: auto; padding: 8px 12px;
+    display: flex; flex-direction: column; gap: 5px;
+    scrollbar-width: thin; scrollbar-color: #333 transparent;
+}
+.wb-log-entry {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+    font-size: 11px; line-height: 1.4; padding: 2px 0; border-bottom: 1px solid #1e1e1e;
+}
+.wb-log-entry:last-child { border-bottom: none; }
+.wb-log-text  { flex: 1; }
+.wb-log-age   { flex-shrink: 0; color: #444; font-size: 10px; white-space: nowrap; }
+.wb-log-empty { color: #555; font-size: 12px; font-style: italic; padding: 8px 0; text-align: center; }
 
 /* ── Arena tab bar ──────────────────────────────────────── */
 .arena-tab-bar {
