@@ -1,12 +1,12 @@
 // js/pages/market.js
-// Market page — two tabs: Food shop and Repair shop.
+// Market page — tabs: Food shop and Shrine (at capitals).
 
 Router.register('market', function () {
     _renderMarketPage();
 });
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let _marketTab = 'food'; // 'food' | 'repair' | 'shrine'
+let _marketTab = 'food'; // 'food' | 'materials' | 'shrine'
 
 function _isAtCapital() {
     const player = PlayerSystem.current;
@@ -36,7 +36,7 @@ function _renderMarketPage() {
                     </div>
                 </div>
                 <div class="page-facility-blocked">
-                    <p>There is no market in ${regionName}.</p><p class="muted-text">Travel to a region with a market to buy food and repair equipment.</p>
+                    <p>There is no market in ${regionName}.</p><p class="muted-text">Travel to a region with a market to buy food.</p>
                 </div>
             </div>
         `;
@@ -59,13 +59,13 @@ function _renderMarketPage() {
             </div>
 
             <div class="market-tabs">
-                <button class="market-tab ${_marketTab === 'food'   ? 'active' : ''}" onclick="_marketSetTab('food')">Food</button>
-                <button class="market-tab ${_marketTab === 'repair' ? 'active' : ''}" onclick="_marketSetTab('repair')">Repair</button>
+                <button class="market-tab ${_marketTab === 'food'      ? 'active' : ''}" onclick="_marketSetTab('food')">Food</button>
+                <button class="market-tab ${_marketTab === 'materials' ? 'active' : ''}" onclick="_marketSetTab('materials')">Materials</button>
                 ${_isAtCapital() ? `<button class="market-tab market-tab-shrine ${_marketTab === 'shrine' ? 'active' : ''}" onclick="_marketSetTab('shrine')">Shrine</button>` : ''}
             </div>
 
             <div class="market-body">
-                ${_marketTab === 'food' ? _marketFoodTab(player) : _marketTab === 'shrine' ? _marketShrineTab(player) : _marketRepairTab(player)}
+                ${_marketTab === 'materials' ? _marketMaterialsTab(player) : _marketTab === 'shrine' ? _marketShrineTab(player) : _marketFoodTab(player)}
             </div>
 
         </div>
@@ -117,6 +117,74 @@ function _marketFoodTab(player) {
         <div class="market-food-tab">
             <p class="market-food-note muted-text">Food is stored in your inventory. Open your bag to consume it whenever you like.</p>
             <div class="market-item-list">${rows.join('')}</div>
+        </div>
+    `;
+}
+
+// ── Materials tab ─────────────────────────────────────────────────────────────
+// Shop price = base value × 15, rounded up. Considerably expensive by design.
+const _MAT_SHOP_MARKUP = 15;
+
+function _matShopPrice(mat) {
+    return Math.ceil((mat.value ?? 1) * _MAT_SHOP_MARKUP);
+}
+
+const _MAT_TIER_LABELS = { 1: 'Common', 2: 'Refined', 3: 'Rare' };
+
+function _marketMaterialsTab(player) {
+    const allMats = Object.values(CRAFTING_MATERIALS);
+
+    // Group by tier
+    const byTier = {};
+    for (const mat of allMats) {
+        const t = mat.tier ?? 1;
+        if (!byTier[t]) byTier[t] = [];
+        byTier[t].push(mat);
+    }
+
+    const sections = Object.keys(byTier).sort((a, b) => Number(a) - Number(b)).map(tier => {
+        const label = _MAT_TIER_LABELS[tier] ?? `Tier ${tier}`;
+        const rows = byTier[tier].map(mat => {
+            const price     = _matShopPrice(mat);
+            const canAfford = player.gold >= price;
+            const owned     = (player.craftingMaterials ?? {})[mat.id] ?? 0;
+
+            return `
+                <div class="market-item-row ${canAfford ? '' : 'market-row-poor'}">
+                    <div class="market-item-body">
+                        <div class="market-item-name-row">
+                            <span class="market-item-name">${mat.name}</span>
+                            ${owned > 0 ? `<span class="market-inv-qty">×${owned} owned</span>` : ''}
+                        </div>
+                        <div class="market-item-tags">
+                            ${mat.tags.map(t => `<span class="market-tag">${t}</span>`).join('')}
+                            ${!canAfford ? `<span class="market-tag market-tag-poor">Insufficient gold</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="market-item-actions">
+                        <span class="market-item-cost">◈ ${price}g</span>
+                        <button
+                            class="market-btn market-btn-buy${canAfford ? '' : ' market-btn-disabled'}"
+                            onclick="_marketBuyMaterial('${mat.id}')"
+                            ${canAfford ? '' : 'disabled'}
+                        >Buy</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="market-mat-tier-section">
+                <div class="market-mat-tier-label">${label} Materials</div>
+                <div class="market-item-list">${rows}</div>
+            </div>
+        `;
+    }).join('');
+
+    return `
+        <div class="market-materials-tab">
+            <p class="market-food-note muted-text">Merchant-grade materials. Prices reflect scarcity — gather through salvage and quests whenever possible.</p>
+            ${sections}
         </div>
     `;
 }
@@ -209,110 +277,6 @@ function _marketShrineTab(player) {
     `;
 }
 
-// ── Repair tab ────────────────────────────────────────────────────────────────
-function _marketRepairTab(player) {
-    // Gather all damaged items from both inventory and equipped slots
-    const damaged = [];
-
-    for (const item of player.inventory) {
-        if (item.durability < item.maxDurability) {
-            damaged.push({ item, source: 'inventory' });
-        }
-    }
-    for (const [slot, item] of Object.entries(player.equipment)) {
-        if (item && item.durability < item.maxDurability) {
-            damaged.push({ item, source: 'equipped', slot });
-        }
-    }
-
-    if (damaged.length === 0) {
-        return `
-            <div class="market-repair-tab">
-                <div class="market-empty">
-                    <p>All your equipment is in perfect condition.</p>
-                    <p class="muted-text">Items lose durability as you use them in quests.</p>
-                </div>
-            </div>
-        `;
-    }
-
-    // Total cost to repair everything
-    const totalCost = damaged.reduce((sum, { item }) => sum + _repairCost(item), 0);
-    const canAffordAll = player.gold >= totalCost;
-
-    const rows = damaged.map(({ item, source, slot }) => {
-        const cost       = _repairCost(item);
-        const canAfford  = player.gold >= cost;
-        const durPct     = Math.round((item.durability / item.maxDurability) * 100);
-        const durColor   = durPct > 60 ? 'var(--success)' : durPct > 25 ? 'var(--warning)' : 'var(--danger)';
-        const tierColor  = (ITEM_TIER_COLORS && ITEM_TIER_COLORS[item.tier]) || '#c9a84c';
-        const tierName   = (ITEM_TIER_NAMES  && ITEM_TIER_NAMES[item.tier])  || `T${item.tier}`;
-        const missing    = item.maxDurability - item.durability;
-        const sourceTag  = source === 'equipped'
-            ? `<span class="market-tag market-tag-equipped">Equipped · ${_equipSlotLabel(slot)}</span>`
-            : `<span class="market-tag market-tag-inv">In Bag</span>`;
-
-        return `
-            <div class="market-item-row ${!canAfford ? 'market-row-poor' : ''}">
-                <div class="market-item-body">
-                    <div class="market-item-name-row">
-                        <span class="market-tier-badge" style="background:${tierColor}22;color:${tierColor};border-color:${tierColor}55">${tierName}</span>
-                        <span class="market-item-name">${item.name}</span>
-                    </div>
-                    <div class="market-item-tags">${sourceTag}</div>
-                    <div class="market-dur-row">
-                        <div class="market-dur-track">
-                            <div class="market-dur-fill" style="width:${durPct}%;background:${durColor}"></div>
-                        </div>
-                        <span class="market-dur-text">${item.durability}/${item.maxDurability}</span>
-                        <span class="market-dur-missing muted-text">(${missing} damaged)</span>
-                    </div>
-                </div>
-                <div class="market-item-actions">
-                    <span class="market-item-cost">◈ ${cost}g</span>
-                    <button
-                        class="market-btn market-btn-repair${!canAfford ? ' market-btn-disabled' : ''}"
-                        onclick="_marketRepairItem(${item.uid})"
-                        ${!canAfford ? 'disabled' : ''}
-                        title="Restore ${missing} durability for ${cost}g"
-                    >Repair</button>
-                </div>
-            </div>
-        `;
-    });
-
-    return `
-        <div class="market-repair-tab">
-            <div class="market-repair-summary">
-                <span class="muted-text">${damaged.length} item${damaged.length !== 1 ? 's' : ''} need repair</span>
-                <button
-                    class="market-btn market-btn-repairall${!canAffordAll ? ' market-btn-disabled' : ''}"
-                    onclick="_marketRepairAll()"
-                    ${!canAffordAll ? 'disabled' : ''}
-                    title="${canAffordAll ? `Repair all for ${totalCost}g` : 'Not enough gold'}"
-                >Repair All — ◈ ${totalCost}g</button>
-            </div>
-            <div class="market-item-list">${rows.join('')}</div>
-        </div>
-    `;
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-// Repair cost: 0.6g per durability point, scaled by tier
-function _repairCost(item) {
-    const missing = item.maxDurability - item.durability;
-    return Math.max(1, Math.ceil(missing * item.tier * 0.6));
-}
-
-function _equipSlotLabel(slot) {
-    const map = {
-        weapon: 'Weapon', offhand: 'Off-Hand', head: 'Head',
-        torso: 'Torso', back: 'Back', hands: 'Hands', legs: 'Legs', feet: 'Feet',
-    };
-    return map[slot] || slot;
-}
-
 // ── Actions ───────────────────────────────────────────────────────────────────
 function _marketSetTab(tab) {
     _marketTab = tab;
@@ -361,55 +325,23 @@ function _marketBuyFood(foodId) {
     _renderMarketPage();
 }
 
-function _marketRepairItem(uid) {
+function _marketBuyMaterial(matId) {
     const player = PlayerSystem.current;
-    const item   = _marketFindItem(player, uid);
-    if (!item) return;
+    const mat    = typeof getMaterial !== 'undefined' ? getMaterial(matId) : null;
+    if (!mat) return;
 
-    const cost = _repairCost(item);
-    if (player.gold < cost) {
+    const price = _matShopPrice(mat);
+    if (player.gold < price) {
         Log.add('Not enough gold.', 'danger');
         return;
     }
 
-    player.gold       -= cost;
-    item.durability    = item.maxDurability;
+    player.gold -= price;
+    if (!player.craftingMaterials) player.craftingMaterials = {};
+    player.craftingMaterials[matId] = (player.craftingMaterials[matId] ?? 0) + 1;
 
-    Log.add(`Repaired ${item.name} for ${cost}g.`, 'success');
+    Log.add(`Bought 1× ${mat.name} for ${price}g.`, 'success');
     SaveSystem.save();
     _renderMarketPage();
 }
 
-function _marketRepairAll() {
-    const player  = PlayerSystem.current;
-    const damaged = [];
-
-    for (const item of player.inventory) {
-        if (item.durability < item.maxDurability) damaged.push(item);
-    }
-    for (const item of Object.values(player.equipment)) {
-        if (item && item.durability < item.maxDurability) damaged.push(item);
-    }
-
-    const totalCost = damaged.reduce((sum, item) => sum + _repairCost(item), 0);
-    if (player.gold < totalCost) {
-        Log.add('Not enough gold to repair everything.', 'danger');
-        return;
-    }
-
-    for (const item of damaged) {
-        player.gold    -= _repairCost(item);
-        item.durability = item.maxDurability;
-    }
-
-    Log.add(`Repaired ${damaged.length} item${damaged.length !== 1 ? 's' : ''} for ${totalCost}g.`, 'success');
-    SaveSystem.save();
-    _renderMarketPage();
-}
-
-// Find an item by uid in both inventory and equipment
-function _marketFindItem(player, uid) {
-    const fromInv = player.inventory.find(i => i.uid === uid);
-    if (fromInv) return fromInv;
-    return Object.values(player.equipment).find(i => i && i.uid === uid) || null;
-}

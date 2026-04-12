@@ -1560,10 +1560,152 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
 .req-met   { color: var(--success); font-weight: 600; }
 .req-unmet { color: var(--danger);  font-weight: 600; }
 
-.quest-card-footer { display: flex; justify-content: flex-end; }
+.quest-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.quest-card-footer-btns {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-left: auto;
+}
 
 .btn-start-quest { min-width: 130px; }
 .btn-blocked { opacity: 0.4; cursor: not-allowed; }
+
+.quest-repeat-hint {
+    font-size: 11px;
+    color: var(--text-dim);
+    white-space: nowrap;
+}
+
+/* ── Repeat Quest popup ────────────────────────────────────── */
+.rq-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.72);
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.rq-panel {
+    background: var(--bg-elevated);
+    border: 1px solid var(--gold-dim);
+    border-radius: 8px;
+    width: 340px;
+    max-width: 92vw;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.6);
+    overflow: hidden;
+}
+.rq-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+}
+.rq-title {
+    font-family: var(--font-heading);
+    font-size: 15px;
+    color: var(--gold);
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+.rq-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 15px;
+    cursor: pointer;
+    padding: 2px 4px;
+    line-height: 1;
+    transition: color var(--transition);
+}
+.rq-close:hover { color: var(--text-bright); }
+.rq-quest-name {
+    padding: 10px 16px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-bright);
+}
+.rq-body {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.rq-field-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 7px;
+}
+.rq-opts {
+    display: flex;
+    gap: 6px;
+}
+.rq-opt {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 7px 0;
+    cursor: pointer;
+    transition: border-color var(--transition), color var(--transition), background var(--transition);
+}
+.rq-opt:hover { border-color: var(--border-light); color: var(--text-bright); }
+.rq-opt.active {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(201,168,76,0.08);
+}
+.rq-toggle-row {
+    display: flex;
+    gap: 6px;
+}
+.rq-toggle {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: 7px 0;
+    cursor: pointer;
+    transition: border-color var(--transition), color var(--transition), background var(--transition);
+}
+.rq-toggle:hover { border-color: var(--border-light); color: var(--text-bright); }
+.rq-toggle.active {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(201,168,76,0.08);
+}
+.rq-footer {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+}
+
+/* ── Active quest auto-repeat badge ───────────────────────── */
+.aq-auto-repeat-badge {
+    font-size: 11px;
+    color: var(--gold);
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 4px;
+    padding: 3px 8px;
+    margin-right: auto;
+}
 
 /* ── Chest section ─────────────────────────────────────────── */
 .chest-grid {
@@ -1897,6 +2039,17 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
 .market-food-note {
     font-size: 12px;
     padding: 8px 0 4px;
+}
+.market-mat-tier-section { margin-bottom: 18px; }
+.market-mat-tier-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+    margin-bottom: 8px;
 }
 
 /* ============================================================
@@ -2751,7 +2904,7 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
     flex: 1;
     min-width: 0;
     min-height: 640px;
-    background: #0d1e32;
+    background: #1a1a1a;
     border: 1px solid var(--border);
     border-radius: 6px;
     overflow: hidden;
@@ -5332,4 +5485,605 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
 .delve-results-log .delve-log-scroll { max-height: 420px; }
 .delve-rewards-list { display: flex; flex-direction: column; gap: 6px; }
 .delve-reward-line  { font-size: 13px; color: var(--text-muted); padding: 4px 0; border-bottom: 1px solid var(--bg-elevated); }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   Training Page
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Facility / status notices ─────────────────────────────────────────────── */
+.training-facility-note {
+    background: rgba(201,168,76,0.07);
+    border: 1px solid rgba(201,168,76,0.20);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+}
+.training-facility-blocked {
+    background: rgba(192,64,64,0.08);
+    border-color: rgba(192,64,64,0.25);
+    color: var(--danger);
+}
+
+/* ── Skills-page training link ─────────────────────────────────────────────── */
+.skills-training-link {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+}
+.skills-training-link a { color: var(--gold); }
+
+/* ── Header stat bar ───────────────────────────────────────────────────────── */
+.training-header-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+.training-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 130px;
+}
+.tstat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    min-width: 52px;
+}
+.tstat-bar-wrap {
+    flex: 1;
+    height: 5px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    min-width: 60px;
+}
+.tstat-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s;
+}
+.tstat-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+.tstat-sublabel {
+    font-size: 10px;
+    font-weight: 400;
+    opacity: 0.8;
+    margin-left: 4px;
+}
+.tstat-readiness { min-width: 180px; }
+.tstat-fatigue   { min-width: 200px; }
+.tstat-mastery   { min-width: 100px; }
+
+/* ── Tab description ───────────────────────────────────────────────────────── */
+.training-tab-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    padding: 0 2px;
+}
+
+/* ── Training card grid ────────────────────────────────────────────────────── */
+.training-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+/* ── Individual training card ──────────────────────────────────────────────── */
+.training-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    transition: border-color var(--transition), background var(--transition);
+}
+.training-card:hover { border-color: var(--border-light); background: var(--bg-elevated); }
+.training-card.tc-queued {
+    border-color: rgba(201,168,76,0.35);
+    background: rgba(201,168,76,0.05);
+}
+
+.tc-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px;
+}
+.tc-name {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.tc-tier {
+    font-size: 10px;
+    background: rgba(201,168,76,0.12);
+    border: 1px solid rgba(201,168,76,0.25);
+    color: var(--gold);
+    border-radius: 3px;
+    padding: 1px 5px;
+    margin-left: 4px;
+}
+.tc-skill-tag {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+.tc-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+.tc-meta {
+    display: flex;
+    gap: 10px;
+    font-size: 11px;
+}
+.tc-cost    { color: #c07830; font-weight: 500; }
+.tc-dur     { color: var(--text-dim); }
+.tc-rewards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.tc-reward-buff,
+.tc-reward-xp,
+.tc-reward-readiness,
+.tc-reward-mastery,
+.tc-reward-warband {
+    font-size: 10px;
+    border-radius: 3px;
+    padding: 2px 6px;
+}
+.tc-reward-buff      { background: rgba(74,158,219,0.12); color: #4a9edb; border: 1px solid rgba(74,158,219,0.25); }
+.tc-reward-xp        { background: rgba(74,158,107,0.12); color: #4a9e6b; border: 1px solid rgba(74,158,107,0.25); }
+.tc-reward-readiness { background: rgba(201,168,76,0.10); color: var(--gold); border: 1px solid rgba(201,168,76,0.25); }
+.tc-reward-mastery   { background: rgba(155,107,212,0.12); color: #9b6bd4; border: 1px solid rgba(155,107,212,0.25); }
+.tc-reward-warband   { background: rgba(192,120,48,0.12); color: #c07830; border: 1px solid rgba(192,120,48,0.3); }
+
+.btn-tc-begin {
+    margin-top: auto;
+    padding: 6px 10px;
+    background: rgba(201,168,76,0.10);
+    border: 1px solid rgba(201,168,76,0.30);
+    color: var(--gold);
+    border-radius: 5px;
+    font-size: 12px;
+    font-family: var(--font-heading);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+.btn-tc-begin:hover:not([disabled]) {
+    background: rgba(201,168,76,0.18);
+    border-color: rgba(201,168,76,0.55);
+}
+.btn-tc-off {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/* ── Lower panels row ──────────────────────────────────────────────────────── */
+.training-lower {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+@media (max-width: 650px) { .training-lower { grid-template-columns: 1fr; } }
+
+/* ── Shared panel ──────────────────────────────────────────────────────────── */
+.training-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.training-panel-title {
+    font-family: var(--font-heading);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.training-panel-empty {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-style: italic;
+}
+
+/* ── Active queue items ────────────────────────────────────────────────────── */
+.tq-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+.tq-item:last-child { border-bottom: none; padding-bottom: 0; }
+.tq-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.tq-progress-wrap {
+    height: 4px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.tq-progress-fill {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 3px;
+    transition: width 1s linear;
+}
+.tq-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.tq-time { font-size: 11px; color: var(--text-muted); }
+.tq-cancel-btn {
+    font-size: 11px;
+    padding: 2px 8px;
+    background: transparent;
+    border: 1px solid rgba(192,64,64,0.30);
+    color: var(--danger);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.tq-cancel-btn:hover { background: rgba(192,64,64,0.08); }
+
+/* ── Results log ───────────────────────────────────────────────────────────── */
+.tresult-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 11px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+}
+.tresult-item:last-child { border-bottom: none; }
+.tresult-text { color: var(--text-muted); flex: 1; line-height: 1.4; }
+.tresult-ago  { color: var(--text-dim); white-space: nowrap; flex-shrink: 0; }
+
+/* ── Mastery bonds section ─────────────────────────────────────────────────── */
+.training-mastery-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+}
+.mastery-pts-badge {
+    background: rgba(201,168,76,0.12);
+    border: 1px solid rgba(201,168,76,0.25);
+    color: var(--gold);
+    font-size: 11px;
+    border-radius: 10px;
+    padding: 1px 8px;
+    font-family: var(--font-body, monospace);
+    font-weight: 600;
+}
+.mastery-desc { margin: 6px 0 12px; }
+.mastery-skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 6px;
+}
+.mastery-skill-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+}
+.mastery-skill-name  { flex: 1; font-size: 12px; color: var(--text-primary); }
+.mastery-skill-bonus { font-size: 11px; font-weight: 600; min-width: 32px; text-align: right; }
+.mastery-invest-btn {
+    font-size: 11px;
+    padding: 2px 8px;
+    background: rgba(201,168,76,0.10);
+    border: 1px solid rgba(201,168,76,0.25);
+    color: var(--gold);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+}
+.mastery-invest-btn:hover:not([disabled]) { background: rgba(201,168,76,0.18); }
+.mastery-invest-off { opacity: 0.35; cursor: not-allowed; }
+
+/* ── Skill mastery/buff badges (on skills page) ────────────────────────────── */
+.skill-mastery-badge {
+    font-size: 10px;
+    background: rgba(201,168,76,0.10);
+    border: 1px solid rgba(201,168,76,0.25);
+    color: var(--gold);
+    border-radius: 3px;
+    padding: 1px 5px;
+    margin-left: 4px;
+}
+.skill-drill-buff {
+    font-size: 10px;
+    background: rgba(74,158,219,0.10);
+    border: 1px solid rgba(74,158,219,0.25);
+    color: #4a9edb;
+    border-radius: 3px;
+    padding: 1px 5px;
+    margin-left: 4px;
+}
 .delve-results-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   Crafting Page Overhaul
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Layout ─────────────────────────────────────────────────────────────────── */
+.crafting-body-grid {
+    display: grid;
+    grid-template-columns: 1fr 220px;
+    gap: 14px;
+    align-items: start;
+}
+@media (max-width: 720px) { .crafting-body-grid { grid-template-columns: 1fr; } }
+
+.crafting-facility-note {
+    background: rgba(201,168,76,0.07);
+    border: 1px solid rgba(201,168,76,0.20);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+}
+.repair-all-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 14px;
+    margin-bottom: 10px;
+}
+
+/* ── Tab desc ───────────────────────────────────────────────────────────────── */
+.craft-tab-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    padding: 0 2px;
+}
+.craft-section-title {
+    font-family: var(--font-heading);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    margin: 16px 0 8px;
+}
+.craft-empty {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-style: italic;
+    padding: 20px 0;
+}
+
+/* ── Item row ───────────────────────────────────────────────────────────────── */
+.craft-item-list { display: flex; flex-direction: column; gap: 8px; }
+.craft-item-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 10px 12px;
+    transition: border-color 0.15s;
+}
+.craft-item-row:hover { border-color: var(--border-light); }
+.craft-item-row-tall { align-items: flex-start; }
+
+/* Item brief block */
+.cib-block { flex: 1; min-width: 0; }
+.cib-name-row { display: flex; align-items: baseline; gap: 6px; }
+.cib-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.cib-upgrade {
+    font-size: 11px;
+    background: rgba(201,168,76,0.12);
+    border: 1px solid rgba(201,168,76,0.3);
+    color: var(--gold);
+    border-radius: 3px;
+    padding: 1px 5px;
+}
+.cib-tags { display: flex; gap: 6px; margin-top: 3px; flex-wrap: wrap; }
+.cib-rarity, .cib-quality { font-size: 11px; font-weight: 500; }
+.cib-score { font-size: 10px; color: var(--text-dim); }
+
+/* Durability track */
+.craft-item-dur { flex: 0 0 100px; }
+.cid-track { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 3px; }
+.cid-fill  { height: 100%; border-radius: 2px; }
+.cid-text  { font-size: 10px; color: var(--text-muted); }
+
+/* Action column */
+.craft-item-action { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+.craft-action-small { justify-content: flex-start; }
+.craft-cost-label { font-size: 10px; color: var(--text-muted); text-align: right; line-height: 1.4; }
+
+/* Reinforce meta */
+.craft-reinforce-meta {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+}
+.craft-upgrade-level { font-weight: 700; color: var(--gold); }
+.craft-chance-tag    { font-size: 11px; font-weight: 600; }
+.craft-quality-tag   { font-size: 11px; font-weight: 600; }
+.craft-arrow         { color: var(--text-dim); font-size: 11px; }
+
+/* Affix reroll block */
+.craft-affixes-block { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+.craft-affix-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: rgba(155,107,212,0.07);
+    border: 1px solid rgba(155,107,212,0.15);
+    border-radius: 4px;
+    font-size: 12px;
+}
+.craft-affix-name { color: var(--text-primary); font-weight: 500; min-width: 110px; }
+.craft-affix-desc { font-size: 11px; flex: 1; }
+
+/* Salvage yield */
+.craft-salvage-yield { flex: 1; font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+
+/* Action buttons */
+.btn-craft-action {
+    padding: 5px 12px;
+    background: rgba(201,168,76,0.10);
+    border: 1px solid rgba(201,168,76,0.30);
+    color: var(--gold);
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: var(--font-heading);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+}
+.btn-craft-action:hover:not([disabled]) { background: rgba(201,168,76,0.18); border-color: rgba(201,168,76,0.55); }
+.btn-craft-off { opacity: 0.35; cursor: not-allowed; }
+.btn-craft-sm  { padding: 3px 8px; font-size: 10px; }
+.btn-craft-danger {
+    background: rgba(192,64,64,0.08);
+    border-color: rgba(192,64,64,0.30);
+    color: var(--danger);
+}
+.btn-craft-danger:hover:not([disabled]) { background: rgba(192,64,64,0.14); }
+
+/* ── Supply tab profession sub-tabs ────────────────────────────────────────── */
+.supply-prof-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 14px;
+}
+.skill-tab-sm {
+    padding: 4px 10px;
+    font-size: 11px;
+}
+.prof-level-tag {
+    font-size: 10px;
+    opacity: 0.7;
+    margin-left: 3px;
+}
+.supply-recipes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 10px;
+}
+
+/* ── Sidebar ────────────────────────────────────────────────────────────────── */
+.crafting-sidebar-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    position: sticky;
+    top: 12px;
+}
+.crafting-sidebar-title {
+    font-family: var(--font-heading);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+}
+.mat-tier-group { margin-bottom: 8px; }
+.mat-tier-label { font-size: 10px; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.05em; margin-bottom: 4px; }
+.mat-row { display: flex; justify-content: space-between; font-size: 12px; padding: 2px 0; }
+.mat-row-name  { color: var(--text-muted); }
+.mat-row-count { color: var(--text-primary); font-weight: 600; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   Inventory — quality, affix, rarity badges on item cards
+   ══════════════════════════════════════════════════════════════════════════════ */
+.inv-quality-badge {
+    font-size: 10px;
+    border: 1px solid;
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-weight: 500;
+}
+.inv-upgrade-badge {
+    font-size: 11px;
+    background: rgba(201,168,76,0.12);
+    border: 1px solid rgba(201,168,76,0.30);
+    color: var(--gold);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-weight: 700;
+}
+.inv-rarity-badge { font-size: 11px; font-weight: 600; }
+.inv-qual-row     { margin-bottom: 3px; }
+.inv-affix-row    { display: flex; flex-wrap: wrap; gap: 4px; margin: 3px 0; }
+.inv-affix-chip {
+    font-size: 10px;
+    background: rgba(155,107,212,0.10);
+    border: 1px solid rgba(155,107,212,0.20);
+    color: #9b6bd4;
+    border-radius: 3px;
+    padding: 1px 6px;
+    cursor: default;
+}
+.inv-equipped-badge {
+    font-size: 10px;
+    background: rgba(76,180,201,0.12);
+    border: 1px solid rgba(76,180,201,0.30);
+    color: #4cb4c9;
+    border-radius: 3px;
+    padding: 1px 6px;
+    margin-left: 6px;
+    vertical-align: middle;
+    cursor: default;
+}
+
+/* ── affix stat span used in affixLabel() ───────────────────────────────────── */
+.affix-stat { opacity: 0.8; font-size: 0.9em; }

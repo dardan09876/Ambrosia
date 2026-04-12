@@ -406,27 +406,10 @@ function _buildMapSvg(locId, adjIds) {
   onwheel="_mapZoom(event)"
   onclick="_mapHandleClick(event)"
 >
-    <defs>
-        <!--
-            Shore haze: dilate the land silhouette, then blur heavily.
-            The blur creates an alpha gradient that fades from opaque near the
-            coast to transparent far out in open water.  Compositing a
-            coastal-blue flood colour through that alpha gives a smooth
-            gradient from shore → deep ocean.
-        -->
-        <filter id="shore-haze" x="-100%" y="-100%" width="300%" height="300%"
-                color-interpolation-filters="sRGB">
-            <feMorphology in="SourceAlpha" operator="dilate" radius="120" result="dilated"/>
-            <feGaussianBlur in="dilated" stdDeviation="80" result="blurred"/>
-            <feFlood flood-color="#2a6a9a" result="col"/>
-            <feComposite in="col" in2="blurred" operator="in"/>
-        </filter>
-    </defs>
+    <defs></defs>
 
-    <!-- Deep ocean -->
-    <rect width="100%" height="100%" fill="#0d1e32"/>
-    <!-- Soft shore gradient radiating out from all landmasses -->
-    <g filter="url(#shore-haze)">${land}</g>
+    <rect width="100%" height="100%" fill="#1a1a1a"/>
+    <g>${land}</g>
     ${fills.join("")}
     ${borders.join("")}
     ${glows.join("")}

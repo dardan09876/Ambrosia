@@ -18,6 +18,7 @@ const Layout = {
         { page: 'arena',      label: 'Arena',    icon: '⚔' },
         { page: 'rift_delve', label: 'Delves',   icon: '🌀' },
         { page: 'warbands',   label: 'Warbands', icon: '⚑' },
+        { page: 'training',   label: 'Training', icon: '◇' },
     ],
 
     STAT_CONFIG: [

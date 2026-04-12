@@ -880,6 +880,116 @@ const RECIPES = [
       materials: [{ itemId: 'beast_fat', amount: 1 }, { itemId: 'ash_resin', amount: 1 }, { itemId: 'charcoal', amount: 1 }],
       goldCost: 8,  output: { itemId: 'weapon_repair_kit', amount: 1 } },
 
+    // ══════════════════════════════════════════════════════════════════════════
+    //  WARBAND SUPPLY ITEMS — consumables and kits used in warband operations
+    // ══════════════════════════════════════════════════════════════════════════
+
+    // ── Alchemy: consumables & field medicine ─────────────────────────────────
+    { id: 'ration_pack', name: 'Ration Pack', profession: 'alchemy', tier: 1, requiredSkill: 0,
+      description: 'Compact field rations. Reduces supply drain during long warband operations.',
+      materials: [{ itemId: 'herbs', amount: 2 }, { itemId: 'beast_fat', amount: 1 }],
+      goldCost: 5,  output: { itemId: 'ration_pack', amount: 3 } },
+
+    { id: 'field_medicine_kit', name: 'Field Medicine Kit', profession: 'alchemy', tier: 1, requiredSkill: 100,
+      description: 'Bandages, poultices, and tonics. Reduces casualty rate in warband missions.',
+      materials: [{ itemId: 'herbs', amount: 3 }, { itemId: 'cloth_scraps', amount: 2 }, { itemId: 'glass_vial', amount: 1 }],
+      goldCost: 12, output: { itemId: 'field_medicine_kit', amount: 1 } },
+
+    { id: 'endurance_tonic', name: 'Endurance Tonic', profession: 'alchemy', tier: 1, requiredSkill: 200,
+      description: 'Improves troop stamina for long marches. Boosts march efficiency for one operation.',
+      materials: [{ itemId: 'herbs', amount: 2 }, { itemId: 'beast_fat', amount: 1 }, { itemId: 'ground_herbs', amount: 1 }],
+      goldCost: 10, output: { itemId: 'endurance_tonic', amount: 2 } },
+
+    { id: 'corruption_antidote', name: 'Corruption Antidote', profession: 'alchemy', tier: 2, requiredSkill: 500,
+      description: 'Reduces corruption buildup during rift missions. Critical for rift-zone operations.',
+      materials: [{ itemId: 'veil_dust', amount: 2 }, { itemId: 'ground_herbs', amount: 2 }, { itemId: 'glass_vial', amount: 1 }],
+      goldCost: 20, output: { itemId: 'corruption_antidote', amount: 2 } },
+
+    { id: 'fire_oil_flask', name: 'Fire Oil Flask', profession: 'alchemy', tier: 2, requiredSkill: 600,
+      description: 'Incendiary flask. Improves siege effectiveness against fortified positions.',
+      materials: [{ itemId: 'beast_fat', amount: 2 }, { itemId: 'ash_resin', amount: 2 }, { itemId: 'glass_vial', amount: 1 }],
+      goldCost: 18, output: { itemId: 'fire_oil_flask', amount: 2 } },
+
+    // ── Blacksmithing: troop weapon kits & siege tools ────────────────────────
+    { id: 'troop_weapon_kit', name: 'Troop Weapon Kit', profession: 'blacksmithing', tier: 1, requiredSkill: 200,
+      description: 'Sharpened blades, replacement parts, and edge oil for a warband unit.',
+      materials: [{ itemId: 'scrap_iron', amount: 4 }, { itemId: 'wood_handle', amount: 2 }],
+      goldCost: 15, output: { itemId: 'troop_weapon_kit', amount: 1 } },
+
+    { id: 'breach_tools', name: 'Breach Tools', profession: 'blacksmithing', tier: 2, requiredSkill: 600,
+      description: 'Crowbars, chisels, and charge frames. Required for fort breach operations.',
+      materials: [{ itemId: 'iron_ingot', amount: 3 }, { itemId: 'rough_wood', amount: 2 }, { itemId: 'charcoal', amount: 1 }],
+      goldCost: 30, output: { itemId: 'breach_tools', amount: 1 } },
+
+    { id: 'iron_weapon_crate', name: 'Iron Weapon Crate', profession: 'blacksmithing', tier: 3, requiredSkill: 1000,
+      description: 'Full weapons crate for a warband company. Significantly improves troop attack power.',
+      materials: [{ itemId: 'iron_ingot', amount: 6 }, { itemId: 'wood_handle', amount: 3 }, { itemId: 'leather_strap', amount: 2 }],
+      goldCost: 60, output: { itemId: 'iron_weapon_crate', amount: 1 } },
+
+    // ── Armorsmithing: troop armor kits ───────────────────────────────────────
+    { id: 'troop_armor_kit', name: 'Troop Armor Kit', profession: 'armorsmithing', tier: 1, requiredSkill: 200,
+      description: 'Plate patches and padding for a warband unit. Improves defense in tile battles.',
+      materials: [{ itemId: 'scrap_iron', amount: 3 }, { itemId: 'tattered_leather', amount: 2 }],
+      goldCost: 14, output: { itemId: 'troop_armor_kit', amount: 1 } },
+
+    { id: 'shield_kit', name: 'Shield Kit', profession: 'armorsmithing', tier: 1, requiredSkill: 300,
+      description: 'Replacement shield straps and rim bracing. Reduces casualty rate in defense.',
+      materials: [{ itemId: 'scrap_iron', amount: 2 }, { itemId: 'rough_wood', amount: 2 }, { itemId: 'leather_strap', amount: 2 }],
+      goldCost: 16, output: { itemId: 'shield_kit', amount: 1 } },
+
+    { id: 'heavy_armor_plates', name: 'Heavy Armor Plates', profession: 'armorsmithing', tier: 2, requiredSkill: 700,
+      description: 'Iron reinforcement plates for elite warband units.',
+      materials: [{ itemId: 'iron_ingot', amount: 4 }, { itemId: 'leather_strap', amount: 2 }],
+      goldCost: 35, output: { itemId: 'heavy_armor_plates', amount: 1 } },
+
+    // ── Woodworking: camp structures, barricades, scout kits ──────────────────
+    { id: 'field_barricade', name: 'Field Barricade', profession: 'woodworking', tier: 1, requiredSkill: 100,
+      description: 'Portable wood barricade frame. Improves hold chance after tile capture.',
+      materials: [{ itemId: 'rough_wood', amount: 4 }, { itemId: 'fiber_bundle', amount: 1 }],
+      goldCost: 10, output: { itemId: 'field_barricade', amount: 2 } },
+
+    { id: 'scout_marker_kit', name: 'Scout Marker Kit', profession: 'woodworking', tier: 1, requiredSkill: 200,
+      description: 'Stakes, flags, and map inserts for scouting teams. Improves scout range.',
+      materials: [{ itemId: 'rough_wood', amount: 2 }, { itemId: 'cloth_scraps', amount: 1 }],
+      goldCost: 8,  output: { itemId: 'scout_marker_kit', amount: 2 } },
+
+    { id: 'fort_timber_bundle', name: 'Fort Timber Bundle', profession: 'woodworking', tier: 2, requiredSkill: 500,
+      description: 'Pre-cut timber for fortification construction on controlled tiles.',
+      materials: [{ itemId: 'treated_plank', amount: 4 }, { itemId: 'rough_wood', amount: 3 }],
+      goldCost: 25, output: { itemId: 'fort_timber_bundle', amount: 1 } },
+
+    // ── Tailoring: banners, travel gear, light field kits ────────────────────
+    { id: 'morale_banner', name: 'Morale Banner', profession: 'tailoring', tier: 1, requiredSkill: 150,
+      description: 'Faction banner for a warband unit. Improves morale and reduces retreat chance.',
+      materials: [{ itemId: 'woven_cloth', amount: 2 }, { itemId: 'fiber_bundle', amount: 1 }],
+      goldCost: 12, output: { itemId: 'morale_banner', amount: 1 } },
+
+    { id: 'field_bandages', name: 'Field Bandages', profession: 'tailoring', tier: 1, requiredSkill: 0,
+      description: 'Quick wound dressing for troops. Reduces immediate casualty count.',
+      materials: [{ itemId: 'cloth_scraps', amount: 3 }],
+      goldCost: 4,  output: { itemId: 'field_bandages', amount: 4 } },
+
+    { id: 'supply_pack', name: 'Supply Pack', profession: 'tailoring', tier: 2, requiredSkill: 400,
+      description: 'Heavy-duty carrier frame and pouches. Increases supply capacity for one operation.',
+      materials: [{ itemId: 'woven_cloth', amount: 2 }, { itemId: 'leather_strap', amount: 2 }, { itemId: 'fiber_bundle', amount: 2 }],
+      goldCost: 20, output: { itemId: 'supply_pack', amount: 1 } },
+
+    // ── Magesmithing: ward stones, rift tools ─────────────────────────────────
+    { id: 'ward_pylon', name: 'Ward Pylon', profession: 'magesmithing', tier: 2, requiredSkill: 500,
+      description: 'Magical warding post for controlled tiles. Reduces enemy rift pressure.',
+      materials: [{ itemId: 'veil_dust', amount: 2 }, { itemId: 'iron_ingot', amount: 1 }, { itemId: 'staff_core', amount: 1 }],
+      goldCost: 40, output: { itemId: 'ward_pylon', amount: 1 } },
+
+    { id: 'rift_anchor', name: 'Rift Anchor', profession: 'magesmithing', tier: 3, requiredSkill: 1000,
+      description: 'Stabilizes rift energies on a controlled tile. Reduces corruption growth for 24 hours.',
+      materials: [{ itemId: 'veil_dust', amount: 3 }, { itemId: 'rift_shard', amount: 1 }, { itemId: 'faded_sigil_wax', amount: 1 }],
+      goldCost: 75, output: { itemId: 'rift_anchor', amount: 1 } },
+
+    { id: 'signal_banner_mage', name: 'Arcane Signal Banner', profession: 'magesmithing', tier: 2, requiredSkill: 700,
+      description: 'Enchanted banner visible across multiple tiles. Coordinates multi-warband operations.',
+      materials: [{ itemId: 'veil_dust', amount: 1 }, { itemId: 'woven_cloth', amount: 2 }, { itemId: 'faded_sigil_wax', amount: 1 }],
+      goldCost: 35, output: { itemId: 'signal_banner_mage', amount: 1 } },
+
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

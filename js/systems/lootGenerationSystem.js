@@ -33,6 +33,11 @@ const LootGenerationSystem = {
         const displayName = this._buildDisplayName(baseItem, rarity);
         const durMax = Math.floor(baseItem.baseDurability * rarityDef.multiplier);
 
+        // Roll quality and affixes (requires affixData.js loaded before this system)
+        const quality  = (typeof rollQuality  !== 'undefined') ? rollQuality(tierNum)                                    : 'standard';
+        const affixes  = (typeof rollAffixes  !== 'undefined') ? rollAffixes(baseItem.category, baseItem.subtype, rarity) : [];
+        const qualMult = (typeof getQuality   !== 'undefined') ? (getQuality(quality)?.multiplier ?? 1)                   : 1;
+
         // Create the item using canonical field names expected by inventory/equip systems
         const item = {
             uid: Date.now() * 10000 + Math.floor(Math.random() * 10000),
@@ -42,13 +47,15 @@ const LootGenerationSystem = {
             category: baseItem.category,
             subtype: baseItem.subtype,
             slot: baseItem.slot,
+            baseTier: tierNum,
             tier: tierNum,
             rarity,
+            quality,
             scalingSkill: baseItem.scalingSkill,
             tags: [...(baseItem.tags || [])],
-            damage: finalPower,
-            defense: finalDefense,
-            durability: durMax,
+            damage:        Math.floor(finalPower   * qualMult),
+            defense:       Math.floor(finalDefense * qualMult),
+            durability:    durMax,
             maxDurability: durMax,
             value: finalValue,
             twoHanded: baseItem.handedness === 'two_handed',
@@ -56,6 +63,9 @@ const LootGenerationSystem = {
                 ? { skill: baseItem.requirement.skill, level: baseItem.requirement.amount }
                 : null,
             statBonuses: { ...(baseItem.implicitBonuses || {}) },
+            affixes,
+            craftedMods:  [],
+            upgradeLevel: 0,
             sourceContext: {
                 chestTier: tierNum,
                 ...sourceContext,
@@ -97,8 +107,13 @@ const LootGenerationSystem = {
         const item = getItem(base.id);
         if (!item) return null;
 
-        // Assign a unique instance id
-        item.uid = Date.now() * 10000 + Math.floor(Math.random() * 10000);
+        // Assign a unique instance id and stamp new item fields if missing
+        item.uid         = Date.now() * 10000 + Math.floor(Math.random() * 10000);
+        item.baseTier    = item.baseTier    ?? item.tier ?? 1;
+        item.quality     = item.quality     ?? ((typeof rollQuality !== 'undefined') ? rollQuality(item.tier ?? 1) : 'standard');
+        item.affixes     = item.affixes     ?? ((typeof rollAffixes !== 'undefined') ? rollAffixes(item.category, item.subtype, item.rarity ?? 'common') : []);
+        item.craftedMods = item.craftedMods ?? [];
+        item.upgradeLevel= item.upgradeLevel?? 0;
         return item;
     },
 

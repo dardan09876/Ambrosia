@@ -248,4 +248,10 @@ const MapSystem = {
     hasActivity(activity) {
         return this.getCurrentActivities().includes(activity);
     },
+
+    // A "city" tile is one that offers quests, a market, and training.
+    isInCity() {
+        const acts = this.getCurrentActivities();
+        return ['quests', 'market', 'training'].every(a => acts.includes(a));
+    },
 };

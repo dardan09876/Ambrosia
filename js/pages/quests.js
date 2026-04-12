@@ -187,6 +187,14 @@ function _buildActiveQuestSection(player) {
                 ${logHtml}
 
                 <div class="aq-actions">
+                    ${(() => {
+                        const ar = player.quests.autoRepeat;
+                        if (ar && ar.questId === active.questId) {
+                            const total = ar.repeatsLeft + 1;
+                            return `<div class="aq-auto-repeat-badge">Auto-repeating · ${total} run${total !== 1 ? 's' : ''} remaining</div>`;
+                        }
+                        return '';
+                    })()}
                     <button class="btn-secondary btn-sm" id="abandon-quest">Abandon quest</button>
                 </div>
             </div>
@@ -227,18 +235,35 @@ function _buildBoardSection(boardQuests, player) {
 }
 
 function _buildQuestCard(quest, player) {
-    const hasActive  = !!player.quests.active;
-    const blocked    = hasActive;
-    const chance     = QuestSystem.getSuccessChance(quest);
-    const skillVal   = PlayerSystem.getEffectiveSkill(quest.skillCheck.skill);
-    const meetsSkill = skillVal >= quest.skillCheck.required;
-    const chestDef   = CHEST_DEFS[quest.chestReward.tier];
-
-    const completions = player.quests.completed.filter(c => c.questId === quest.id).length;
+    const hasActive    = !!player.quests.active;
+    const blocked      = hasActive;
+    const chance       = QuestSystem.getSuccessChance(quest);
+    const skillVal     = PlayerSystem.getEffectiveSkill(quest.skillCheck.skill);
+    const meetsSkill   = skillVal >= quest.skillCheck.required;
+    const chestDef     = CHEST_DEFS[quest.chestReward.tier];
+    const successCount = QuestSystem.getQuestSuccessCount(quest.id);
+    const repeatUnlocked = successCount >= 5;
 
     let btnLabel = 'Begin Quest →';
     let btnTitle = `Start: ${quest.name}`;
-    if (hasActive)  { btnLabel = 'Quest Active';    btnTitle = 'A quest is already in progress.'; }
+    if (hasActive) { btnLabel = 'Quest Active'; btnTitle = 'A quest is already in progress.'; }
+
+    // Repeat Quest button — visible only once 5 successes are recorded
+    let repeatBtn = '';
+    if (repeatUnlocked) {
+        repeatBtn = `<button
+            class="btn-secondary btn-sm btn-repeat-quest"
+            data-quest-id="${quest.id}"
+            ${blocked ? 'disabled' : ''}
+            title="${blocked ? 'A quest is already in progress.' : 'Auto-repeat this quest'}"
+        >Repeat Quest</button>`;
+    }
+
+    // Progress toward unlock hint (3–4 completions)
+    let repeatHint = '';
+    if (!repeatUnlocked && successCount >= 3) {
+        repeatHint = `<span class="quest-repeat-hint">${successCount}/5 to unlock auto-repeat</span>`;
+    }
 
     return `
         <div class="quest-card ${blocked ? 'quest-card-blocked' : ''}">
@@ -250,7 +275,7 @@ function _buildQuestCard(quest, player) {
                 </div>
                 <div class="quest-card-right">
                     <span class="quest-tier-badge tier-badge-${quest.tier}">Tier ${quest.tier}</span>
-                    ${completions > 0 ? `<span class="quest-completions" title="Total completions">×${completions}</span>` : ''}
+                    ${successCount > 0 ? `<span class="quest-completions" title="${successCount} successful completion${successCount !== 1 ? 's' : ''}">×${successCount}</span>` : ''}
                 </div>
             </div>
 
@@ -281,12 +306,16 @@ function _buildQuestCard(quest, player) {
             </div>
 
             <div class="quest-card-footer">
-                <button
-                    class="btn-primary btn-sm btn-start-quest ${blocked ? 'btn-blocked' : ''}"
-                    data-quest-id="${quest.id}"
-                    ${blocked ? 'disabled' : ''}
-                    title="${btnTitle}"
-                >${btnLabel}</button>
+                ${repeatHint}
+                <div class="quest-card-footer-btns">
+                    ${repeatBtn}
+                    <button
+                        class="btn-primary btn-sm btn-start-quest ${blocked ? 'btn-blocked' : ''}"
+                        data-quest-id="${quest.id}"
+                        ${blocked ? 'disabled' : ''}
+                        title="${btnTitle}"
+                    >${btnLabel}</button>
+                </div>
             </div>
         </div>
     `;
@@ -320,14 +349,21 @@ function _bindAllButtons(container) {
                 filtered.length
                     ? filtered.map(q => _buildQuestCard(q, PlayerSystem.current)).join('')
                     : '<p class="muted-text" style="padding:16px 0">No quests match this filter.</p>';
-            // Rebind start buttons after partial re-render
+            // Rebind start + repeat buttons after partial re-render
             document.querySelectorAll('.btn-start-quest:not([disabled])').forEach(_bindStartBtn);
+            document.querySelectorAll('.btn-repeat-quest:not([disabled])').forEach(btn => {
+                btn.addEventListener('click', () => _openRepeatQuestPopup(btn.dataset.questId));
+            });
         });
     });
 
     // Start quest buttons
     container.querySelectorAll('.btn-start-quest:not([disabled])').forEach(_bindStartBtn);
 
+    // Repeat quest buttons
+    container.querySelectorAll('.btn-repeat-quest:not([disabled])').forEach(btn => {
+        btn.addEventListener('click', () => _openRepeatQuestPopup(btn.dataset.questId));
+    });
 }
 
 function _bindStartBtn(btn) {
@@ -337,6 +373,113 @@ function _bindStartBtn(btn) {
         const container = document.getElementById('content-area');
         if (container) _renderQuestsPage(container);
     });
+}
+
+// ── Repeat Quest popup ────────────────────────────────────────────────────────
+function _openRepeatQuestPopup(questId) {
+    if (document.getElementById('repeat-quest-overlay')) return;
+
+    const quest = QuestSystem._findQuest(questId);
+    if (!quest) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'repeat-quest-overlay';
+    overlay.className = 'rq-overlay';
+    overlay.innerHTML = `
+        <div class="rq-panel">
+            <div class="rq-header">
+                <div class="rq-title">Repeat Quest</div>
+                <button class="rq-close" id="rq-close">✕</button>
+            </div>
+            <div class="rq-quest-name">${quest.name}</div>
+            <div class="rq-body">
+                <div class="rq-field">
+                    <div class="rq-field-label">Repeats</div>
+                    <div class="rq-opts" id="rq-repeats">
+                        ${[2, 4, 6, 8].map((n, i) =>
+                            `<button class="rq-opt${i === 0 ? ' active' : ''}" data-value="${n}">${n}</button>`
+                        ).join('')}
+                    </div>
+                </div>
+                <div class="rq-field">
+                    <div class="rq-field-label">Stop on failure</div>
+                    <div class="rq-toggle-row">
+                        <button class="rq-toggle active" id="rq-fail-yes">Yes</button>
+                        <button class="rq-toggle" id="rq-fail-no">No</button>
+                    </div>
+                </div>
+                <div class="rq-field">
+                    <div class="rq-field-label">Stop if durability below 25%</div>
+                    <div class="rq-toggle-row">
+                        <button class="rq-toggle active" id="rq-dur-yes">Yes</button>
+                        <button class="rq-toggle" id="rq-dur-no">No</button>
+                    </div>
+                </div>
+            </div>
+            <div class="rq-footer">
+                <button class="btn-secondary btn-sm" id="rq-cancel">Cancel</button>
+                <button class="btn-primary btn-sm" id="rq-confirm">Begin Auto-Repeat →</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Backdrop click closes
+    overlay.addEventListener('click', e => { if (e.target === overlay) _closeRepeatQuestPopup(); });
+
+    overlay.querySelector('#rq-close').addEventListener('click', _closeRepeatQuestPopup);
+    overlay.querySelector('#rq-cancel').addEventListener('click', _closeRepeatQuestPopup);
+
+    // Repeats selector
+    overlay.querySelectorAll('#rq-repeats .rq-opt').forEach(btn => {
+        btn.addEventListener('click', () => {
+            overlay.querySelectorAll('#rq-repeats .rq-opt').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+
+    // Yes/No toggles
+    function _bindToggle(yesId, noId) {
+        const yes = overlay.querySelector('#' + yesId);
+        const no  = overlay.querySelector('#' + noId);
+        yes.addEventListener('click', () => { yes.classList.add('active'); no.classList.remove('active'); });
+        no.addEventListener('click',  () => { no.classList.add('active');  yes.classList.remove('active'); });
+    }
+    _bindToggle('rq-fail-yes', 'rq-fail-no');
+    _bindToggle('rq-dur-yes',  'rq-dur-no');
+
+    // Confirm
+    overlay.querySelector('#rq-confirm').addEventListener('click', () => {
+        const repeats            = parseInt(overlay.querySelector('#rq-repeats .rq-opt.active')?.dataset.value ?? '2');
+        const stopOnFailure      = overlay.querySelector('#rq-fail-yes').classList.contains('active');
+        const stopOnLowDurability = overlay.querySelector('#rq-dur-yes').classList.contains('active');
+
+        QuestSystem.setAutoRepeat(questId, { repeats, stopOnFailure, stopOnLowDurability });
+
+        const startResult = QuestSystem.start(questId);
+        _closeRepeatQuestPopup();
+
+        if (!startResult.ok) {
+            QuestSystem.cancelAutoRepeat();
+            Log.add(startResult.reason, 'warning');
+            return;
+        }
+
+        const container = document.getElementById('content-area');
+        if (container) _renderQuestsPage(container);
+    });
+
+    // Escape key
+    overlay._keyHandler = e => { if (e.key === 'Escape') _closeRepeatQuestPopup(); };
+    document.addEventListener('keydown', overlay._keyHandler);
+}
+
+function _closeRepeatQuestPopup() {
+    const overlay = document.getElementById('repeat-quest-overlay');
+    if (!overlay) return;
+    if (overlay._keyHandler) document.removeEventListener('keydown', overlay._keyHandler);
+    overlay.remove();
 }
 
 // ── Live countdown timers ─────────────────────────────────────────────────────

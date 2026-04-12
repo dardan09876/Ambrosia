@@ -212,7 +212,216 @@ const CraftingSystem = {
         }
     },
 
-    // Get available recipes for a profession
+    // ── Repair ────────────────────────────────────────────────────────────────
+    // Restores durability to max. Costs gold (see getRepairCost in affixData.js).
+    repairItem(player, itemUid) {
+        // Search inventory first, then equipped slots
+        let item = player.inventory.find(i => String(i.uid) === String(itemUid));
+        if (!item && player.equipment) {
+            item = Object.values(player.equipment).find(i => i && String(i.uid) === String(itemUid));
+        }
+        if (!item) return { ok: false, reason: 'Item not found.' };
+
+        const missing = (item.maxDurability || 100) - (item.durability ?? item.maxDurability ?? 100);
+        if (missing <= 0) return { ok: false, reason: 'Item is already at full durability.' };
+
+        const cost = typeof getRepairCost !== 'undefined' ? getRepairCost(item) : missing * 2;
+        if (player.gold < cost) return { ok: false, reason: `Not enough gold (need ${cost}g).` };
+
+        player.gold        -= cost;
+        item.durability     = item.maxDurability;
+        Log.add(`Repaired ${item.name} to full durability. (−${cost}g)`, 'success');
+        SaveSystem.save();
+        return { ok: true, cost };
+    },
+
+    // ── Repair All ────────────────────────────────────────────────────────────
+    // Repairs every damaged item (inventory + equipped) in one action.
+    repairAll(player) {
+        const allGear = this.getGearInventory(player);
+        const damaged = allGear.filter(i => (i.durability ?? i.maxDurability ?? 100) < (i.maxDurability ?? 100));
+        if (!damaged.length) return { ok: false, reason: 'All equipment is already at full durability.' };
+
+        let totalCost = 0;
+        for (const ghost of damaged) {
+            totalCost += typeof getRepairCost !== 'undefined' ? getRepairCost(ghost) : 20;
+        }
+        if (player.gold < totalCost) {
+            return { ok: false, reason: `Not enough gold to repair everything (need ${totalCost}g, have ${player.gold}g).` };
+        }
+
+        // Mutate originals (search inventory + equipment by uid)
+        let count = 0;
+        for (const ghost of damaged) {
+            let real = player.inventory.find(i => String(i.uid) === String(ghost.uid));
+            if (!real && player.equipment) {
+                real = Object.values(player.equipment).find(i => i && String(i.uid) === String(ghost.uid));
+            }
+            if (real) { real.durability = real.maxDurability; count++; }
+        }
+
+        player.gold -= totalCost;
+        Log.add(`Repaired ${count} item${count !== 1 ? 's' : ''} for ${totalCost}g.`, 'success');
+        SaveSystem.save();
+        return { ok: true, totalCost, count };
+    },
+
+    // ── Reinforce (upgrade level +1) ──────────────────────────────────────────
+    // Increases power/defense and adds to upgradeLevel. Uses relevant skill.
+    reinforceItem(player, itemUid) {
+        const item = player.inventory.find(i => String(i.uid) === String(itemUid));
+        if (!item) return { ok: false, reason: 'Item not found.' };
+
+        const tier    = item.baseTier ?? item.tier ?? 1;
+        const uLevel  = item.upgradeLevel ?? 0;
+        if (uLevel >= 10) return { ok: false, reason: 'Item is at maximum upgrade level (+10).' };
+
+        // Skill for reinforcement: blacksmithing for weapons, armorsmithing for armor
+        const profession = (item.category === 'armor') ? 'armorsmithing' : 'blacksmithing';
+        const skillLevel = this.getProfessionSkill(player, profession);
+        const chance     = typeof getUpgradeChance !== 'undefined'
+            ? getUpgradeChance(skillLevel, uLevel, tier)
+            : Math.max(0.15, 0.75 - uLevel * 0.12 - tier * 0.06);
+
+        // Material cost: iron ingots for metal, rough_wood for bows/staves
+        const matId  = (item.tags?.includes('wood')) ? 'rough_wood' : 'scrap_iron';
+        const matAmt = tier + uLevel;
+        if (this.getMaterialCount(player, matId) < matAmt) {
+            const matName = typeof getMaterial !== 'undefined' ? (getMaterial(matId)?.name ?? matId) : matId;
+            return { ok: false, reason: `Need ${matAmt}× ${matName}.` };
+        }
+        const goldCost = tier * 8 + uLevel * 5;
+        if (player.gold < goldCost) return { ok: false, reason: `Need ${goldCost}g.` };
+
+        this.removeMaterial(player, matId, matAmt);
+        player.gold -= goldCost;
+        this.gainProfessionXp(player, profession, skillLevel, tier);
+
+        const roll = Math.random();
+        if (roll < chance) {
+            item.upgradeLevel = uLevel + 1;
+            const bonusFlat   = Math.ceil(tier * 1.5);
+            if (item.damage  > 0) item.damage  += bonusFlat;
+            if (item.defense > 0) item.defense += Math.ceil(bonusFlat * 0.5);
+            Log.add(`Reinforced ${item.name} to +${item.upgradeLevel}! (+${bonusFlat} power)`, 'success');
+            SaveSystem.save();
+            return { ok: true, success: true, newLevel: item.upgradeLevel };
+        } else if (roll < chance + 0.20) {
+            // Partial — small durability hit, no level gain
+            const loss      = Math.ceil(item.maxDurability * 0.08);
+            item.durability = Math.max(1, (item.durability ?? item.maxDurability) - loss);
+            Log.add(`Reinforcement of ${item.name} partially failed. No upgrade, small durability loss.`, 'warning');
+            SaveSystem.save();
+            return { ok: true, success: false, partial: true };
+        } else {
+            // Fail — material and gold lost, durability loss
+            const loss      = Math.ceil(item.maxDurability * 0.15);
+            item.durability = Math.max(1, (item.durability ?? item.maxDurability) - loss);
+            Log.add(`Reinforcement of ${item.name} failed. Materials consumed.`, 'danger');
+            SaveSystem.save();
+            return { ok: true, success: false, partial: false };
+        }
+    },
+
+    // ── Refine (quality upgrade) ──────────────────────────────────────────────
+    // Attempts to raise quality by one tier (standard → fine → superior → masterwork).
+    refineItem(player, itemUid) {
+        const item = player.inventory.find(i => String(i.uid) === String(itemUid));
+        if (!item) return { ok: false, reason: 'Item not found.' };
+
+        const nextQuality = typeof getNextQuality !== 'undefined' ? getNextQuality(item.quality ?? 'standard') : null;
+        if (!nextQuality) return { ok: false, reason: 'Item is already at maximum quality.' };
+
+        const tier       = item.baseTier ?? item.tier ?? 1;
+        const profession = (item.category === 'armor') ? 'armorsmithing' : 'blacksmithing';
+        const skillLevel = this.getProfessionSkill(player, profession);
+        const chance     = typeof getRefineChance !== 'undefined'
+            ? getRefineChance(skillLevel, tier)
+            : Math.max(0.10, 0.45 + skillLevel * 0.003 - tier * 0.08);
+
+        const matId  = 'veil_dust'; // refining requires magical reagent
+        const matAmt = tier;
+        if (this.getMaterialCount(player, matId) < matAmt) {
+            return { ok: false, reason: `Need ${matAmt}× Veil Dust to refine.` };
+        }
+        const goldCost = tier * 15;
+        if (player.gold < goldCost) return { ok: false, reason: `Need ${goldCost}g.` };
+
+        this.removeMaterial(player, matId, matAmt);
+        player.gold -= goldCost;
+        this.gainProfessionXp(player, profession, skillLevel, tier);
+
+        if (Math.random() < chance) {
+            const oldQuality  = item.quality;
+            item.quality      = nextQuality;
+            const qualDef     = typeof getQuality !== 'undefined' ? getQuality(nextQuality) : { label: nextQuality };
+            Log.add(`Refined ${item.name}: ${oldQuality} → ${qualDef.label || nextQuality}.`, 'success');
+            SaveSystem.save();
+            return { ok: true, success: true, newQuality: nextQuality };
+        } else {
+            Log.add(`Refinement of ${item.name} failed. Veil Dust consumed.`, 'warning');
+            SaveSystem.save();
+            return { ok: true, success: false };
+        }
+    },
+
+    // ── Modify (reroll one affix) ─────────────────────────────────────────────
+    // Rerolls one affix on an item. Requires veil_dust + magesmithing skill.
+    modifyAffix(player, itemUid, affixIndex) {
+        const item = player.inventory.find(i => String(i.uid) === String(itemUid));
+        if (!item) return { ok: false, reason: 'Item not found.' };
+        if (!item.affixes?.length) return { ok: false, reason: 'Item has no affixes to reroll.' };
+        if (affixIndex < 0 || affixIndex >= item.affixes.length) return { ok: false, reason: 'Invalid affix index.' };
+
+        const tier     = item.baseTier ?? item.tier ?? 1;
+        const matAmt   = tier + 1;
+        if (this.getMaterialCount(player, 'veil_dust') < matAmt) {
+            return { ok: false, reason: `Need ${matAmt}× Veil Dust to modify affix.` };
+        }
+        const goldCost = tier * 20;
+        if (player.gold < goldCost) return { ok: false, reason: `Need ${goldCost}g.` };
+
+        this.removeMaterial(player, 'veil_dust', matAmt);
+        player.gold -= goldCost;
+
+        const oldAffix = item.affixes[affixIndex];
+        // Roll a new affix of the same kind
+        const newAffixes = typeof rollAffixes !== 'undefined'
+            ? rollAffixes(item.category, item.subtype, 'uncommon') // roll as uncommon (1 affix)
+            : [];
+        const newAffix = newAffixes[0] ?? oldAffix;
+        // Preserve kind (prefix/suffix) if available
+        newAffix.kind = oldAffix.kind ?? newAffix.kind;
+        item.affixes[affixIndex] = newAffix;
+
+        this.gainProfessionXp(player, 'magesmithing', this.getProfessionSkill(player, 'magesmithing'), tier);
+        Log.add(`Modified ${item.name}: replaced ${oldAffix.name} with ${newAffix.name}.`, 'success');
+        SaveSystem.save();
+        return { ok: true, oldAffix, newAffix };
+    },
+
+    // ── Get equippable items in inventory (for repair/reinforce/refine targets) ──
+    // Includes equipped items flagged with _equipped:true and _equippedSlot.
+    getGearInventory(player) {
+        const results = [];
+        if (player?.inventory) {
+            for (const i of player.inventory) {
+                if (i.slot && i.category !== 'consumable' && i.type !== 'food' && i.type !== 'chest') {
+                    results.push(i);
+                }
+            }
+        }
+        if (player?.equipment) {
+            for (const [slot, item] of Object.entries(player.equipment)) {
+                if (item && item.uid) {
+                    results.push({ ...item, _equipped: true, _equippedSlot: slot });
+                }
+            }
+        }
+        return results;
+    },
+
+    // ── Get available recipes for a profession
     getAvailableRecipes(player, profession) {
         this.initProfessions(player);
         if (typeof getAvailableRecipes === 'undefined') return [];

@@ -125,6 +125,33 @@ function _invItemCard(item) {
         if (chips.length) bonusChips = `<div class="inv-bonus-row">${chips.join('')}</div>`;
     }
 
+    // Quality badge
+    const qualDef   = (typeof getQuality !== 'undefined') ? getQuality(item.quality ?? 'standard') : null;
+    const qualBadge = qualDef && item.quality && item.quality !== 'standard'
+        ? `<span class="inv-quality-badge" style="color:${qualDef.color};border-color:${qualDef.color}44">${qualDef.label}</span>`
+        : '';
+
+    // Upgrade level
+    const uLvl      = item.upgradeLevel ?? 0;
+    const upgradeBadge = uLvl > 0
+        ? `<span class="inv-upgrade-badge">+${uLvl}</span>`
+        : '';
+
+    // Rarity badge
+    const rarityDef  = typeof getRarity !== 'undefined' ? getRarity(item.rarity ?? 'common') : null;
+    const rarityBadge = rarityDef && item.rarity && item.rarity !== 'common'
+        ? `<span class="inv-rarity-badge" style="color:${rarityDef.color}">${rarityDef.name}</span>`
+        : '';
+
+    // Affix chips
+    let affixChips = '';
+    if (item.affixes?.length) {
+        const chips = item.affixes.map(a =>
+            `<span class="inv-affix-chip" title="${a.desc ?? ''}">${a.name}</span>`
+        );
+        affixChips = `<div class="inv-affix-row">${chips.join('')}</div>`;
+    }
+
     return `
         <div class="inv-item-card">
             <div class="inv-item-left">
@@ -133,10 +160,14 @@ function _invItemCard(item) {
             <div class="inv-item-body">
                 <div class="inv-item-name-row">
                     <span class="inv-item-name">${item.name}</span>
+                    ${upgradeBadge}
                     ${typeBadge}
+                    ${rarityBadge}
                     <span class="inv-item-slot-label">${_invSlotLabel(item.slot)}</span>
                 </div>
+                ${qualBadge ? `<div class="inv-qual-row">${qualBadge}</div>` : ''}
                 ${statTags.length ? `<div class="inv-item-stats">${statTags.join('')}</div>` : ''}
+                ${affixChips}
                 ${bonusChips}
                 <div class="inv-item-dur-row">
                     <div class="inv-dur-track">

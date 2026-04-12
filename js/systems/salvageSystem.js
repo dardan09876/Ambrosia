@@ -94,11 +94,21 @@ const SalvageSystem = {
         if (durabilityPercent < 0.4) durabilityMod = 0.25;
         else if (durabilityPercent < 0.75) durabilityMod = 0.5;
 
+        // Tier/rarity/upgrade multiplier from affixData.js formula
+        const craftingSkill = typeof CraftingSystem !== 'undefined'
+            ? CraftingSystem.getProfessionSkill(player, 'blacksmithing')
+            : 0;
+        const yieldScore = typeof getSalvageYield !== 'undefined'
+            ? getSalvageYield(item, craftingSkill)
+            : (item.tier ?? 1) * 2;
+        const yieldMult = Math.max(0.5, Math.min(3.0, yieldScore / 4));
+
         // Roll materials
         const materials = [];
         for (const entry of salvageTable.table) {
             if (Math.random() < entry.chance * durabilityMod) {
-                const amount = Math.floor(Math.random() * (entry.max - entry.min + 1)) + entry.min;
+                const rawAmount = Math.floor(Math.random() * (entry.max - entry.min + 1)) + entry.min;
+                const amount    = Math.max(0, Math.floor(rawAmount * yieldMult));
                 if (amount > 0) {
                     materials.push({
                         materialId: entry.materialId,
@@ -106,6 +116,13 @@ const SalvageSystem = {
                     });
                 }
             }
+        }
+
+        // High-rarity or affixed items also yield rune_dust
+        if ((item.affixes?.length > 0 || ['epic','legendary','named'].includes(item.rarity)) &&
+            typeof CraftingSystem !== 'undefined') {
+            const dustYield = (item.affixes?.length || 0) + (['legendary','named'].includes(item.rarity) ? 2 : 1);
+            materials.push({ materialId: 'veil_dust', amount: dustYield });
         }
 
         // Add materials to player

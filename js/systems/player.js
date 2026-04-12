@@ -177,6 +177,10 @@ const PlayerSystem = {
                 board: { date: '', questIds: [] },
                 // Daily completion counter — resets each calendar day
                 daily: { date: '', count: 0 },
+                // Per-quest successful completion counts (for auto-repeat unlock)
+                questCompletionCounts: {},
+                // Auto-repeat state: { questId, repeatsLeft, stopOnFailure, stopOnLowDurability }
+                autoRepeat: null,
             },
 
             travel: { active: false, fromId: null, toId: null, startTime: null, arrivalTime: null },
@@ -208,6 +212,20 @@ const PlayerSystem = {
             // [{ type, stat, amount, label, expiresAt }]
             activeEffects: [],
 
+            // ── Training system ───────────────────────────────
+            training: {
+                readiness:            0,     // 0–200; consumed by high-risk missions
+                masteryPoints:        0,     // spent for permanent skill % bonuses
+                masteryBonuses:       {},    // { skillKey: pct } e.g. { melee: 0.05 }
+                trainingActionsToday: 0,     // fatigue counter; resets each calendar day
+                lastTrainingDate:     '',
+                activeQueue:          [],    // [{ actionId, startTime, endTime }]
+                slotsMax:             1,
+                activeBuffs:          [],    // temp quest buffs from drills
+                warbandBuffs:         [],    // warband operation buffs
+                resultsLog:           [],    // last 8 completed results
+            },
+
             // ── World progression flags ───────────────────────
             flags: {
                 boardQuestSuccesses: 0,  // count of successful board quests (post-tutorial)
@@ -237,6 +255,8 @@ const PlayerSystem = {
         if (!('regionId' in this.current.quests.board)) this.current.quests.board.regionId = '';
         if (!this.current.quests.daily) this.current.quests.daily = { date: '', count: 0 };
         if (!('guildBoard' in this.current.quests)) this.current.quests.guildBoard = null;
+        if (!this.current.quests.questCompletionCounts) this.current.quests.questCompletionCounts = {};
+        if (!('autoRepeat' in this.current.quests)) this.current.quests.autoRepeat = null;
         if (!this.current.abilities) this.current.abilities = { unlocked: [], equipped: [] };
         if (!('ring_1' in this.current.equipment)) this.current.equipment.ring_1 = null;
         if (!('ring_2' in this.current.equipment)) this.current.equipment.ring_2 = null;
@@ -327,6 +347,20 @@ const PlayerSystem = {
                 this.current.warbandMap = [];
             }
         }
+        // Backfill training system
+        if (!this.current.training) this.current.training = {
+            readiness: 0, masteryPoints: 0, masteryBonuses: {},
+            trainingActionsToday: 0, lastTrainingDate: '',
+            activeQueue: [], slotsMax: 1,
+            activeBuffs: [], warbandBuffs: [], resultsLog: [],
+        };
+        const tr = this.current.training;
+        if (!tr.masteryBonuses)   tr.masteryBonuses = {};
+        if (!tr.activeQueue)      tr.activeQueue = [];
+        if (!tr.activeBuffs)      tr.activeBuffs = [];
+        if (!tr.warbandBuffs)     tr.warbandBuffs = [];
+        if (!tr.resultsLog)       tr.resultsLog = [];
+        if (tr.slotsMax == null)  tr.slotsMax = 1;
         // Recalculate derived maxes in case design values changed
         this._recalcStatMaxes();
     },
@@ -375,7 +409,9 @@ const PlayerSystem = {
                 mult = Math.min(mult, c.factor);
             }
         }
-        return Math.floor(base * mult);
+        // Apply mastery bonus (from Training page mastery investment)
+        const masteryBonus = this.current.training?.masteryBonuses?.[skillName] ?? 0;
+        return Math.floor(base * mult * (1 + masteryBonus));
     },
 
     // ── Survival state update (called by game loop) ───────────

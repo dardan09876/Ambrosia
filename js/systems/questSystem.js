@@ -291,6 +291,15 @@ const QuestSystem = {
             player.flags.boardQuestSuccesses = (player.flags.boardQuestSuccesses || 0) + 1;
         }
 
+        // Track per-quest success count for auto-repeat unlock (5 successes = eligible)
+        if (success && !isTutorialQuest) {
+            if (!player.quests.questCompletionCounts) player.quests.questCompletionCounts = {};
+            player.quests.questCompletionCounts[quest.id] = (player.quests.questCompletionCounts[quest.id] || 0) + 1;
+        }
+
+        // Handle auto-repeat before save/render
+        this._handleAutoRepeat(quest, success, partial);
+
         SaveSystem.save();
         if (Router._current === 'quests' || Router._current === 'guilds') Router._load(Router._current);
     },
@@ -423,6 +432,79 @@ const QuestSystem = {
         const phase = active.phases[idx];
         const elapsed = Date.now() - phase.startAt;
         return Math.min(100, Math.round((elapsed / phase.durationMs) * 100));
+    },
+
+    // ── Auto-repeat ───────────────────────────────────────────────────────────
+
+    // Called at end of resolve() to continue or stop auto-repeat.
+    _handleAutoRepeat(quest, success, partial) {
+        const player = PlayerSystem.current;
+        const ar = player.quests.autoRepeat;
+        if (!ar || ar.questId !== quest.id) return;
+
+        const failed = !success && !partial;
+
+        if (ar.stopOnFailure && failed) {
+            player.quests.autoRepeat = null;
+            Log.add('Auto-repeat stopped: quest failed.', 'warning');
+            return;
+        }
+        if (ar.stopOnLowDurability && this._checkLowDurability()) {
+            player.quests.autoRepeat = null;
+            Log.add('Auto-repeat stopped: equipment durability is low.', 'warning');
+            return;
+        }
+        if (ar.repeatsLeft <= 0) {
+            player.quests.autoRepeat = null;
+            Log.add('Auto-repeat complete.', 'info');
+            return;
+        }
+
+        ar.repeatsLeft--;
+        const startResult = this.start(quest.id);
+        if (!startResult.ok) {
+            player.quests.autoRepeat = null;
+            Log.add(`Auto-repeat stopped: ${startResult.reason}`, 'warning');
+        }
+    },
+
+    // Returns true if any equipped item with durability is below 25% of max.
+    _checkLowDurability() {
+        const player = PlayerSystem.current;
+        const SLOTS  = ['weapon', 'offhand', 'head', 'torso', 'back', 'hands', 'legs', 'feet'];
+        for (const slot of SLOTS) {
+            const item = player.equipment[slot];
+            if (!item || item.durability == null || !item.maxDurability) continue;
+            if (item.durability / item.maxDurability < 0.25) return true;
+        }
+        return false;
+    },
+
+    // Returns the number of successful completions recorded for a quest.
+    getQuestSuccessCount(questId) {
+        return PlayerSystem.current?.quests?.questCompletionCounts?.[questId] ?? 0;
+    },
+
+    // Configure and activate auto-repeat for a quest.
+    // Called by the popup confirm button — the caller is responsible for starting the first run.
+    setAutoRepeat(questId, config) {
+        const player = PlayerSystem.current;
+        if (!player) return;
+        // repeatsLeft = total runs - 1 (first run starts immediately after this call)
+        player.quests.autoRepeat = {
+            questId,
+            repeatsLeft:          config.repeats - 1,
+            stopOnFailure:        config.stopOnFailure,
+            stopOnLowDurability:  config.stopOnLowDurability,
+        };
+        SaveSystem.save();
+    },
+
+    cancelAutoRepeat() {
+        const player = PlayerSystem.current;
+        if (!player) return;
+        player.quests.autoRepeat = null;
+        SaveSystem.save();
     },
 
     // ── Helpers ───────────────────────────────────────────────────────────────
