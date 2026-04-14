@@ -69,9 +69,16 @@ Router.register('warbands', function renderWarbands(container) {
                     <div class="card warbands-map-card">
                         <div class="card-header">
                             War Map — Capital Ruins
-                            <span class="wb-influence-badge">⚑ <span id="wb-inf-val">${player.warbandInfluence || 0}</span> Influence <span id="wb-inf-rate" class="wb-inf-rate">+${terr.player}/s</span> · ${terr.player}/${terr.total} tiles</span>
-                            ${_renderGameTimerBadge(player)}
-                            <button class="btn btn-sm btn-secondary" id="wb-end-campaign" style="margin-left:auto;font-size:11px;padding:2px 8px">End Campaign</button>
+                            <span class="wb-influence-badge">
+                                ⚡ <span id="wb-cmd-val">${Math.floor(ws.command ?? 0)}</span>/<span>${ws.commandCap ?? 300}</span>
+                                <span id="wb-cmd-rate" class="wb-cmd-rate">${ws._lastTurnCommandGain != null ? `+${ws._lastTurnCommandGain}/turn` : ''}</span>
+                                &nbsp;·&nbsp; ⚑ <span id="wb-inf-val">${player.warbandInfluence || 0}</span> Inf
+                                <span class="wb-cmd-rate">${ws._lastTurnInfluenceGain != null ? `+${ws._lastTurnInfluenceGain}/turn` : ''}</span>
+                                &nbsp;·&nbsp; ${terr.player}/${terr.total} tiles
+                            </span>
+                            <span class="wb-game-timer" style="color:#4a9e6b">Turn ${ws.turn ?? 0} / ${ws.turnLimit ?? 60}</span>
+                            ${gs === 'active' ? `<button class="btn btn-sm btn-primary" id="wb-end-turn" style="margin-left:4px;font-size:11px;padding:2px 8px">End Turn</button>` : ''}
+                            <button class="btn btn-sm btn-secondary" id="wb-end-campaign" style="margin-left:4px;font-size:11px;padding:2px 8px">End Campaign</button>
                         </div>
                         <div class="card-body" style="position:relative">
                             ${gs === 'countdown' ? _renderCountdownOverlay(player) : ''}
@@ -136,9 +143,10 @@ function _renderFactionStatusBar(player, terr, phase, intents) {
     const ePct  = Math.round((terr.enemy      / total) * 100);
     const cPct  = Math.max(0, 100 - pPct - iPct - aPct - ePct);
 
+    const ws          = player.warbandStats || {};
     const activeOrder = WarbandSystem.getActiveOrder(player);
     const orderDef    = activeOrder ? getStrategicOrder(activeOrder.orderId) : null;
-    const orderRem    = activeOrder ? Math.max(0, Math.ceil((activeOrder.expiresAt - Date.now()) / 1000)) : 0;
+    const orderRem    = activeOrder ? Math.max(0, (activeOrder.expiresTurn ?? 0) - (ws.turn ?? 0)) : 0;
 
     const phaseColors = { 1: '#4a9e6b', 2: '#c9a84c', 3: '#c04040' };
     const phaseColor  = phaseColors[phase?.id] || '#aaa';
@@ -152,13 +160,13 @@ function _renderFactionStatusBar(player, terr, phase, intents) {
             </div>
 
             <!-- Active order badge -->
-            ${activeOrder ? `<div class="wb-active-order-badge" id="wb-order-badge" data-expires-at="${activeOrder.expiresAt}">
-                ${orderDef?.icon} ${orderDef?.name} — <span id="wb-order-rem">${orderRem}s</span>
+            ${activeOrder ? `<div class="wb-active-order-badge">
+                ${orderDef?.icon} ${orderDef?.name} — <span>${orderRem}t</span> left
             </div>` : ''}
 
             <!-- Iron Shields badge -->
-            ${player.warbandStats?.globalFortBoost && Date.now() < player.warbandStats.globalFortBoost.expiresAt
-                ? `<div class="wb-active-order-badge" style="color:#7ab0f0;border-color:rgba(74,126,192,0.4)">🛡 Iron Shields</div>` : ''}
+            ${ws.globalFortBoost && (ws.turn ?? 0) < ws.globalFortBoost.expiresTurn
+                ? `<div class="wb-active-order-badge" style="color:#7ab0f0;border-color:rgba(74,126,192,0.4)">🛡 Iron Shields — ${Math.max(0, ws.globalFortBoost.expiresTurn - (ws.turn ?? 0))}t left</div>` : ''}
 
             <!-- Faction badges row -->
             <div class="wb-faction-badges">
@@ -225,17 +233,6 @@ function _renderCountdownOverlay(player) {
     `;
 }
 
-// ── Game timer badge (shown in map card header during active game) ────────────
-
-function _renderGameTimerBadge(player) {
-    const ws = player.warbandStats || {};
-    if (ws.gameState !== 'active' || !ws.gameEndsAt) return '';
-    const rem   = Math.max(0, Math.ceil((ws.gameEndsAt - Date.now()) / 1000));
-    const mins  = Math.floor(rem / 60), secs = rem % 60;
-    const color = rem < 120 ? '#c04040' : rem < 300 ? '#c9a84c' : '#4a9e6b';
-    return `<span class="wb-game-timer" id="wb-game-timer" data-ends-at="${ws.gameEndsAt}" style="color:${color}">⏱ ${mins}:${String(secs).padStart(2,'0')}</span>`;
-}
-
 // ── Ended screen ──────────────────────────────────────────────────────────────
 
 function _renderEndedScreen(player) {
@@ -252,7 +249,7 @@ function _renderEndedScreen(player) {
             <h2 class="wb-ended-title ${win ? 'wb-ended-win' : 'wb-ended-loss'}">${win ? 'Victory!' : 'Defeat'}</h2>
             <p class="wb-ended-reason">${win
                 ? (result.winReason || 'The Heart of Valdros has fallen to your forces!')
-                : (result.winReason || 'Campaign time expired. The Heart of Valdros still stands.')
+                : (result.winReason || 'All turns spent. The Heart of Valdros still stands.')
             }</p>
 
             <div class="wb-ended-stats">
@@ -260,7 +257,8 @@ function _renderEndedScreen(player) {
                 <div class="wb-stat-row"><span>Iron Dominion</span><span style="color:#4a7ec0">${terr.ally_iron}</span></div>
                 <div class="wb-stat-row"><span>Ashen Covenant</span><span style="color:#b47ae0">${terr.ally_ashen}</span></div>
                 <div class="wb-stat-row"><span>Void Horde</span><span style="color:#c04040">${terr.enemy}</span></div>
-                <div class="wb-stat-row"><span>Influence earned</span><span>${ws.totalInfluenceEarned || 0}</span></div>
+                <div class="wb-stat-row"><span>Influence earned this run</span><span style="color:#b47ae0">${ws.totalInfluenceEarned || 0}</span></div>
+                <div class="wb-stat-row"><span>Total Influence (persistent)</span><span style="color:#b47ae0">${player.warbandInfluence || 0}</span></div>
                 <div class="wb-stat-row"><span>Phase reached</span><span style="color:${phaseColor}">${phase?.label || '—'}</span></div>
                 ${modDef ? `<div class="wb-stat-row"><span>Map modifier</span><span style="color:var(--gold)">${modDef.icon} ${modDef.name}</span></div>` : ''}
             </div>
@@ -464,7 +462,7 @@ function _renderTileDetail(player, tileId) {
     const tierDef    = getTierDef(tile.tier);
     const zd         = tile.demonZone ? getDemonZone(tile.demonZone) : null;
     const support    = WarbandSystem.getActiveFactionSupport(player);
-    const inf        = player.warbandInfluence || 0;
+    const cmd        = Math.floor(player.warbandStats?.command ?? 0);
 
     let fortifyCost = WARBAND_COSTS.fortify;
     let stabCost    = WARBAND_COSTS.stabilizeRift;
@@ -506,7 +504,7 @@ function _renderTileDetail(player, tileId) {
         const troopCount = tile.troopCount ?? 0;
         const fortLevel  = tile.fortLevel  ?? (tile.fortified ? 1 : 0);
         const MAX_T = 3, MAX_F = 2;
-        const btnClass = (cost, ok) => `btn btn-sm ${(inf >= cost && ok) ? 'btn-primary' : 'btn-disabled'}`;
+        const btnClass = (cost, ok) => `btn btn-sm ${(cmd >= cost && ok) ? 'btn-primary' : 'btn-disabled'}`;
         const fortReductionLabel = fortLevel === 0 ? '−50% pressure'
                                  : fortLevel === 1 ? '−75% pressure (max next)'
                                  : '−75% pressure (max)';
@@ -515,18 +513,18 @@ function _renderTileDetail(player, tileId) {
         actions = `
             <div class="wb-tile-actions">
                 <button class="${btnClass(troopCost, troopCount < MAX_T)}"
-                    ${troopCount < MAX_T && inf >= troopCost ? `data-tile-action="troops" data-tile-id="${tileId}"` : 'disabled'}
+                    ${troopCount < MAX_T && cmd >= troopCost ? `data-tile-action="troops" data-tile-id="${tileId}"` : 'disabled'}
                     title="Deploy troops — +20 ctrl, +4/tick gain, −15% pressure (max 3)">
-                    ⚔ Troops ${troopCount}/${MAX_T} <span class="wb-cost">${troopCost}</span>
+                    ⚔ Troops ${troopCount}/${MAX_T} <span class="wb-cost">${troopCost} Cmd</span>
                 </button>
                 <button class="${btnClass(fortifyCost, fortLevel < MAX_F)}"
-                    ${fortLevel < MAX_F && inf >= fortifyCost ? `data-tile-action="fortify" data-tile-id="${tileId}"` : 'disabled'}
+                    ${fortLevel < MAX_F && cmd >= fortifyCost ? `data-tile-action="fortify" data-tile-id="${tileId}"` : 'disabled'}
                     title="Fortify — reduces enemy pressure (max 2)">
-                    🛡 Fortify ${fortLevel}/${MAX_F} <span class="wb-cost">${fortifyCost}</span>
+                    🛡 Fortify ${fortLevel}/${MAX_F} <span class="wb-cost">${fortifyCost} Cmd</span>
                 </button>
                 ${stabAvail ? `<button class="${btnClass(stabCost, true)}"
-                    ${inf >= stabCost ? `data-tile-action="stabilize" data-tile-id="${tileId}"` : 'disabled'}>
-                    ✦ Stabilize <span class="wb-cost">${stabCost}</span>
+                    ${cmd >= stabCost ? `data-tile-action="stabilize" data-tile-id="${tileId}"` : 'disabled'}>
+                    ✦ Stabilize <span class="wb-cost">${stabCost} Cmd</span>
                 </button>` : ''}
             </div>
             ${troopCount > 0 ? `<p class="muted-text" style="font-size:11px;margin-top:4px">⚔ ${troopCount} stack${troopCount>1?'s':''} — +${troopCount*4}/tick, −${troopCount*15}% pressure.</p>` : ''}
@@ -567,13 +565,13 @@ function _renderTileDetail(player, tileId) {
 // ── Strategic Orders ──────────────────────────────────────────────────────────
 
 function _renderStrategicOrders(player) {
-    const inf         = player.warbandInfluence || 0;
+    const cmd         = Math.floor(player.warbandStats?.command ?? 0);
     const activeOrder = WarbandSystem.getActiveOrder(player);
 
     if (activeOrder) {
-        const def    = getStrategicOrder(activeOrder.orderId);
-        const remSec = Math.max(0, Math.ceil((activeOrder.expiresAt - Date.now()) / 1000));
-        const target = activeOrder.targetTileId
+        const def      = getStrategicOrder(activeOrder.orderId);
+        const remTurns = Math.max(0, (activeOrder.expiresTurn ?? 0) - (player.warbandStats?.turn ?? 0));
+        const target   = activeOrder.targetTileId
             ? (WARBAND_TILE_TYPES[WarbandSystem.getTile(player, activeOrder.targetTileId)?.type]?.label ?? '...')
             : null;
         return `
@@ -581,28 +579,28 @@ function _renderStrategicOrders(player) {
                 <div style="font-size:22px">${def?.icon}</div>
                 <div style="font-weight:600;color:#c9a84c">${def?.name}</div>
                 ${target ? `<div class="muted-text" style="font-size:11px">→ ${target}</div>` : ''}
-                <div class="muted-text" style="font-size:11px"><span id="wb-order-rem-panel" data-expires-at="${activeOrder.expiresAt}">${remSec}s</span> remaining</div>
+                <div class="muted-text" style="font-size:11px">${remTurns} turn${remTurns !== 1 ? 's' : ''} remaining</div>
             </div>
             <div class="wb-orders-grid" style="opacity:0.4;pointer-events:none">
-                ${_orderButtons(player, inf, activeOrder)}
+                ${_orderButtons(player, cmd, activeOrder)}
             </div>
         `;
     }
 
     return `
         <p class="muted-text" style="font-size:11px;margin-bottom:10px">Issue a global command. One active at a time.</p>
-        <div class="wb-orders-grid">${_orderButtons(player, inf, null)}</div>
+        <div class="wb-orders-grid">${_orderButtons(player, cmd, null)}</div>
     `;
 }
 
-function _orderButtons(player, inf, activeOrder) {
+function _orderButtons(player, cmd, activeOrder) {
     return WARBAND_STRATEGIC_ORDERS.map(def => {
-        const cd    = WarbandSystem.getOrderCooldownRemaining(player, def.id);
-        const ok    = !activeOrder && cd === 0 && inf >= (def.cost || 0);
-        const cdSec = Math.ceil(cd / 1000);
-        const hint  = cd > 0 ? `${cdSec}s cooldown`
-                    : def.cost && inf < def.cost ? `${def.cost} inf needed`
-                    : def.cost ? `${def.cost} inf` : def.requiresTarget ? 'select target' : 'ready';
+        const cdTurns = WarbandSystem.getOrderCooldownRemaining(player, def.id);
+        const ok      = !activeOrder && cdTurns === 0 && cmd >= (def.cost || 0);
+        const hint    = cdTurns > 0           ? `${cdTurns}t cooldown`
+                      : def.cost && cmd < def.cost ? `${def.cost} Cmd needed`
+                      : def.cost               ? `${def.cost} Cmd`
+                      : def.requiresTarget     ? 'select target' : 'ready';
         return `
             <button class="wb-order-btn ${ok ? '' : 'wb-btn-dim'}"
                 ${ok ? `data-order-id="${def.id}"` : 'disabled'} title="${def.description}">
@@ -617,26 +615,25 @@ function _orderButtons(player, inf, activeOrder) {
 // ── Tactical Abilities ────────────────────────────────────────────────────────
 
 function _renderTacticalAbilities(player) {
-    const inf          = player.warbandInfluence || 0;
+    const cmd          = Math.floor(player.warbandStats?.command ?? 0);
     const selectedTile = _wbSelectedTile ? WarbandSystem.getTile(player, _wbSelectedTile) : null;
     const tileState    = selectedTile ? WarbandSystem.controlState(selectedTile) : null;
 
     const rows = WARBAND_TACTICAL_ABILITIES.map(def => {
-        const cd      = WarbandSystem.getAbilityCooldownRemaining(player, def.id);
-        const cdSec   = Math.ceil(cd / 1000);
-        const hasCost = def.cost > 0;
-        const affdCost = !hasCost || inf >= def.cost;
+        const cdTurns  = WarbandSystem.getAbilityCooldownRemaining(player, def.id);
+        const hasCost  = def.cost > 0;
+        const affdCost = !hasCost || cmd >= def.cost;
         let targetable = true, targetHint = '';
         if (def.targetState && def.targetState !== 'any') {
             if (!selectedTile) { targetable = false; targetHint = 'select a tile'; }
             else if (def.targetState === 'enemy' && tileState !== 'enemy' && tileState !== 'contested')
                 { targetable = false; targetHint = 'needs enemy tile'; }
         }
-        const ok     = cd === 0 && affdCost && targetable;
-        const status = cd > 0         ? `${cdSec}s cd`
-                     : !affdCost      ? `${def.cost} inf needed`
+        const ok     = cdTurns === 0 && affdCost && targetable;
+        const status = cdTurns > 0    ? `${cdTurns}t cd`
+                     : !affdCost      ? `${def.cost} Cmd needed`
                      : !targetable    ? targetHint
-                     : def.cost > 0   ? `${def.cost} inf` : 'ready';
+                     : def.cost > 0   ? `${def.cost} Cmd` : 'ready';
 
         const targetLabel = def.targetState && selectedTile
             ? ` → ${WARBAND_TILE_TYPES[selectedTile.type]?.label ?? selectedTile.type}`
@@ -651,7 +648,7 @@ function _renderTacticalAbilities(player) {
                 </div>
                 <button class="btn btn-sm ${ok ? 'btn-primary' : 'btn-disabled'}"
                     ${ok ? `data-ability-id="${def.id}" data-ability-tile="${_wbSelectedTile || ''}"` : 'disabled'}>
-                    ${cd > 0 ? `<span class="wb-cd-timer" data-cd-expires="${Date.now()+cd}">${cdSec}s</span>` : status}
+                    ${status}
                 </button>
             </div>
         `;
@@ -737,14 +734,14 @@ function _renderFactionSupport(player) {
     const inf     = player.warbandInfluence || 0;
 
     if (support) {
-        const remMins = Math.max(0, Math.ceil(((ws.factionSupportExpires||0) - Date.now()) / 60000));
+        const remTurns = Math.max(0, (ws.factionSupportExpiresTurn ?? 0) - (ws.turn ?? 0));
         return `
             <div class="wb-faction-active">
                 <span style="font-size:16px">${support.icon}</span>
                 <div>
                     <div style="font-weight:600;font-size:13px">${support.name} Support Active</div>
                     <div class="muted-text" style="font-size:11px">${support.supportLabel}</div>
-                    <div class="muted-text" style="font-size:11px">${remMins}m remaining</div>
+                    <div class="muted-text" style="font-size:11px">${remTurns} turn${remTurns !== 1 ? 's' : ''} remaining</div>
                 </div>
             </div>
         `;
@@ -762,15 +759,16 @@ function _renderFactionSupport(player) {
         </div>
         <button class="btn btn-sm ${inf>=cost?'btn-secondary':'btn-disabled'}" style="width:100%"
             ${inf>=cost?'id="wb-faction-support-btn"':'disabled'}>
-            Request Support (${cost} inf · 30 min)
+            Request Support (${cost} Influence · 8 turns)
         </button>
-        ${inf<cost?`<p class="muted-text" style="font-size:11px;margin-top:4px">Need ${cost-inf} more influence.</p>`:''}
+        ${inf<cost?`<p class="muted-text" style="font-size:11px;margin-top:4px">Need ${cost-inf} more Influence.</p>`:''}
     `;
 }
 
 // ── Active Bonuses ────────────────────────────────────────────────────────────
 
 function _renderActiveBonuses(player) {
+    const ws          = player.warbandStats || {};
     const playerTiles = WarbandSystem.getMap(player).filter(t => WarbandSystem.controlState(t) === 'player');
     if (playerTiles.length === 0)
         return `<p class="muted-text" style="font-size:12px">Control tiles to gain passive bonuses.</p>`;
@@ -788,9 +786,10 @@ function _renderActiveBonuses(player) {
     const stabs = WarbandSystem.getMap(player).filter(t => t.stabilized).length;
     if (stabs > 0) rows.push(`<div class="wb-bonus-row"><span>✦ Stabilized Rifts ×${stabs}</span><span style="color:#9b6bd4">Spawns suppressed</span></div>`);
 
-    const gfb = player.warbandStats?.globalFortBoost;
-    if (gfb && Date.now() < gfb.expiresAt) {
-        rows.push(`<div class="wb-bonus-row"><span>🛡 Iron Shields</span><span style="color:#7ab0f0">+${gfb.level} fort · ${Math.ceil((gfb.expiresAt-Date.now())/1000)}s</span></div>`);
+    const gfb = ws.globalFortBoost;
+    if (gfb && (ws.turn ?? 0) < gfb.expiresTurn) {
+        const remT = Math.max(0, gfb.expiresTurn - (ws.turn ?? 0));
+        rows.push(`<div class="wb-bonus-row"><span>🛡 Iron Shields</span><span style="color:#7ab0f0">+${gfb.level} fort · ${remT}t</span></div>`);
     }
 
     return rows.join('') || `<p class="muted-text" style="font-size:12px">No bonuses active.</p>`;
@@ -803,19 +802,18 @@ function _renderCampaignStats(player) {
     const terr   = WarbandSystem.getTerritoryStats(player);
     const phase  = WarbandSystem.getPhase(player);
     const modDef = ws.mapModifier ? getMapModifier(ws.mapModifier) : null;
-    const fi     = ws.factionInfluence || {};
     return `
         ${modDef ? `<div class="wb-stat-row"><span>Modifier</span><span style="color:var(--gold)">${modDef.icon} ${modDef.name}</span></div>` : ''}
+        <div class="wb-stat-row"><span>Turn</span><span style="color:#c9a84c">${ws.turn ?? 0} / ${ws.turnLimit ?? 60}</span></div>
         <div class="wb-stat-row"><span>Phase</span><span style="color:${phase?.id===3?'#c04040':phase?.id===2?'#c9a84c':'#4a9e6b'}">${phase?.label}</span></div>
+        <div class="wb-stat-row"><span>Command</span><span style="color:#c9a84c">${Math.floor(ws.command??0)} / ${ws.commandCap??300}</span></div>
+        <div class="wb-stat-row"><span>Influence (persistent)</span><span style="color:#b47ae0">${player.warbandInfluence||0}</span></div>
+        <div class="wb-stat-row"><span>Total Inf. earned</span><span>${ws.totalInfluenceEarned||0}</span></div>
         <div class="wb-stat-row"><span>Your tiles</span><span style="color:#4a9e6b">${terr.player}</span></div>
-        <div class="wb-stat-row"><span>Iron Dom. tiles</span><span style="color:#4a7ec0">${terr.ally_iron}</span></div>
-        <div class="wb-stat-row"><span>Ashen Cov. tiles</span><span style="color:#b47ae0">${terr.ally_ashen}</span></div>
+        <div class="wb-stat-row"><span>Iron Dom.</span><span style="color:#4a7ec0">${terr.ally_iron}</span></div>
+        <div class="wb-stat-row"><span>Ashen Cov.</span><span style="color:#b47ae0">${terr.ally_ashen}</span></div>
         <div class="wb-stat-row"><span>Contested</span><span style="color:#c9a84c">${terr.contested}</span></div>
         <div class="wb-stat-row"><span>Void Horde</span><span style="color:#c04040">${terr.enemy}</span></div>
-        <div class="wb-stat-row"><span>Your influence</span><span>${player.warbandInfluence||0}</span></div>
-        <div class="wb-stat-row"><span>Iron influence</span><span style="color:#4a7ec0">${fi.iron_dominion||0}</span></div>
-        <div class="wb-stat-row"><span>Ashen influence</span><span style="color:#b47ae0">${fi.ashen_covenant||0}</span></div>
-        <div class="wb-stat-row"><span>Total earned</span><span>${ws.totalInfluenceEarned||0}</span></div>
     `;
 }
 
@@ -825,73 +823,16 @@ function _bindWarbandEvents(container, player) {
     _clearWbTimer();
     _wbPendingOrder = null;
     _wbTimerInterval = setInterval(() => {
-        // Self-clean if the user has navigated away from this page
+        // Self-clean if the user has navigated away
         if (typeof Router !== 'undefined' && Router._current !== 'warbands') {
             _clearWbTimer(); return;
         }
 
-        // Influence counter + income rate (live, reads directly from player object)
-        const infVal  = container.querySelector('#wb-inf-val');
-        const infRate = container.querySelector('#wb-inf-rate');
-        if (infVal || infRate) {
-            const rate = WarbandSystem.getMap(player)
-                .filter(t => WarbandSystem.controlState(t) === 'player').length;
-            if (infVal)  infVal.textContent  = player.warbandInfluence || 0;
-            if (infRate) infRate.textContent = `+${rate}/s`;
-        }
-
-        // Countdown number
+        // Countdown number (pre-game)
         const cdNum = container.querySelector('#wb-countdown-num');
         if (cdNum) {
             const rem = Math.max(0, Math.ceil((parseInt(cdNum.dataset.endsAt, 10) - Date.now()) / 1000));
             cdNum.textContent = rem;
-            if (rem === 0) { _clearWbTimer(); Router._load('warbands'); }
-        }
-
-        // Game timer badge
-        const gameTimer = container.querySelector('#wb-game-timer');
-        if (gameTimer) {
-            const rem   = Math.max(0, Math.ceil((parseInt(gameTimer.dataset.endsAt, 10) - Date.now()) / 1000));
-            const mins  = Math.floor(rem / 60), secs = rem % 60;
-            const color = rem < 120 ? '#c04040' : rem < 300 ? '#c9a84c' : '#4a9e6b';
-            gameTimer.textContent = `⏱ ${mins}:${String(secs).padStart(2, '0')}`;
-            gameTimer.style.color = color;
-            if (rem === 0) { _clearWbTimer(); Router._load('warbands'); }
-        }
-
-        // Order / quest timers (not the countdown or game timer which are handled above)
-        container.querySelectorAll('[data-ends-at]:not(#wb-countdown-num):not(#wb-game-timer)').forEach(el => {
-            const rem = Math.max(0, parseInt(el.dataset.endsAt,10) - Date.now());
-            const m = Math.floor(rem/60000), s = Math.ceil((rem%60000)/1000);
-            el.textContent = `⏳ ${m}:${String(s).padStart(2,'0')}`;
-            if (rem === 0) { _clearWbTimer(); Router._load('warbands'); }
-        });
-        // CD timers (quest cooldowns)
-        container.querySelectorAll('[data-cd-expires]:not(.wb-cd-timer)').forEach(el => {
-            const rem = Math.max(0, parseInt(el.dataset.cdExpires,10) - Date.now());
-            if (rem === 0) { _clearWbTimer(); Router._load('warbands'); return; }
-            const s = Math.ceil(rem/1000), m = Math.floor(s/60), sc = s%60;
-            el.textContent = `Cooldown ${m}:${String(sc).padStart(2,'0')}`;
-        });
-        // Ability CD spans
-        container.querySelectorAll('.wb-cd-timer[data-cd-expires]').forEach(el => {
-            const rem = Math.max(0, parseInt(el.dataset.cdExpires,10) - Date.now());
-            if (rem === 0) { _clearWbTimer(); Router._load('warbands'); return; }
-            el.textContent = `${Math.ceil(rem/1000)}s`;
-        });
-        // Order badge countdown
-        const orderBadge = container.querySelector('#wb-order-badge');
-        if (orderBadge) {
-            const rem = Math.max(0, parseInt(orderBadge.dataset.expiresAt,10) - Date.now());
-            const remSpan = container.querySelector('#wb-order-rem');
-            if (remSpan) remSpan.textContent = `${Math.ceil(rem/1000)}s`;
-            if (rem === 0) { _clearWbTimer(); Router._load('warbands'); }
-        }
-        // Order panel countdown
-        const orderPanel = container.querySelector('#wb-order-rem-panel');
-        if (orderPanel) {
-            const rem = Math.max(0, parseInt(orderPanel.dataset.expiresAt,10) - Date.now());
-            orderPanel.textContent = `${Math.ceil(rem/1000)}s`;
             if (rem === 0) { _clearWbTimer(); Router._load('warbands'); }
         }
     }, 1000);
@@ -980,6 +921,11 @@ function _bindWarbandEvents(container, player) {
     container.querySelector('#wb-cancel-countdown')?.addEventListener('click', () => {
         WarbandSystem.resetCampaign(player);
         Router._load('warbands');
+    });
+
+    container.querySelector('#wb-end-turn')?.addEventListener('click', () => {
+        WarbandSystem.endPlayerTurn(player);
+        // endPlayerTurn calls Router._load internally after save
     });
 
     container.querySelector('#wb-end-campaign')?.addEventListener('click', () => {

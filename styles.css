@@ -4906,7 +4906,7 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
     font-size: 13px; font-weight: 700; color: var(--gold);
     background: rgba(201,168,76,0.12); padding: 2px 10px; border-radius: 12px;
 }
-.wb-inf-rate {
+.wb-inf-rate, .wb-cmd-rate {
     font-size: 11px; font-weight: 600; color: #4a9e6b;
     margin-left: 4px; font-variant-numeric: tabular-nums;
 }
@@ -5485,6 +5485,332 @@ h1, h2, h3, .heading { font-family: var(--font-heading); font-weight: 600; lette
 .delve-results-log .delve-log-scroll { max-height: 420px; }
 .delve-rewards-list { display: flex; flex-direction: column; gap: 6px; }
 .delve-reward-line  { font-size: 13px; color: var(--text-muted); padding: 4px 0; border-bottom: 1px solid var(--bg-elevated); }
+
+/* ── Delve board legend ─────────────────────────────────────────────────────── */
+.delve-grid-legend {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+.legend-title {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+}
+.legend-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0;
+}
+.legend-icon {
+    font-size: 14px;
+    width: 20px;
+    text-align: center;
+    color: var(--text-bright);
+}
+.legend-label { font-size: 12px; color: var(--text-muted); }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   Interactive Delve Grid
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* Page wrapper — no extra top padding */
+.dg-page { padding-top: 0 !important; }
+
+/* ── Status bar ──────────────────────────────────────────────────────────────── */
+.dg-status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 14px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+.dg-status-left  { display: flex; align-items: center; gap: 10px; }
+.dg-status-right { display: flex; align-items: center; gap: 10px; }
+
+.dg-delve-name  { font-size: 13px; font-weight: 600; color: var(--gold); font-family: var(--font-heading); }
+.dg-turn-badge  { font-size: 11px; color: var(--text-muted); background: var(--bg-elevated); border-radius: 4px; padding: 2px 7px; }
+.dg-corr-badge  { font-size: 11px; color: var(--warning); }
+.dg-hp-label    { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
+.dg-hp-track    { width: 100px; height: 7px; background: var(--bg-elevated); border-radius: 4px; overflow: hidden; flex-shrink: 0; }
+.dg-hp-fill     { height: 100%; border-radius: 4px; transition: width 0.3s ease; }
+.dg-corr-total  { font-size: 11px; color: var(--warning); white-space: nowrap; }
+
+/* ── Game layout ─────────────────────────────────────────────────────────────── */
+.dg-game-layout {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    align-items: start;
+}
+@media (max-width: 760px) {
+    .dg-game-layout { grid-template-columns: 1fr; }
+}
+
+/* ── Grid ────────────────────────────────────────────────────────────────────── */
+.dg-grid-wrap {
+    overflow-x: auto;
+}
+.dg-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: fit-content;
+}
+.dg-row { display: flex; gap: 2px; }
+
+.dg-tile {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    user-select: none;
+    transition: border-color 0.15s, background 0.15s;
+    cursor: default;
+}
+
+/* Hidden / fog */
+.tile-hidden {
+    background: #0d0e12;
+    color: #1a1c22;
+    border-color: #191b20;
+}
+
+/* Empty / cleared */
+.tile-empty, .tile-cleared {
+    background: var(--bg-card);
+    color: var(--text-dim);
+    border-color: var(--bg-elevated);
+}
+
+/* Player */
+.tile-player {
+    background: rgba(201,168,76,0.15);
+    border-color: var(--gold);
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 16px;
+}
+
+/* Enemy */
+.tile-enemy {
+    background: rgba(220,60,60,0.10);
+    border-color: rgba(220,60,60,0.25);
+    color: #dc3c3c;
+}
+
+/* Elite */
+.tile-elite {
+    background: rgba(200,80,200,0.10);
+    border-color: rgba(200,80,200,0.30);
+    color: #c850c8;
+}
+
+/* Treasure */
+.tile-treasure {
+    background: rgba(201,168,76,0.10);
+    border-color: rgba(201,168,76,0.25);
+    color: var(--gold);
+}
+
+/* Shrine */
+.tile-shrine {
+    background: rgba(80,160,240,0.10);
+    border-color: rgba(80,160,240,0.25);
+    color: #50a0f0;
+}
+
+/* Event */
+.tile-event {
+    background: rgba(80,200,160,0.10);
+    border-color: rgba(80,200,160,0.20);
+    color: #50c8a0;
+}
+
+/* Hazard */
+.tile-hazard {
+    background: rgba(220,140,40,0.10);
+    border-color: rgba(220,140,40,0.22);
+    color: #dc8c28;
+}
+
+/* Boss */
+.tile-boss {
+    background: rgba(180,30,30,0.18);
+    border-color: rgba(200,50,50,0.50);
+    color: #e03030;
+    font-size: 16px;
+    box-shadow: 0 0 6px rgba(200,50,50,0.25);
+}
+
+/* Move target — clickable highlighted tile */
+.tile-move {
+    border-color: var(--gold) !important;
+    box-shadow: 0 0 5px rgba(201,168,76,0.4);
+    cursor: pointer;
+    animation: dg-pulse 1.4s ease-in-out infinite;
+}
+.tile-move:hover {
+    background: rgba(201,168,76,0.18) !important;
+}
+
+/* Revisit warning */
+.tile-revisit {
+    opacity: 0.7;
+}
+
+@keyframes dg-pulse {
+    0%, 100% { box-shadow: 0 0 4px rgba(201,168,76,0.3); }
+    50%       { box-shadow: 0 0 10px rgba(201,168,76,0.6); }
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────────── */
+.dg-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 220px;
+}
+
+/* Player stats chips */
+.dg-player-stats {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.dg-stat-chip {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 5px 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+.dg-stat-chip strong { color: var(--text-bright); }
+
+/* ── Exploration panel ───────────────────────────────────────────────────────── */
+.dg-explore-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.dg-explore-hint { font-size: 12px; color: var(--text-muted); margin: 0; }
+.dg-hint-dim     { color: var(--text-dim); }
+.dg-shrine-btn, .dg-escape-btn { align-self: flex-start; }
+
+/* ── Combat panel ────────────────────────────────────────────────────────────── */
+.dg-combat-panel {
+    background: var(--bg-card);
+    border: 1px solid rgba(220,60,60,0.3);
+    border-radius: 6px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dg-enemy-card { display: flex; flex-direction: column; gap: 5px; }
+.dg-enemy-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.dg-enemy-name {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-bright);
+}
+.dg-enemy-role {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: rgba(220,60,60,0.15);
+    border: 1px solid rgba(220,60,60,0.3);
+    color: #e07070;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.dg-enemy-hp-row { display: flex; align-items: center; gap: 8px; }
+.dg-enemy-hp-track {
+    flex: 1;
+    height: 7px;
+    background: var(--bg-elevated);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.dg-enemy-hp-fill   { height: 100%; border-radius: 4px; transition: width 0.3s ease; }
+.dg-enemy-hp-label  { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.dg-enemy-stats     { font-size: 11px; color: var(--text-dim); }
+
+/* Combat action buttons */
+.dg-combat-actions { display: flex; flex-direction: column; gap: 6px; }
+.dg-combat-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 12px;
+    gap: 6px;
+}
+.dg-btn-hint {
+    font-size: 10px;
+    font-weight: 400;
+    opacity: 0.7;
+}
+
+/* ── Log ─────────────────────────────────────────────────────────────────────── */
+.dg-log {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.dg-log-results { max-height: 420px; }
+.dg-log-line {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+/* ── Results screen ──────────────────────────────────────────────────────────── */
+.dg-results-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    align-items: start;
+}
+@media (max-width: 680px) { .dg-results-layout { grid-template-columns: 1fr; } }
+
+.dg-results-summary .card-body { display: flex; flex-direction: column; gap: 6px; }
+.dg-reward-line {
+    font-size: 13px;
+    color: var(--text-muted);
+    padding: 4px 0;
+    border-bottom: 1px solid var(--bg-elevated);
+}
+.dg-results-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
 
 /* ══════════════════════════════════════════════════════════════════════════════
    Training Page

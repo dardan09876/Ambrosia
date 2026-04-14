@@ -41,7 +41,6 @@ function _renderQuestsPage(container) {
             <div class="page-header">
                 <h1 class="page-title">Quest Board</h1>
                 <p class="page-subtitle">
-                    A fresh board is posted each day at midnight.
                     Complete quests to earn gold and loot chests.
                 </p>
             </div>

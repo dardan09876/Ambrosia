@@ -2,11 +2,49 @@
 // Static definitions for the Warbands system.
 
 // ── Action costs ──────────────────────────────────────────────────────────────
+// Command costs: in-match tactical actions
+// Influence costs: persistent meta resource (faction support only)
 const WARBAND_COSTS = {
-    fortify:        50,
-    deployTroops:   30,
-    stabilizeRift:  70,
-    factionSupport: 40,
+    fortify:        40,    // Command
+    deployTroops:   25,    // Command
+    stabilizeRift:  60,    // Command
+    factionSupport: 80,    // Influence
+};
+
+// ── Per-tile income values (granted each turn) ────────────────────────────────
+// Command income per controlled tile type (resource node = supply, fortress = stronghold)
+const WARBAND_TILE_CMD_INCOME = {
+    pathway:    0,      // empty frontline — no command
+    rift:       0.20,   // chokepoint-equivalent
+    supply:     1.20,   // resource node
+    stronghold: 0.80,   // fortress anchor
+    heart:      0,
+};
+// Influence income per controlled tile type
+const WARBAND_TILE_INF_INCOME = {
+    pathway:    0.15,
+    rift:       0.35,
+    supply:     0.25,
+    stronghold: 0.75,
+    heart:      3.0,
+};
+
+// ── Capture costs (Command + Influence deducted on tile flip) ─────────────────
+const WARBAND_CAPTURE_COSTS = {
+    pathway:    { cmd: 0,  inf: 8  },
+    rift:       { cmd: 8,  inf: 14 },
+    supply:     { cmd: 10, inf: 18 },
+    stronghold: { cmd: 20, inf: 30 },
+    heart:      { cmd: 30, inf: 40 },
+};
+
+// ── Capture rewards (immediate burst on successful capture) ───────────────────
+const WARBAND_CAPTURE_REWARDS = {
+    pathway:    { cmd: 5,  inf: 4  },
+    rift:       { cmd: 8,  inf: 7  },
+    supply:     { cmd: 15, inf: 10 },
+    stronghold: { cmd: 20, inf: 18 },
+    heart:      { cmd: 0,  inf: 0  },  // win condition — handled separately
 };
 
 // ── Control score thresholds ──────────────────────────────────────────────────
@@ -347,43 +385,43 @@ const WARBAND_ENEMY_FACTION = {
 // ── Strategic orders ──────────────────────────────────────────────────────────
 const WARBAND_STRATEGIC_ORDERS = [
     {
-        id:          'aggressive_push',
-        name:        'Aggressive Push',
-        icon:        '⚡',
-        description: 'All forces surge forward. Hold gains ×2, allies push hard — but enemy pressure increases.',
-        durationSec: 300,
-        cooldownSec: 600,
-        cost:        0,
+        id:           'aggressive_push',
+        name:         'Aggressive Push',
+        icon:         '⚡',
+        description:  'All forces surge forward. Hold gains ×2, allies push hard — but enemy pressure increases.',
+        durationTurns: 3,
+        cooldownTurns: 6,
+        cost:          20,
         effects: { allyAttackMult: 1.5, playerHoldMult: 2.0, enemyPressureMult: 1.2 },
     },
     {
-        id:          'hold_the_line',
-        name:        'Hold the Line',
-        icon:        '🛡',
-        description: 'Fortifications doubled, demon pressure halved. Allies stop advancing but hold firm.',
-        durationSec: 300,
-        cooldownSec: 480,
-        cost:        0,
+        id:           'hold_the_line',
+        name:         'Hold the Line',
+        icon:         '🛡',
+        description:  'Fortifications doubled, demon pressure halved. Allies stop advancing but hold firm.',
+        durationTurns: 3,
+        cooldownTurns: 4,
+        cost:          0,
         effects: { fortMult: 2.0, allyAttackMult: 0.2, allyDefMult: 2.0, enemyPressureMult: 0.5 },
     },
     {
-        id:          'rally_allies',
-        name:        'Rally Allies',
-        icon:        '📯',
-        description: 'Boost both allied factions for 3 minutes. They push and hold harder.',
-        durationSec: 180,
-        cooldownSec: 540,
-        cost:        25,
+        id:           'rally_allies',
+        name:         'Rally Allies',
+        icon:         '📯',
+        description:  'Boost both allied factions for 2 turns. They push and hold harder.',
+        durationTurns: 2,
+        cooldownTurns: 5,
+        cost:          30,
         effects: { allyAttackMult: 2.0, allyDefMult: 1.5 },
     },
     {
-        id:          'focused_assault',
-        name:        'Focused Assault',
-        icon:        '🎯',
-        description: 'Concentrate all allied forces on the selected tile. Massive pressure applied.',
-        durationSec: 180,
-        cooldownSec: 720,
-        cost:        20,
+        id:           'focused_assault',
+        name:         'Focused Assault',
+        icon:         '🎯',
+        description:  'Concentrate all allied forces on the selected tile. Massive pressure applied.',
+        durationTurns: 2,
+        cooldownTurns: 6,
+        cost:          25,
         effects: { allyFocusMult: 3.0 },
         requiresTarget: true,
     },
@@ -392,44 +430,44 @@ const WARBAND_STRATEGIC_ORDERS = [
 // ── Tactical abilities ────────────────────────────────────────────────────────
 const WARBAND_TACTICAL_ABILITIES = [
     {
-        id:          'bombardment',
-        name:        'Fire Bombardment',
-        icon:        '🔥',
-        description: 'Bombard a demon tile — deals −35 control and weakens demon strength.',
-        cooldownSec: 60,
-        cost:        15,
-        targetState: 'enemy',
-        effect:      { controlDmg: 35, demonStrengthDmg: 20 },
+        id:           'bombardment',
+        name:         'Fire Bombardment',
+        icon:         '🔥',
+        description:  'Bombard a demon tile — deals −35 control and weakens demon strength.',
+        cooldownTurns: 2,
+        cost:          20,
+        targetState:  'enemy',
+        effect:       { controlDmg: 35, demonStrengthDmg: 20 },
     },
     {
-        id:          'reinforcements',
-        name:        'Reinforcements',
-        icon:        '⚔',
-        description: 'Rush troops to any tile — +25 control, +1 troop stack.',
-        cooldownSec: 120,
-        cost:        0,
-        targetState: 'any',
-        effect:      { controlGain: 25, addTroop: true },
+        id:           'reinforcements',
+        name:         'Reinforcements',
+        icon:         '⚔',
+        description:  'Rush troops to any tile — +25 control, +1 troop stack.',
+        cooldownTurns: 3,
+        cost:          15,
+        targetState:  'any',
+        effect:       { controlGain: 25, addTroop: true },
     },
     {
-        id:          'cleanse',
-        name:        'Corruption Cleanse',
-        icon:        '✦',
-        description: 'Purge a rift tile — −20 control, may auto-stabilize.',
-        cooldownSec: 90,
-        cost:        20,
-        targetState: 'enemy',
-        effect:      { controlDmg: 20, demonStrengthDmg: 15, stabilizeRift: true },
+        id:           'cleanse',
+        name:         'Corruption Cleanse',
+        icon:         '✦',
+        description:  'Purge a rift tile — −20 control, may auto-stabilize.',
+        cooldownTurns: 2,
+        cost:          25,
+        targetState:  'enemy',
+        effect:       { controlDmg: 20, demonStrengthDmg: 15, stabilizeRift: true },
     },
     {
-        id:          'iron_shields',
-        name:        'Iron Shields',
-        icon:        '🛡',
-        description: 'All player tiles gain +2 effective fort for 2 minutes.',
-        cooldownSec: 180,
-        cost:        25,
-        targetState: null,
-        effect:      { globalFortBoost: 2, durationSec: 120 },
+        id:           'iron_shields',
+        name:         'Iron Shields',
+        icon:         '🛡',
+        description:  'All player tiles gain +2 effective fort for 3 turns.',
+        cooldownTurns: 3,
+        cost:          30,
+        targetState:  null,
+        effect:       { globalFortBoost: 2, durationTurns: 3 },
     },
 ];
 

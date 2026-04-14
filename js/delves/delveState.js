@@ -1,44 +1,75 @@
 // js/delves/delveState.js
-// Shared mutable state for the current delve run.
+// Mutable state for an active interactive grid-based delve run.
+// The run is ephemeral — not persisted to saves mid-run.
 
 const DelveState = {
-    // 'idle' | 'playing' | 'paused' | 'complete'
-    status:          'idle',
+    // ── Run lifecycle ─────────────────────────────────────────────────────────
+    // 'idle' | 'exploring' | 'combat' | 'result'
+    phase:    'idle',
+    delveId:  null,
+    delveDef: null,
 
-    // The pre-resolved run record (set by DelveEngine before playback starts)
-    run:             null,
+    // ── Grid (10×10 flat array, index = y*10+x) ───────────────────────────────
+    grid:      null,
+    playerPos: null,   // { x, y }
+    turn:      0,
 
-    // Playback
-    playbackRecords: [],   // array of resolved node records (full run)
-    playbackIndex:   -1,   // which record is currently "on screen" (-1 = not started)
-    speed:           1,    // 1 | 2 | 4
-    _interval:       null,
+    // ── Player snapshot for this run ──────────────────────────────────────────
+    playerHp:     0,
+    playerMaxHp:  0,
+    playerAttack: 0,
+    playerDefense:0,
+    playerPower:  0,
 
-    // Accumulated visible log lines (grows as playback advances)
-    visibleLog:      [],
+    // ── Corruption accumulated this run (applied to live player at end) ───────
+    gainedCorruption: 0,
 
-    // Which delve is selected on the board (before starting)
+    // ── Loot collected this run ───────────────────────────────────────────────
+    goldFound:       0,
+    materialsFound:  [],
+    riftShardsFound: 0,
+    xpFound:         0,
+
+    // ── Active combat ─────────────────────────────────────────────────────────
+    // { enemy: {...with role mods}, enemyHp, enemyMaxHp, isBoss }
+    combat: null,
+
+    // ── Run result ────────────────────────────────────────────────────────────
+    // 'victory' | 'death' | 'escaped'
+    result: null,
+
+    // ── Combat + exploration log ──────────────────────────────────────────────
+    log: [],
+
+    // ── Board selection (persists between runs) ───────────────────────────────
     selectedDelveId: 'shattered_rift',
 
-    reset() {
-        this.status          = 'idle';
-        this.run             = null;
-        this.playbackRecords = [];
-        this.playbackIndex   = -1;
-        this.speed           = 1;
-        this.visibleLog      = [];
-        if (this._interval) { clearInterval(this._interval); this._interval = null; }
-    },
+    // ─────────────────────────────────────────────────────────────────────────
 
-    // Push a line to the visible log (caps at 80 lines)
     addLog(line) {
-        this.visibleLog.push(line);
-        if (this.visibleLog.length > 80) this.visibleLog.shift();
+        this.log.push(line);
+        if (this.log.length > 60) this.log.shift();
     },
 
-    // The record currently shown during playback
-    currentRecord() {
-        if (this.playbackIndex < 0 || this.playbackIndex >= this.playbackRecords.length) return null;
-        return this.playbackRecords[this.playbackIndex];
+    reset() {
+        this.phase             = 'idle';
+        this.delveId           = null;
+        this.delveDef          = null;
+        this.grid              = null;
+        this.playerPos         = null;
+        this.turn              = 0;
+        this.playerHp          = 0;
+        this.playerMaxHp       = 0;
+        this.playerAttack      = 0;
+        this.playerDefense     = 0;
+        this.playerPower       = 0;
+        this.gainedCorruption  = 0;
+        this.goldFound         = 0;
+        this.materialsFound    = [];
+        this.riftShardsFound   = 0;
+        this.xpFound           = 0;
+        this.combat            = null;
+        this.result            = null;
+        this.log               = [];
     },
 };

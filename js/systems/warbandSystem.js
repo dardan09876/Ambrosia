@@ -320,6 +320,10 @@ const WarbandSystem = {
         if (ws.gameEndsAt      === undefined) ws.gameEndsAt      = null;
         if (ws.gameDuration    === undefined) ws.gameDuration    = 1800;
         if (ws.gameResult      === undefined) ws.gameResult      = null;
+        if (ws.command         === undefined) ws.command         = 0;
+        if (ws.commandCap      === undefined) ws.commandCap      = 300;
+        if (ws.turn            === undefined) ws.turn            = 0;
+        if (ws.turnLimit       === undefined) ws.turnLimit       = 60;
 
         // ── v2 map migration: upgrade small (5×4) maps to the new 13×10 layout ──
         if (!ws._mapV2) {
@@ -403,14 +407,14 @@ const WarbandSystem = {
     requestFactionSupport(player) {
         const cost = WARBAND_COSTS.factionSupport;
         if ((player.warbandInfluence || 0) < cost)
-            return { ok: false, reason: `Need ${cost} influence.` };
+            return { ok: false, reason: `Need ${cost} Influence.` };
         const support = getWarbandFactionSupport(player.faction);
         if (!support) return { ok: false, reason: 'No support available.' };
 
         player.warbandInfluence -= cost;
-        player.warbandStats.factionSupportActive  = player.faction;
-        player.warbandStats.factionSupportExpires = Date.now() + 30 * 60 * 1000;
-        Log.add(`${support.name} support activated for 30 minutes.`, 'success');
+        player.warbandStats.factionSupportActive      = player.faction;
+        player.warbandStats.factionSupportExpiresTurn = (player.warbandStats.turn ?? 0) + 8;
+        Log.add(`${support.name} support activated for 8 turns.`, 'success');
         SaveSystem.save();
         return { ok: true };
     },
@@ -418,9 +422,9 @@ const WarbandSystem = {
     _checkFactionSupportExpiry(player) {
         const ws = player.warbandStats;
         if (!ws.factionSupportActive) return;
-        if (Date.now() >= (ws.factionSupportExpires || 0)) {
-            ws.factionSupportActive  = null;
-            ws.factionSupportExpires = null;
+        if ((ws.turn ?? 0) >= (ws.factionSupportExpiresTurn ?? 0)) {
+            ws.factionSupportActive       = null;
+            ws.factionSupportExpiresTurn  = null;
         }
     },
 
@@ -428,15 +432,16 @@ const WarbandSystem = {
     getActiveOrder(player) {
         const ws = player.warbandStats;
         if (!ws?.activeOrder) return null;
-        if (Date.now() >= ws.activeOrder.expiresAt) { ws.activeOrder = null; return null; }
+        if ((ws.turn ?? 0) >= ws.activeOrder.expiresTurn) { ws.activeOrder = null; return null; }
         return ws.activeOrder;
     },
 
     getOrderCooldownRemaining(player, orderId) {
-        const last = player.warbandStats?.orderCooldowns?.[orderId] || 0;
-        const def  = getStrategicOrder(orderId);
-        if (!def || !last) return 0;
-        return Math.max(0, (last + def.cooldownSec * 1000) - Date.now());
+        const lastTurn = player.warbandStats?.orderCooldowns?.[orderId] || 0;
+        const def      = getStrategicOrder(orderId);
+        if (!def || !lastTurn) return 0;
+        const curTurn  = player.warbandStats?.turn ?? 0;
+        return Math.max(0, (lastTurn + def.cooldownTurns) - curTurn);
     },
 
     canApplyOrder(player, orderId) {
@@ -445,8 +450,8 @@ const WarbandSystem = {
         if (this.getActiveOrder(player)) return { ok: false, reason: 'An order is already active.' };
         const cd = this.getOrderCooldownRemaining(player, orderId);
         if (cd > 0) return { ok: false, reason: `On cooldown.` };
-        if (def.cost && (player.warbandInfluence || 0) < def.cost)
-            return { ok: false, reason: `Need ${def.cost} influence.` };
+        if (def.cost && (player.warbandStats?.command ?? 0) < def.cost)
+            return { ok: false, reason: `Need ${def.cost} Command.` };
         return { ok: true };
     },
 
@@ -456,10 +461,10 @@ const WarbandSystem = {
 
         const def = getStrategicOrder(orderId);
         const ws  = player.warbandStats;
-        if (def.cost) player.warbandInfluence -= def.cost;
+        if (def.cost) ws.command -= def.cost;
 
-        ws.activeOrder = { orderId, expiresAt: Date.now() + def.durationSec * 1000, targetTileId: targetTileId || null };
-        ws.orderCooldowns[orderId] = Date.now();
+        ws.activeOrder = { orderId, expiresTurn: (ws.turn ?? 0) + def.durationTurns, targetTileId: targetTileId || null };
+        ws.orderCooldowns[orderId] = ws.turn ?? 0;
 
         const tileLabel = targetTileId ? ` → ${WARBAND_TILE_TYPES[this.getTile(player, targetTileId)?.type]?.label ?? targetTileId}` : '';
         this.addWarLog(player, `${def.icon} Order: ${def.name}${tileLabel}`, 'success');
@@ -471,7 +476,7 @@ const WarbandSystem = {
     _checkOrderExpiry(player) {
         const ws = player.warbandStats;
         if (!ws?.activeOrder) return;
-        if (Date.now() >= ws.activeOrder.expiresAt) {
+        if ((ws.turn ?? 0) >= ws.activeOrder.expiresTurn) {
             const def = getStrategicOrder(ws.activeOrder.orderId);
             this.addWarLog(player, `Order expired: ${def?.name ?? ws.activeOrder.orderId}`, 'info');
             ws.activeOrder = null;
@@ -486,10 +491,11 @@ const WarbandSystem = {
 
     // ── Tactical abilities ────────────────────────────────────────────────────
     getAbilityCooldownRemaining(player, abilityId) {
-        const last = player.warbandStats?.abilityCooldowns?.[abilityId] || 0;
-        const def  = getTacticalAbility(abilityId);
-        if (!def || !last) return 0;
-        return Math.max(0, (last + def.cooldownSec * 1000) - Date.now());
+        const lastTurn = player.warbandStats?.abilityCooldowns?.[abilityId] || 0;
+        const def      = getTacticalAbility(abilityId);
+        if (!def || !lastTurn) return 0;
+        const curTurn  = player.warbandStats?.turn ?? 0;
+        return Math.max(0, (lastTurn + def.cooldownTurns) - curTurn);
     },
 
     canUseAbility(player, abilityId, tileId = null) {
@@ -497,8 +503,8 @@ const WarbandSystem = {
         if (!def) return { ok: false, reason: 'Unknown ability.' };
         const cd = this.getAbilityCooldownRemaining(player, abilityId);
         if (cd > 0) return { ok: false, reason: `On cooldown.` };
-        if (def.cost && (player.warbandInfluence || 0) < def.cost)
-            return { ok: false, reason: `Need ${def.cost} influence.` };
+        if (def.cost && (player.warbandStats?.command ?? 0) < def.cost)
+            return { ok: false, reason: `Need ${def.cost} Command.` };
         if (def.targetState && def.targetState !== 'any' && tileId) {
             const tile  = this.getTile(player, tileId);
             const state = tile ? this.controlState(tile) : null;
@@ -515,8 +521,8 @@ const WarbandSystem = {
         const def = getTacticalAbility(abilityId);
         const ws  = player.warbandStats;
         if (!ws.abilityCooldowns) ws.abilityCooldowns = {};
-        if (def.cost) player.warbandInfluence -= def.cost;
-        ws.abilityCooldowns[abilityId] = Date.now();
+        if (def.cost) ws.command -= def.cost;
+        ws.abilityCooldowns[abilityId] = ws.turn ?? 0;
 
         const tile     = tileId ? this.getTile(player, tileId) : null;
         const typeName = WARBAND_TILE_TYPES[tile?.type]?.label ?? (tile?.type ?? 'area');
@@ -536,7 +542,7 @@ const WarbandSystem = {
             this.addWarLog(player, `✦ ${typeName} stabilized via ${def.name}.`, 'success');
         }
         if (def.effect.globalFortBoost) {
-            ws.globalFortBoost = { level: def.effect.globalFortBoost, expiresAt: Date.now() + (def.effect.durationSec || 120) * 1000 };
+            ws.globalFortBoost = { level: def.effect.globalFortBoost, expiresTurn: (ws.turn ?? 0) + (def.effect.durationTurns || 3) };
             this.addWarLog(player, `🛡 Iron Shields active — all tiles +${def.effect.globalFortBoost} fort.`, 'success');
         }
 
@@ -550,7 +556,7 @@ const WarbandSystem = {
     _checkGlobalFortBoostExpiry(player) {
         const ws = player.warbandStats;
         if (!ws?.globalFortBoost) return;
-        if (Date.now() >= ws.globalFortBoost.expiresAt) ws.globalFortBoost = null;
+        if ((ws.turn ?? 0) >= ws.globalFortBoost.expiresTurn) ws.globalFortBoost = null;
     },
 
     _getEffectiveFortLevel(player, tile) {
@@ -568,8 +574,9 @@ const WarbandSystem = {
         const MAX = 3;
         if (tile.troopCount >= MAX) return { ok: false, reason: 'Max troops deployed.' };
         const cost = WARBAND_COSTS.deployTroops;
-        if ((player.warbandInfluence || 0) < cost) return { ok: false, reason: `Need ${cost} inf.` };
-        player.warbandInfluence -= cost;
+        const _ws  = player.warbandStats;
+        if ((_ws.command ?? 0) < cost) return { ok: false, reason: `Need ${cost} Command.` };
+        _ws.command -= cost;
         tile.troopCount++;
         tile.controlScore   = Math.min(WARBAND_CONTROL.playerFull, tile.controlScore + 20);
         tile.demonStrength  = Math.max(0, (tile.demonStrength || 0) - 10);
@@ -590,8 +597,9 @@ const WarbandSystem = {
         const support = this.getActiveFactionSupport(player);
         let cost = WARBAND_COSTS.fortify;
         if (support?.effects?.fortifyCostMod) cost = Math.ceil(cost * support.effects.fortifyCostMod);
-        if ((player.warbandInfluence || 0) < cost) return { ok: false, reason: `Need ${cost} inf.` };
-        player.warbandInfluence -= cost;
+        const _wsF = player.warbandStats;
+        if ((_wsF.command ?? 0) < cost) return { ok: false, reason: `Need ${cost} Command.` };
+        _wsF.command -= cost;
         tile.fortLevel++;
         const reductionLabel = tile.fortLevel === 1 ? '50%' : '75%';
         Log.add(`${WARBAND_TILE_TYPES[tile.type]?.label ?? tile.type} fortified lv${tile.fortLevel} — pressure −${reductionLabel}.`, 'success');
@@ -606,8 +614,9 @@ const WarbandSystem = {
         const support = this.getActiveFactionSupport(player);
         let cost = WARBAND_COSTS.stabilizeRift;
         if (support?.effects?.stabilizeCostMod) cost = Math.ceil(cost * support.effects.stabilizeCostMod);
-        if ((player.warbandInfluence || 0) < cost) return { ok: false, reason: `Need ${cost} inf.` };
-        player.warbandInfluence -= cost;
+        const _wsS = player.warbandStats;
+        if ((_wsS.command ?? 0) < cost) return { ok: false, reason: `Need ${cost} Command.` };
+        _wsS.command -= cost;
         tile.stabilized    = true;
         tile.demonStrength = 0;
         Log.add(`Rift stabilized — demon spawns suppressed.`, 'success');
@@ -617,9 +626,14 @@ const WarbandSystem = {
 
     gainInfluenceFromDelve(player, delveTier) {
         const gain = delveTier * 8;
-        player.warbandInfluence = (player.warbandInfluence || 0) + gain;
-        player.warbandStats.totalInfluenceEarned = (player.warbandStats.totalInfluenceEarned || 0) + gain;
-        Log.add(`+${gain} warband influence from delve.`, 'info');
+        this._gainInfluence(player, gain);
+        Log.add(`+${gain} Influence from delve.`, 'info');
+    },
+
+    _gainInfluence(player, amount) {
+        if (!amount || amount <= 0) return;
+        player.warbandInfluence = (player.warbandInfluence || 0) + amount;
+        player.warbandStats.totalInfluenceEarned = (player.warbandStats.totalInfluenceEarned || 0) + amount;
     },
 
     // ── Rift quests ───────────────────────────────────────────────────────────
@@ -736,8 +750,6 @@ const WarbandSystem = {
         ws.gameResult           = null;
         ws.warLog               = [];
         ws.demonPhase           = 1;
-        ws.minorWaveTimer       = 0;
-        ws.majorWaveTimer       = 0;
         ws.activeOrder          = null;
         ws.globalFortBoost      = null;
         ws.orderCooldowns       = {};
@@ -745,8 +757,10 @@ const WarbandSystem = {
         ws.aiIntents            = { iron_dominion: null, ashen_covenant: null, void_horde: null };
         ws.totalInfluenceEarned  = 0;
         ws.questsCompleted       = 0;
-        ws.factionInfluence      = { iron_dominion: 0, ashen_covenant: 0 };
-        player.warbandInfluence  = 0;
+        ws.command               = 0;
+        ws.commandCap            = 300;
+        ws.turn                  = 0;
+        ws.turnLimit             = 60;
         this.addWarLog(player, '⏳ Campaign begins in 15 seconds. Prepare your forces.', 'info');
         SaveSystem.save();
         return { ok: true };
@@ -755,7 +769,11 @@ const WarbandSystem = {
     beginGame(player) {
         const ws      = player.warbandStats;
         ws.gameState  = 'active';
-        ws.gameEndsAt = Date.now() + (ws.gameDuration || 900) * 1000;
+        ws.gameEndsAt = null;
+        ws.turn       = 1;
+        // Starting resources — enough for an opening move, not enough to spam
+        ws.command    = 80;
+        player.warbandInfluence = (player.warbandInfluence || 0) + 30;
         this.addWarLog(player, '⚔ The campaign has begun — capture the Heart of Valdros!', 'success');
         SaveSystem.save();
     },
@@ -765,9 +783,11 @@ const WarbandSystem = {
         ws.gameState  = 'ended';
         ws.gameResult = { win: result.win, loss: result.loss, winReason: result.winReason ?? null };
         ws.gameEndsAt = null;
-        const msg     = result.win
-            ? `⚑ Victory — ${result.winReason || 'Campaign won!'}`
-            : '☠ Campaign ended — time expired.';
+        const endInf  = result.win ? 50 : 10;
+        this._gainInfluence(player, endInf);
+        const msg = result.win
+            ? `⚑ Victory — ${result.winReason || 'Campaign won!'} (+${endInf} Influence)`
+            : `☠ Campaign ended. (+${endInf} Influence consolation)`;
         this.addWarLog(player, msg, result.win ? 'success' : 'danger');
         SaveSystem.save();
     },
@@ -791,82 +811,159 @@ const WarbandSystem = {
         SaveSystem.save();
     },
 
-    // ── Game loop tick ────────────────────────────────────────────────────────
-    _holdingTimer:  0,
-    _warTimer:      0,
-    HOLDING_INTERVAL: 30,
-    WAR_INTERVAL:     60,
-
+    // ── Game loop tick (countdown only — active advances via endPlayerTurn) ──────
     tick() {
         const player = PlayerSystem.current;
         if (!player?.warbandStats) return;
-
         this._ensureCampaign(player);
-
-        // ── Game state gate ───────────────────────────────────────────────────
         const gs = player.warbandStats.gameState ?? 'idle';
-
         if (gs === 'idle' || gs === 'ended') return;
-
         if (gs === 'countdown') {
             if (Date.now() >= (player.warbandStats.countdownEndsAt || 0)) {
                 this.beginGame(player);
                 if (typeof Router !== 'undefined' && Router._current === 'warbands')
                     Router._load('warbands');
             }
-            return;
         }
+        // gs === 'active': state advances only when player clicks End Turn
+    },
 
-        // gs === 'active': check time limit first
-        if (player.warbandStats.gameEndsAt && Date.now() >= player.warbandStats.gameEndsAt) {
-            this.endGame(player, { win: false, loss: true, winReason: null });
-            if (typeof Router !== 'undefined' && Router._current === 'warbands')
-                Router._load('warbands');
-            return;
-        }
+    // ── Supply network BFS ────────────────────────────────────────────────────
+    // Returns a Set of tile IDs that are supply-connected to the player's anchors.
+    // Anchors: outer player-lane tiles (faction base), strongholds, supply nodes.
+    _computeSupplyNetwork(player) {
+        const tiles   = this.getMap(player);
+        const byId    = Object.fromEntries(tiles.map(t => [t.id, t]));
+        const anchors = tiles
+            .filter(t => {
+                if (this.controlState(t) !== 'player') return false;
+                return (t.tier === 'outer' && t.lane === 'player') ||
+                       t.type === 'stronghold' ||
+                       t.type === 'supply';
+            })
+            .map(t => t.id);
 
-        // Influence per controlled tile per tick
-        const _tiles = this.getMap(player);
-        const _playerTiles = _tiles.filter(t => this.controlState(t) === 'player').length;
-        if (_playerTiles > 0) {
-            player.warbandInfluence = (player.warbandInfluence || 0) + _playerTiles;
-            player.warbandStats.totalInfluenceEarned = (player.warbandStats.totalInfluenceEarned || 0) + _playerTiles;
-        }
-        const _fi = player.warbandStats.factionInfluence || {};
-        for (const _fid of ['iron_dominion', 'ashen_covenant']) {
-            _fi[_fid] = (_fi[_fid] || 0) + _tiles.filter(t => t.allyFaction === _fid).length;
-        }
-        player.warbandStats.factionInfluence = _fi;
-
-        this._checkFactionSupportExpiry(player);
-        this._checkOrderExpiry(player);
-        this._checkGlobalFortBoostExpiry(player);
-
-        // Holding bonus (player tiles consolidate)
-        this._holdingTimer++;
-        if (this._holdingTimer >= this.HOLDING_INTERVAL) {
-            this._holdingTimer = 0;
-            this._applyHoldingBonus(player);
-        }
-
-        // War turn (demon + faction AI)
-        this._warTimer++;
-        if (this._warTimer >= this.WAR_INTERVAL) {
-            this._warTimer = 0;
-            this._checkPhaseTransition(player);
-            this._demonStrongpointEffect(player);
-            this._demonTurn(player);
-            this._allyTurn(player);
-            this._waveSystem(player);
-
-            // Auto-end on win or total loss after each war turn
-            const wl = this.checkWinLoss(player);
-            if (wl.win || wl.loss) {
-                this.endGame(player, wl);
-                if (typeof Router !== 'undefined' && Router._current === 'warbands')
-                    Router._load('warbands');
+        const connected = new Set(anchors);
+        const queue     = [...anchors];
+        while (queue.length > 0) {
+            const id   = queue.shift();
+            const tile = byId[id];
+            if (!tile) continue;
+            for (const adjId of tile.adjacentIds) {
+                if (connected.has(adjId)) continue;
+                const adj = byId[adjId];
+                if (adj && this.controlState(adj) === 'player') {
+                    connected.add(adjId);
+                    queue.push(adjId);
+                }
             }
         }
+        return connected;
+    },
+
+    // ── Resource grant at turn start ──────────────────────────────────────────
+    // Grants Command (capped) and Influence (persistent) for the coming turn.
+    // Formula: base + sqrt-scaled tile income + frontline bonus − upkeep
+    _grantTurnResources(player) {
+        const tiles       = this.getMap(player);
+        const byId        = Object.fromEntries(tiles.map(t => [t.id, t]));
+        const ws          = player.warbandStats;
+        const playerTiles = tiles.filter(t => this.controlState(t) === 'player');
+        const connected   = this._computeSupplyNetwork(player);
+
+        // ── Per-tile income ───────────────────────────────────────────────────
+        let rawCmd = 0, rawInf = 0;
+        for (const t of playerTiles) {
+            let tCmd = WARBAND_TILE_CMD_INCOME[t.type] ?? 0;
+            let tInf = WARBAND_TILE_INF_INCOME[t.type] ?? 0.15;
+            if (t.isChokepoint) { tCmd += 0.2; tInf += 0.2; }          // chokepoint bonus
+            if (t.tier === 'inner') { tCmd += 0.2; tInf += 0.35; }     // center-approach bonus
+            if (!connected.has(t.id)) { tCmd *= 0.25; tInf *= 0.5; }   // isolation penalty
+            rawCmd += tCmd;
+            rawInf += tInf;
+        }
+
+        // ── Diminishing returns (sqrt scaling) ────────────────────────────────
+        const scaledCmd = rawCmd <= 10 ? rawCmd : 10 + Math.sqrt(rawCmd - 10) * 2.4;
+        const scaledInf = rawInf <= 6  ? rawInf  : 6  + Math.sqrt(rawInf  - 6)  * 1.8;
+
+        // ── Base passive income ───────────────────────────────────────────────
+        let totalCmd = 1.5 + scaledCmd;
+        let totalInf = 0.35 + scaledInf;
+
+        // ── Frontline bonus ───────────────────────────────────────────────────
+        const frontlineCount = playerTiles.filter(t =>
+            t.adjacentIds.some(id => {
+                const nb = byId[id];
+                return nb && this.controlState(nb) === 'enemy';
+            })
+        ).length;
+        totalCmd += Math.min(2.5, frontlineCount * 0.15);
+        totalInf += Math.min(1.0, frontlineCount * 0.05);
+
+        // ── Upkeep drain ──────────────────────────────────────────────────────
+        let upkeep = 0;
+        for (const t of playerTiles) {
+            upkeep += (t.troopCount ?? 0) * 0.8;   // warband upkeep
+            upkeep += (t.fortLevel  ?? 0) * 0.2;   // structure upkeep
+        }
+        // Overextension penalty: >35% isolated tiles costs extra command
+        const isolatedCount = playerTiles.filter(t => !connected.has(t.id)).length;
+        if (playerTiles.length > 0 && isolatedCount / playerTiles.length > 0.35) {
+            upkeep += isolatedCount * 0.08;
+        }
+
+        // ── Apply ─────────────────────────────────────────────────────────────
+        const cmdGain = Math.max(1, Math.floor(totalCmd - upkeep));
+        const infGain = Math.max(0, Math.floor(totalInf));
+        ws.command  = Math.min(ws.commandCap ?? 300, (ws.command ?? 0) + cmdGain);
+        ws._lastTurnCommandGain   = cmdGain;
+        ws._lastTurnInfluenceGain = infGain;
+        if (infGain > 0) this._gainInfluence(player, infGain);
+    },
+
+    // ── End player turn → AI acts → new turn begins ───────────────────────────
+    endPlayerTurn(player) {
+        const ws = player.warbandStats;
+        if (ws.gameState !== 'active') return;
+
+        // Advance turn counter
+        ws.turn = (ws.turn || 0) + 1;
+
+        // Turn limit check
+        if (ws.turn > (ws.turnLimit || 60)) {
+            this.endGame(player, { win: false, loss: true, winReason: 'Turn limit reached.' });
+            if (typeof Router !== 'undefined' && Router._current === 'warbands') Router._load('warbands');
+            return;
+        }
+
+        // Expire time-limited effects
+        this._checkOrderExpiry(player);
+        this._checkGlobalFortBoostExpiry(player);
+        this._checkFactionSupportExpiry(player);
+
+        // Run all AI systems
+        this._checkPhaseTransition(player);
+        this._demonStrongpointEffect(player);
+        this._demonTurn(player);
+        this._allyTurn(player);
+        this._applyHoldingBonus(player);
+        this._waveSystem(player);
+
+        // Check win / loss
+        const wl = this.checkWinLoss(player);
+        if (wl.win || wl.loss) {
+            this.endGame(player, wl);
+            if (typeof Router !== 'undefined' && Router._current === 'warbands') Router._load('warbands');
+            return;
+        }
+
+        // Grant command + influence for next player turn
+        this._grantTurnResources(player);
+        this.addWarLog(player, `— Turn ${ws.turn} —`, 'info');
+
+        SaveSystem.save();
+        if (typeof Router !== 'undefined' && Router._current === 'warbands') Router._load('warbands');
     },
 
     // ── Player holding + attack ───────────────────────────────────────────────
@@ -902,8 +999,20 @@ const WarbandSystem = {
 
                     if (this.controlState(adj) === 'player') {
                         adj.demonStrength = 0;
-                        const typeName = WARBAND_TILE_TYPES[adj.type]?.label ?? adj.type;
-                        this.addWarLog(player, `⚑ You captured ${typeName} (${adj.tier})!`, 'success');
+                        const typeName  = WARBAND_TILE_TYPES[adj.type]?.label ?? adj.type;
+                        const capCost   = WARBAND_CAPTURE_COSTS[adj.type]   ?? { cmd: 0,  inf: 8  };
+                        const capRewd   = WARBAND_CAPTURE_REWARDS[adj.type] ?? { cmd: 5,  inf: 4  };
+                        const _ws       = player.warbandStats;
+                        const cmdNet    = capRewd.cmd - capCost.cmd;
+                        const infNet    = capRewd.inf - capCost.inf;
+                        _ws.command = Math.min(_ws.commandCap ?? 300,
+                            Math.max(0, (_ws.command ?? 0) + cmdNet));
+                        if (infNet > 0) this._gainInfluence(player, infNet);
+                        else if (infNet < 0)
+                            player.warbandInfluence = Math.max(0, (player.warbandInfluence || 0) + infNet);
+                        const cmdLbl = cmdNet !== 0 ? ` ${cmdNet > 0 ? '+' : ''}${cmdNet} Cmd` : '';
+                        const infLbl = infNet !== 0 ? ` ${infNet > 0 ? '+' : ''}${infNet} Inf` : '';
+                        this.addWarLog(player, `⚑ Captured ${typeName} (${adj.tier})${cmdLbl}${infLbl}`, 'success');
                     }
                     changed = true;
                 }
@@ -1082,26 +1191,15 @@ const WarbandSystem = {
         this._setIntent(player, 'void_horde', intentTexts[phase] ?? 'Advancing');
     },
 
-    // Behavior 5: Wave attacks (periodic surges)
+    // Behavior 5: Wave attacks (every 3 turns minor, every 8 turns major)
     _waveSystem(player) {
-        const ws       = player.warbandStats;
-        const phaseDef = this.getPhase(player);
+        const ws        = player.warbandStats;
+        const phaseDef  = this.getPhase(player);
         const intensity = phaseDef?.waveIntensity ?? 1;
+        const turn      = ws.turn ?? 0;
 
-        ws.minorWaveTimer = (ws.minorWaveTimer || 0) + 1;
-        ws.majorWaveTimer = (ws.majorWaveTimer || 0) + 1;
-
-        // Minor wave every 2 min (120 ticks)
-        if (ws.minorWaveTimer >= 120) {
-            ws.minorWaveTimer = 0;
-            this._launchWave(player, 'minor', intensity);
-        }
-
-        // Major wave every 5 min (300 ticks)
-        if (ws.majorWaveTimer >= 300) {
-            ws.majorWaveTimer = 0;
-            this._launchWave(player, 'major', intensity);
-        }
+        if (turn > 0 && turn % 3 === 0) this._launchWave(player, 'minor', intensity);
+        if (turn > 0 && turn % 8 === 0) this._launchWave(player, 'major', intensity);
     },
 
     _launchWave(player, type, intensityMult) {
@@ -1156,6 +1254,12 @@ const WarbandSystem = {
             const label = isMajor ? '⚠ Major Demon Offensive' : '↑ Demon Incursion';
             this.addWarLog(player, `${label} — ${hit} front${hit > 1 ? 's' : ''} hit.`, 'danger');
             if (isMajor) Log.add(`Major demon offensive underway!`, 'danger');
+            // Surviving the wave grants Influence
+            if (tiles.some(t => this.controlState(t) === 'player')) {
+                const _waveInf = isMajor ? 10 : 3;
+                this._gainInfluence(player, _waveInf);
+                this.addWarLog(player, `⚑ Wave survived — +${_waveInf} Influence.`, 'info');
+            }
             this._propagateUnlocks(tiles);
             PlayerSystem._recalcStatMaxes();
             SaveSystem.save();

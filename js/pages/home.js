@@ -229,7 +229,7 @@ Router.register('home', function renderHome(container) {
                                 <span>Once you reach level <strong>15</strong> choose a talent to focus your skills.</span>
                             </div>
                             <div class="tip-item">
-                                <span class="tip-icon"></span>
+                                <span class="tip-icon">⬡</span>
                                 <span>Enter a city to explore and interact with the world.</span>
                             </div>
                         </div>
